@@ -14,11 +14,11 @@
 
   --color-card: hsl(var(--card));
   --color-card-foreground: hsl(var(--card-foreground));
-  --color-card-border: hsl(var(--card-border));
+  --color-card-border: var(--card-border);
 
   --color-popover: hsl(var(--popover));
   --color-popover-foreground: hsl(var(--popover-foreground));
-  --color-popover-border: hsl(var(--popover-border));
+  --color-popover-border: var(--popover-border);
 
   --color-primary: hsl(var(--primary));
   --color-primary-foreground: hsl(var(--primary-foreground));
@@ -68,7 +68,7 @@
 
   --border: 240 4% 16%;
   --input: 240 4% 18%;
-  --ring: 347 77% 50%;
+  --ring: 347 50% 42%;
 
   --card: 240 5% 8%;
   --card-foreground: 240 5% 75%;
@@ -78,10 +78,10 @@
   --popover-foreground: 0 0% 98%;
   --popover-border: 240 4% 16%;
 
-  /* Rose primary */
-  --primary: 347 77% 54%;
+  /* Dusty rose primary — muted, less flashy */
+  --primary: 347 52% 46%;
   --primary-foreground: 0 0% 100%;
-  --primary-border: 347 77% 46%;
+  --primary-border: 347 52% 38%;
 
   /* Zinc-800 secondary (dark button) */
   --secondary: 240 4% 16%;
@@ -92,9 +92,9 @@
   --muted-foreground: 240 4% 48%;
   --muted-border: 240 5% 12%;
 
-  --accent: 347 77% 54%;
+  --accent: 347 52% 46%;
   --accent-foreground: 0 0% 100%;
-  --accent-border: 347 77% 40%;
+  --accent-border: 347 52% 34%;
 
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
@@ -103,11 +103,11 @@
   --sidebar: 240 6% 4%;
   --sidebar-foreground: 0 0% 98%;
   --sidebar-border: 240 4% 14%;
-  --sidebar-primary: 347 77% 54%;
+  --sidebar-primary: 347 52% 46%;
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 240 4% 16%;
   --sidebar-accent-foreground: 0 0% 98%;
-  --sidebar-ring: 347 77% 54%;
+  --sidebar-ring: 347 52% 46%;
 
   --app-font-sans: 'Inter', system-ui, sans-serif;
   --app-font-serif: 'Space Grotesk', system-ui, sans-serif;
@@ -115,12 +115,12 @@
 
   --radius: 0.75rem;
 
-  --primary-border: hsl(347 77% 40%);
+  --primary-border: hsl(347 52% 38%);
   --secondary-border: hsl(240 4% 22%);
   --muted-border: hsl(240 5% 12%);
-  --accent-border: hsl(347 77% 40%);
+  --accent-border: hsl(347 52% 34%);
   --destructive-border: hsl(0 84% 52%);
-  --sidebar-primary-border: hsl(347 77% 46%);
+  --sidebar-primary-border: hsl(347 52% 40%);
   --sidebar-accent-border: hsl(240 4% 22%);
 }
 
@@ -140,9 +140,9 @@
   .hide-scrollbar::-webkit-scrollbar { display: none; }
   .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-  /* Rose glow gradient — used for logo icon, CTA sections */
+  /* Dusty rose gradient — hero fallback and CTA sections */
   .gradient-hero {
-    background: linear-gradient(135deg, hsl(347 77% 42%) 0%, hsl(333 71% 38%) 60%, hsl(320 60% 30%) 100%);
+    background: linear-gradient(135deg, hsl(347 52% 32%) 0%, hsl(333 48% 28%) 60%, hsl(320 38% 20%) 100%);
   }
 
   /* Dark glass overlay */
@@ -152,19 +152,19 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
-  /* Rose glow text gradient */
+  /* Muted rose text gradient */
   .text-rose-gradient {
-    background: linear-gradient(90deg, hsl(351 95% 71%), hsl(333 71% 60%));
+    background: linear-gradient(90deg, hsl(347 60% 62%), hsl(333 52% 52%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  /* Rose glow shadow on buttons */
+  /* Soft rose glow shadow on buttons */
   .shadow-rose-glow {
-    box-shadow: 0 0 20px rgba(225, 29, 72, 0.35);
+    box-shadow: 0 0 20px rgba(175, 65, 85, 0.28);
   }
   .shadow-rose-glow:hover {
-    box-shadow: 0 0 30px rgba(225, 29, 72, 0.5);
+    box-shadow: 0 0 30px rgba(175, 65, 85, 0.4);
   }
 }
