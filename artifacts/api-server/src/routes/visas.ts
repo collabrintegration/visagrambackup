@@ -301,6 +301,42 @@ router.get("/stats/overview", async (req, res) => {
   });
 });
 
+// Worldwide passport rankings
+router.get("/passport/rankings", async (req, res) => {
+  const counts = await db
+    .select({
+      code: visasTable.passportCountryCode,
+      entryType: visasTable.entryType,
+      cnt: sql<number>`count(*)::int`,
+    })
+    .from(visasTable)
+    .groupBy(visasTable.passportCountryCode, visasTable.entryType);
+
+  const countries = await db
+    .select({ code: countriesTable.code, name: countriesTable.name, flagEmoji: countriesTable.flagEmoji })
+    .from(countriesTable);
+
+  const countryMap = new Map(countries.map((c) => [c.code, c]));
+
+  const totals = new Map<string, { visaFree: number; total: number }>();
+  for (const row of counts) {
+    const existing = totals.get(row.code) ?? { visaFree: 0, total: 0 };
+    existing.total += row.cnt;
+    if (row.entryType === "visa_free") existing.visaFree += row.cnt;
+    totals.set(row.code, existing);
+  }
+
+  const ranked = Array.from(totals.entries())
+    .map(([code, stats]) => {
+      const c = countryMap.get(code);
+      return { code, name: c?.name ?? code, flagEmoji: c?.flagEmoji ?? "", ...stats };
+    })
+    .sort((a, b) => b.total - a.total || b.visaFree - a.visaFree)
+    .map((entry, idx) => ({ ...entry, rank: idx + 1 }));
+
+  res.json(ranked);
+});
+
 // Manual refresh trigger (admin only — no auth for demo purposes)
 router.post("/admin/refresh", async (req, res) => {
   try {

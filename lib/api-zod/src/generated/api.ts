@@ -189,6 +189,21 @@ export const ListDestinationsByPassportResponse = zod.object({
 
 
 /**
+ * Returns all countries ranked by passport strength (total accessible destinations)
+ * @summary Get worldwide passport strength rankings
+ */
+export const GetPassportRankingsResponseItem = zod.object({
+  "rank": zod.number(),
+  "code": zod.string(),
+  "name": zod.string(),
+  "flagEmoji": zod.string(),
+  "visaFree": zod.number(),
+  "total": zod.number()
+})
+export const GetPassportRankingsResponse = zod.array(GetPassportRankingsResponseItem)
+
+
+/**
  * Returns aggregated statistics about visas and countries
  * @summary Get global stats overview
  */

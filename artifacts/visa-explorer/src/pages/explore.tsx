@@ -390,7 +390,7 @@ export default function Explore() {
                               return (
                                 <Link
                                   key={dest.id}
-                                  href={`/country/${code}`}
+                                  href={`/country/${code}?from=${selectedCode}`}
                                   className="group relative bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 hover:shadow-md transition-all"
                                 >
                                   <div className="h-20 overflow-hidden">

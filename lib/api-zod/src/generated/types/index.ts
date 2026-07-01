@@ -17,6 +17,7 @@ export * from './listDestinationsByPassportParams';
 export * from './listVisasParams';
 export * from './passportDestinationsResponse';
 export * from './passportRank';
+export * from './passportRankEntry';
 export * from './statsOverview';
 export * from './visaDetail';
 export * from './visaListResponse';

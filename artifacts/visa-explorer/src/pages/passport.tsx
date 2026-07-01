@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
-import { useListCountries, getListCountriesQueryKey, useListDestinationsByPassport, getListDestinationsByPassportQueryKey } from "@workspace/api-client-react";
+import { useListCountries, getListCountriesQueryKey, useListDestinationsByPassport, getListDestinationsByPassportQueryKey, useGetPassportRankings, getGetPassportRankingsQueryKey } from "@workspace/api-client-react";
 import { CheckCircle2, FileWarning, HelpCircle, AlertCircle, Loader2, Globe, ChevronDown, Search } from "lucide-react";
 import { getCountryImageUrl, getCountryFallbackImageUrl, getCountryLandmarkInfo } from "@/lib/countryImages";
 
@@ -61,6 +61,12 @@ export default function PassportPower() {
     }
   );
 
+  const { data: rankings } = useGetPassportRankings({
+    query: { queryKey: getGetPassportRankingsQueryKey() }
+  });
+
+  const myRank = rankings?.find(r => r.code === selectedPassport);
+
   const selectedCountry = countries?.find(c => c.code === selectedPassport);
   const heroImg = selectedPassport ? getCountryImageUrl(selectedPassport, 1200, 400) : null;
   const landmarkInfo = selectedPassport ? getCountryLandmarkInfo(selectedPassport) : null;
@@ -108,11 +114,18 @@ export default function PassportPower() {
               <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight">
                 {selectedCountry?.name ?? "Select your passport"}
               </h1>
-              {passportData && (
-                <p className="text-white/60 text-sm mt-1">
-                  You can travel to <span className="text-white font-semibold">{passportData.totalDestinations} destinations</span> in our database
-                </p>
-              )}
+              <div className="flex flex-wrap items-center gap-3 mt-1.5">
+                {passportData && (
+                  <p className="text-white/60 text-sm">
+                    Access to <span className="text-white font-semibold">{passportData.totalDestinations} destinations</span>
+                  </p>
+                )}
+                {myRank && (
+                  <span className="inline-flex items-center gap-1.5 bg-primary/25 border border-primary/40 text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                    🏆 Ranked #{myRank.rank} of {rankings?.length} passports
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -223,7 +236,7 @@ export default function PassportPower() {
                       return (
                         <Link
                           key={dest.id}
-                          href={`/country/${dest.destinationCountryCode}`}
+                          href={`/country/${dest.destinationCountryCode}?from=${selectedPassport}`}
                           className="group relative bg-card border border-border rounded-xl overflow-hidden hover:border-primary/25 transition-all"
                         >
                           <div className="h-20 overflow-hidden">

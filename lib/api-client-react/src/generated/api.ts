@@ -24,6 +24,7 @@ import type {
   ListDestinationsByPassportParams,
   ListVisasParams,
   PassportDestinationsResponse,
+  PassportRankEntry,
   StatsOverview,
   VisaDetail,
   VisaListResponse
@@ -533,6 +534,84 @@ export function useListDestinationsByPassport<TData = Awaited<ReturnType<typeof 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListDestinationsByPassportQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPassportRankingsUrl = () => {
+
+
+
+
+  return `/api/passport/rankings`
+}
+
+/**
+ * Returns all countries ranked by passport strength (total accessible destinations)
+ * @summary Get worldwide passport strength rankings
+ */
+export const getPassportRankings = async ( options?: RequestInit): Promise<PassportRankEntry[]> => {
+
+  return customFetch<PassportRankEntry[]>(getGetPassportRankingsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPassportRankingsQueryKey = () => {
+    return [
+    `/api/passport/rankings`
+    ] as const;
+    }
+
+
+export const getGetPassportRankingsQueryOptions = <TData = Awaited<ReturnType<typeof getPassportRankings>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPassportRankings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPassportRankingsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPassportRankings>>> = ({ signal }) => getPassportRankings({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPassportRankings>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPassportRankingsQueryResult = NonNullable<Awaited<ReturnType<typeof getPassportRankings>>>
+export type GetPassportRankingsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get worldwide passport strength rankings
+ */
+
+export function useGetPassportRankings<TData = Awaited<ReturnType<typeof getPassportRankings>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPassportRankings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPassportRankingsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

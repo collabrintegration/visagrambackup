@@ -168,6 +168,15 @@ export interface StatsOverview {
   refreshInProgress: boolean;
 }
 
+export interface PassportRankEntry {
+  rank: number;
+  code: string;
+  name: string;
+  flagEmoji: string;
+  visaFree: number;
+  total: number;
+}
+
 export type ListCountriesParams = {
 /**
  * Search by country name
