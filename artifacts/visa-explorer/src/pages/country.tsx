@@ -1,8 +1,22 @@
 import { useParams, useSearch } from "wouter";
-import { useGetCountry, getGetCountryQueryKey } from "@workspace/api-client-react";
-import { Globe, MapPin, Coins, Languages, ArrowLeft, Loader2, Camera, Clock, DollarSign, CalendarDays, RefreshCw, Repeat, ExternalLink, FileText, Phone, Car, Users } from "lucide-react";
+import { useState } from "react";
+import {
+  useGetCountry, getGetCountryQueryKey,
+  useGetCountryReviews, getGetCountryReviewsQueryKey,
+  useCreateCountryReview,
+  useGetCountryQuestions, getGetCountryQuestionsQueryKey,
+  useCreateCountryQuestion,
+  useGetQuestionAnswers, getGetQuestionAnswersQueryKey,
+  usePostAnswer,
+  useUpsertTravelEntry, useDeleteTravelEntry, useGetTravelMap, getGetTravelMapQueryKey,
+} from "@workspace/api-client-react";
+import type { QuestionSummary } from "@workspace/api-client-react";
+import { useAuth } from "@workspace/replit-auth-web";
+import { useQueryClient } from "@tanstack/react-query";
+import { Globe, MapPin, Coins, Languages, ArrowLeft, Loader2, Camera, Clock, DollarSign, CalendarDays, RefreshCw, Repeat, ExternalLink, FileText, Phone, Car, Users, Star, MessageSquare, ChevronDown, ChevronUp, CheckCircle2, Heart, PlusCircle, Send } from "lucide-react";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { getCountryImageUrl, getCountryFallbackImageUrl, getCountryLandmarkInfo } from "@/lib/countryImages";
 import { getCountryDetails } from "@/lib/countryDetails";
 
@@ -31,6 +45,51 @@ function entriesLabel(entries: string | null | undefined) {
   if (!entries) return null;
   const map: Record<string, string> = { single: "Single Entry", double: "Double Entry", multiple: "Multiple Entry" };
   return map[entries.toLowerCase()] ?? entries;
+}
+
+function StarInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [hover, setHover] = useState(0);
+  return (
+    <div className="flex gap-1">
+      {Array.from({ length: 5 }, (_, i) => i + 1).map((i) => (
+        <button
+          key={i}
+          type="button"
+          onClick={() => onChange(i)}
+          onMouseEnter={() => setHover(i)}
+          onMouseLeave={() => setHover(0)}
+          className="p-0.5 transition-transform hover:scale-110"
+        >
+          <Star
+            className={`w-6 h-6 ${i <= (hover || value) ? "fill-primary text-primary" : "text-muted-foreground/30"}`}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function StarRow({ rating }: { rating: number }) {
+  return (
+    <div className="flex gap-0.5">
+      {Array.from({ length: 5 }, (_, i) => (
+        <Star
+          key={i}
+          className={`w-3.5 h-3.5 ${i < Math.round(rating) ? "fill-primary text-primary" : "text-muted-foreground/30"}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
 }
 
 export default function CountryDetail() {
@@ -383,7 +442,406 @@ export default function CountryDetail() {
             </div>
           </div>
         )}
+
+        {/* ── Travel Map Quick-Add ── */}
+        {code && <TravelMapSection code={code} countryName={country.name} flagEmoji={country.flagEmoji ?? ""} />}
+
+        {/* ── Reviews ── */}
+        {code && <ReviewsSection code={code} countryName={country.name} />}
+
+        {/* ── Q&A ── */}
+        {code && <QASection code={code} countryName={country.name} />}
+
       </div>
+    </div>
+  );
+}
+
+/* ─────────── Travel Map section ─────────── */
+function TravelMapSection({ code, countryName, flagEmoji }: { code: string; countryName: string; flagEmoji: string }) {
+  const { isAuthenticated, login } = useAuth();
+  const queryClient = useQueryClient();
+
+  const { data: entries = [] } = useGetTravelMap({
+    query: { queryKey: getGetTravelMapQueryKey(), enabled: isAuthenticated },
+  });
+
+  const { mutate: upsert, isPending: isUpserting } = useUpsertTravelEntry({
+    mutation: {
+      onSuccess: () => { void queryClient.invalidateQueries({ queryKey: getGetTravelMapQueryKey() }); },
+    },
+  });
+  const { mutate: remove, isPending: isRemoving } = useDeleteTravelEntry({
+    mutation: {
+      onSuccess: () => { void queryClient.invalidateQueries({ queryKey: getGetTravelMapQueryKey() }); },
+    },
+  });
+
+  const current = entries.find((e) => e.countryCode === code);
+  const isPending = isUpserting || isRemoving;
+
+  return (
+    <div className="bg-card border border-border rounded-2xl p-6">
+      <div className="flex items-center gap-3 mb-4">
+        <span className="text-3xl">{flagEmoji}</span>
+        <h2 className="text-lg font-bold">Add to My Travel Map</h2>
+      </div>
+      {!isAuthenticated ? (
+        <div className="flex items-center gap-3 flex-wrap">
+          <p className="text-sm text-muted-foreground flex-1">Sign in to track {countryName} on your map.</p>
+          <Button size="sm" onClick={login}><CheckCircle2 className="w-4 h-4 mr-1.5" /> Sign in</Button>
+        </div>
+      ) : (
+        <div className="flex gap-3 flex-wrap">
+          <Button
+            size="sm"
+            variant={current?.status === "visited" ? "default" : "outline"}
+            disabled={isPending}
+            onClick={() =>
+              current?.status === "visited"
+                ? remove({ code })
+                : upsert({ code, data: { status: "visited" } })
+            }
+          >
+            <CheckCircle2 className="w-4 h-4 mr-1.5 text-emerald-400" />
+            {current?.status === "visited" ? "✓ Visited" : "Mark as Visited"}
+          </Button>
+          <Button
+            size="sm"
+            variant={current?.status === "want_to_visit" ? "default" : "outline"}
+            disabled={isPending}
+            onClick={() =>
+              current?.status === "want_to_visit"
+                ? remove({ code })
+                : upsert({ code, data: { status: "want_to_visit" } })
+            }
+          >
+            <Heart className="w-4 h-4 mr-1.5 text-primary" />
+            {current?.status === "want_to_visit" ? "✓ Saved" : "Want to Visit"}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────── Reviews section ─────────── */
+function ReviewsSection({ code, countryName }: { code: string; countryName: string }) {
+  const { isAuthenticated, login } = useAuth();
+  const queryClient = useQueryClient();
+  const [showForm, setShowForm] = useState(false);
+  const [overall, setOverall] = useState(0);
+  const [ease, setEase] = useState(0);
+  const [welcome, setWelcome] = useState(0);
+  const [body, setBody] = useState("");
+
+  const { data: reviewsData } = useGetCountryReviews(code, {
+    query: { queryKey: getGetCountryReviewsQueryKey(code) },
+  });
+
+  const { mutate: submitReview, isPending: submitting } = useCreateCountryReview({
+    mutation: {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: getGetCountryReviewsQueryKey(code) });
+        setShowForm(false);
+        setOverall(0); setEase(0); setWelcome(0); setBody("");
+      },
+    },
+  });
+
+  const reviews = reviewsData?.reviews ?? [];
+  const avg = reviewsData?.avgRatings;
+
+  return (
+    <div className="bg-card border border-border rounded-2xl p-6 md:p-8 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <Star className="w-5 h-5 text-primary" /> Traveler Reviews
+          </h2>
+          {avg && avg.overall != null && reviews.length > 0 && (
+            <div className="flex items-center gap-3 mt-2 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <StarRow rating={avg.overall} />
+                <span className="text-sm font-semibold">{avg.overall.toFixed(1)}</span>
+                <span className="text-xs text-muted-foreground">({reviews.length} review{reviews.length !== 1 ? "s" : ""})</span>
+              </div>
+            </div>
+          )}
+        </div>
+        {isAuthenticated && !showForm && (
+          <Button size="sm" onClick={() => setShowForm(true)}>
+            <PlusCircle className="w-4 h-4 mr-1.5" /> Write a Review
+          </Button>
+        )}
+        {!isAuthenticated && (
+          <Button size="sm" variant="outline" onClick={login}>
+            Sign in to review
+          </Button>
+        )}
+      </div>
+
+      {showForm && (
+        <form
+          className="bg-muted/30 rounded-xl p-5 space-y-4 border border-border/60"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!overall) return;
+            submitReview({ code, data: { overallRating: overall, easeRating: ease || overall, welcomeRating: welcome || overall, body: body.trim() || undefined } });
+          }}
+        >
+          <h3 className="font-semibold text-sm">Your review of {countryName}</h3>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Overall *</label>
+              <StarInput value={overall} onChange={setOverall} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Ease of Entry</label>
+                <StarInput value={ease} onChange={setEase} />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Welcoming</label>
+                <StarInput value={welcome} onChange={setWelcome} />
+              </div>
+            </div>
+            <textarea
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder="Share your experience (optional)..."
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm resize-none h-24 focus:outline-none focus:ring-1 focus:ring-primary/50"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button type="submit" size="sm" disabled={submitting || !overall}>
+              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 mr-1.5" />}
+              Submit
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setShowForm(false)}>Cancel</Button>
+          </div>
+        </form>
+      )}
+
+      {reviews.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          <Star className="w-8 h-8 mx-auto mb-2 text-muted" />
+          <p className="text-sm">No reviews yet. Be the first!</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {reviews.map((r) => (
+            <div key={r.id} className="border-b border-border/60 last:border-0 pb-4 last:pb-0">
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                    {(r.user?.firstName || "A")[0].toUpperCase()}
+                  </div>
+                  <span className="text-sm font-medium">{r.user?.firstName || "Traveler"}</span>
+                </div>
+                <span className="text-xs text-muted-foreground">{timeAgo(r.createdAt)}</span>
+              </div>
+              <StarRow rating={r.overallRating} />
+              {r.body && <p className="text-sm text-muted-foreground mt-2">{r.body}</p>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────── Q&A section ─────────── */
+function QASection({ code, countryName }: { code: string; countryName: string }) {
+  const { isAuthenticated, login } = useAuth();
+  const queryClient = useQueryClient();
+  const [showForm, setShowForm] = useState(false);
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [expanded, setExpanded] = useState<number | null>(null);
+
+  const { data: questions = [] } = useGetCountryQuestions(code, {
+    query: { queryKey: getGetCountryQuestionsQueryKey(code) },
+  });
+
+  const { mutate: submitQ, isPending: submittingQ } = useCreateCountryQuestion({
+    mutation: {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: getGetCountryQuestionsQueryKey(code) });
+        setShowForm(false); setTitle(""); setBody("");
+      },
+    },
+  });
+
+  return (
+    <div className="bg-card border border-border rounded-2xl p-6 md:p-8 space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <MessageSquare className="w-5 h-5 text-primary" /> Questions & Answers
+        </h2>
+        {isAuthenticated && !showForm && (
+          <Button size="sm" onClick={() => setShowForm(true)}>
+            <PlusCircle className="w-4 h-4 mr-1.5" /> Ask a Question
+          </Button>
+        )}
+        {!isAuthenticated && (
+          <Button size="sm" variant="outline" onClick={login}>
+            Sign in to ask
+          </Button>
+        )}
+      </div>
+
+      {showForm && (
+        <form
+          className="bg-muted/30 rounded-xl p-5 space-y-3 border border-border/60"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!title.trim()) return;
+            submitQ({ code, data: { title: title.trim(), body: body.trim() || "" } });
+          }}
+        >
+          <h3 className="font-semibold text-sm">Ask about {countryName}</h3>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Your question (required)"
+            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+          />
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder="Add more context (optional)..."
+            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm resize-none h-20 focus:outline-none focus:ring-1 focus:ring-primary/50"
+          />
+          <div className="flex gap-2">
+            <Button type="submit" size="sm" disabled={submittingQ || !title.trim()}>
+              {submittingQ ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 mr-1.5" />}
+              Post Question
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setShowForm(false)}>Cancel</Button>
+          </div>
+        </form>
+      )}
+
+      {questions.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          <MessageSquare className="w-8 h-8 mx-auto mb-2 text-muted" />
+          <p className="text-sm">No questions yet. Ask the community!</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {questions.map((q) => (
+            <QuestionItem
+              key={q.id}
+              q={q}
+              isExpanded={expanded === q.id}
+              onToggle={() => setExpanded(expanded === q.id ? null : q.id)}
+              isAuthenticated={isAuthenticated}
+              onLogin={login}
+              queryClient={queryClient}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function QuestionItem({
+  q, isExpanded, onToggle, isAuthenticated, onLogin, queryClient,
+}: {
+  q: QuestionSummary;
+  isExpanded: boolean;
+  onToggle: () => void;
+  isAuthenticated: boolean;
+  onLogin: () => void;
+  queryClient: ReturnType<typeof useQueryClient>;
+}) {
+  const [answerText, setAnswerText] = useState("");
+
+  const { data: qaData, isLoading: answersLoading } = useGetQuestionAnswers(q.id, {
+    query: { queryKey: getGetQuestionAnswersQueryKey(q.id), enabled: isExpanded },
+  });
+  const answers = qaData?.answers ?? [];
+
+  const { mutate: submitAnswer, isPending: submittingA } = usePostAnswer({
+    mutation: {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: getGetQuestionAnswersQueryKey(q.id) });
+        setAnswerText("");
+      },
+    },
+  });
+
+  return (
+    <div className="border border-border/60 rounded-xl overflow-hidden">
+      <button
+        onClick={onToggle}
+        className="w-full text-left p-4 hover:bg-muted/20 transition-colors"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-sm">{q.title}</p>
+            {q.body && !isExpanded && (
+              <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{q.body}</p>
+            )}
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs text-muted-foreground">{q.answersCount} {q.answersCount === 1 ? "answer" : "answers"}</span>
+            {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+          </div>
+        </div>
+      </button>
+
+      {isExpanded && (
+        <div className="border-t border-border/60 p-4 space-y-4">
+          {q.body && <p className="text-sm text-muted-foreground">{q.body}</p>}
+          <div className="text-xs text-muted-foreground">
+            Asked by {q.user?.firstName || "Anonymous"} · {timeAgo(q.createdAt)}
+          </div>
+
+          {answersLoading ? (
+            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+          ) : answers.length > 0 ? (
+            <div className="space-y-3">
+              {answers.map((a) => (
+                <div key={a.id} className="pl-4 border-l-2 border-primary/30">
+                  <p className="text-sm">{a.body}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{a.user?.firstName || "Anonymous"} · {timeAgo(a.createdAt)}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">No answers yet.</p>
+          )}
+
+          {isAuthenticated ? (
+            <div className="flex gap-2">
+              <input
+                value={answerText}
+                onChange={(e) => setAnswerText(e.target.value)}
+                placeholder="Write an answer..."
+                className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey && answerText.trim()) {
+                    e.preventDefault();
+                    submitAnswer({ id: q.id, data: { body: answerText.trim() } });
+                  }
+                }}
+              />
+              <Button
+                size="sm"
+                disabled={submittingA || !answerText.trim()}
+                onClick={() => submitAnswer({ id: q.id, data: { body: answerText.trim() } })}
+              >
+                {submittingA ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              </Button>
+            </div>
+          ) : (
+            <Button size="sm" variant="outline" onClick={onLogin}>Sign in to answer</Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

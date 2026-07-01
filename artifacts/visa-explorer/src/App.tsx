@@ -10,13 +10,15 @@ import Explore from "@/pages/explore";
 import CountryDetail from "@/pages/country";
 import PassportPower from "@/pages/passport";
 import VisaDetail from "@/pages/visa";
+import Community from "@/pages/community";
+import ProfilePage from "@/pages/profile";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 2 * 60 * 1000,       // data is fresh for 2 minutes
-      refetchOnWindowFocus: true,      // re-validate when user returns to tab
-      refetchOnReconnect: true,        // re-validate after a network drop
+      staleTime: 2 * 60 * 1000,
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
       retry: 1,
     },
   },
@@ -31,6 +33,8 @@ function Router() {
         <Route path="/country/:code" component={CountryDetail} />
         <Route path="/passport" component={PassportPower} />
         <Route path="/visa/:id" component={VisaDetail} />
+        <Route path="/community" component={Community} />
+        <Route path="/profile" component={ProfilePage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

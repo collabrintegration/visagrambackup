@@ -233,3 +233,264 @@ export const GetStatsOverviewResponse = zod.object({
 })
 
 
+/**
+ * @summary Get the currently authenticated user
+ */
+export const GetCurrentAuthUserResponse = zod.object({
+  "user": zod.union([zod.object({
+  "id": zod.string(),
+  "email": zod.string().nullable(),
+  "firstName": zod.string().nullable(),
+  "lastName": zod.string().nullable(),
+  "profileImageUrl": zod.string().nullable()
+}),zod.null()])
+})
+
+
+/**
+ * @summary Get community activity feed
+ */
+export const GetCommunityFeedQueryParams = zod.object({
+  "limit": zod.coerce.number().optional()
+})
+
+export const GetCommunityFeedResponseItem = zod.object({
+  "type": zod.enum(['review', 'question']),
+  "id": zod.number(),
+  "createdAt": zod.string(),
+  "countryCode": zod.string(),
+  "countryName": zod.string().nullish(),
+  "countryFlag": zod.string().nullish(),
+  "user": zod.object({
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish()
+}),
+  "data": zod.object({
+
+}).passthrough()
+})
+export const GetCommunityFeedResponse = zod.array(GetCommunityFeedResponseItem)
+
+
+/**
+ * @summary Get reviews for a country
+ */
+export const GetCountryReviewsParams = zod.object({
+  "code": zod.coerce.string()
+})
+
+export const GetCountryReviewsResponse = zod.object({
+  "count": zod.number(),
+  "avgRatings": zod.object({
+  "overall": zod.number().optional(),
+  "ease": zod.number().optional(),
+  "welcome": zod.number().optional()
+}).nullish(),
+  "reviews": zod.array(zod.object({
+  "id": zod.number(),
+  "overallRating": zod.number(),
+  "easeRating": zod.number(),
+  "welcomeRating": zod.number(),
+  "body": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "user": zod.object({
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish()
+})
+}))
+})
+
+
+/**
+ * @summary Create or update a review for a country
+ */
+export const CreateCountryReviewParams = zod.object({
+  "code": zod.coerce.string()
+})
+
+export const createCountryReviewBodyOverallRatingMax = 5;
+
+export const createCountryReviewBodyEaseRatingMax = 5;
+
+export const createCountryReviewBodyWelcomeRatingMax = 5;
+
+
+
+export const CreateCountryReviewBody = zod.object({
+  "overallRating": zod.number().min(1).max(createCountryReviewBodyOverallRatingMax),
+  "easeRating": zod.number().min(1).max(createCountryReviewBodyEaseRatingMax),
+  "welcomeRating": zod.number().min(1).max(createCountryReviewBodyWelcomeRatingMax),
+  "body": zod.string().optional()
+})
+
+export const CreateCountryReviewResponse = zod.object({
+  "id": zod.number(),
+  "overallRating": zod.number(),
+  "easeRating": zod.number(),
+  "welcomeRating": zod.number(),
+  "body": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "user": zod.object({
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish()
+})
+})
+
+
+/**
+ * @summary Get Q&A questions for a country
+ */
+export const GetCountryQuestionsParams = zod.object({
+  "code": zod.coerce.string()
+})
+
+export const GetCountryQuestionsResponseItem = zod.object({
+  "id": zod.number(),
+  "passportCode": zod.string().nullish(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "resolved": zod.boolean(),
+  "createdAt": zod.string(),
+  "answersCount": zod.number(),
+  "user": zod.object({
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish()
+})
+})
+export const GetCountryQuestionsResponse = zod.array(GetCountryQuestionsResponseItem)
+
+
+/**
+ * @summary Post a question about a country
+ */
+export const CreateCountryQuestionParams = zod.object({
+  "code": zod.coerce.string()
+})
+
+export const CreateCountryQuestionBody = zod.object({
+  "title": zod.string(),
+  "body": zod.string(),
+  "passportCode": zod.string().optional()
+})
+
+export const CreateCountryQuestionResponse = zod.object({
+  "id": zod.number(),
+  "passportCode": zod.string().nullish(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "resolved": zod.boolean(),
+  "createdAt": zod.string(),
+  "answersCount": zod.number(),
+  "user": zod.object({
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish()
+})
+})
+
+
+/**
+ * @summary Get answers for a question
+ */
+export const GetQuestionAnswersParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetQuestionAnswersResponse = zod.object({
+  "question": zod.object({
+
+}).passthrough(),
+  "answers": zod.array(zod.object({
+  "id": zod.number(),
+  "body": zod.string(),
+  "isAccepted": zod.boolean(),
+  "createdAt": zod.string(),
+  "user": zod.object({
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish()
+})
+}))
+})
+
+
+/**
+ * @summary Post an answer to a question
+ */
+export const PostAnswerParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PostAnswerBody = zod.object({
+  "body": zod.string()
+})
+
+export const PostAnswerResponse = zod.object({
+  "id": zod.number(),
+  "body": zod.string(),
+  "isAccepted": zod.boolean(),
+  "createdAt": zod.string(),
+  "user": zod.object({
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish()
+})
+})
+
+
+/**
+ * @summary Get the authenticated user's travel map
+ */
+export const GetTravelMapResponseItem = zod.object({
+  "id": zod.number(),
+  "countryCode": zod.string(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "countryName": zod.string().nullish(),
+  "countryFlag": zod.string().nullish(),
+  "continent": zod.string().nullish()
+})
+export const GetTravelMapResponse = zod.array(GetTravelMapResponseItem)
+
+
+/**
+ * @summary Add or update a country in the travel map
+ */
+export const UpsertTravelEntryParams = zod.object({
+  "code": zod.coerce.string()
+})
+
+export const UpsertTravelEntryBody = zod.object({
+  "status": zod.enum(['visited', 'want_to_visit']),
+  "notes": zod.string().optional()
+})
+
+export const UpsertTravelEntryResponse = zod.object({
+  "id": zod.number(),
+  "countryCode": zod.string(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "countryName": zod.string().nullish(),
+  "countryFlag": zod.string().nullish(),
+  "continent": zod.string().nullish()
+})
+
+
+/**
+ * @summary Remove a country from the travel map
+ */
+export const DeleteTravelEntryParams = zod.object({
+  "code": zod.coerce.string()
+})
+
+export const DeleteTravelEntryResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+

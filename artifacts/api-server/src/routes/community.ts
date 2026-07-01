@@ -1,0 +1,409 @@
+import { Router, type IRouter, type Request, type Response } from "express";
+import { db, reviewsTable, questionsTable, answersTable, travelEntriesTable, usersTable, countriesTable } from "@workspace/db";
+import { eq, and, desc, sql } from "drizzle-orm";
+
+const router: IRouter = Router();
+
+function userSnippet(u: { firstName: string | null; lastName: string | null; profileImageUrl: string | null } | undefined) {
+  if (!u) return { firstName: null, lastName: null, profileImageUrl: null };
+  return { firstName: u.firstName, lastName: u.lastName, profileImageUrl: u.profileImageUrl };
+}
+
+// ── Community Feed ─────────────────────────────────────────────────────────
+router.get("/community/feed", async (req: Request, res: Response) => {
+  const limit = Math.min(Number(req.query.limit) || 20, 50);
+
+  const [reviews, questions] = await Promise.all([
+    db.select({
+      id: reviewsTable.id,
+      userId: reviewsTable.userId,
+      countryCode: reviewsTable.countryCode,
+      overallRating: reviewsTable.overallRating,
+      easeRating: reviewsTable.easeRating,
+      welcomeRating: reviewsTable.welcomeRating,
+      body: reviewsTable.body,
+      createdAt: reviewsTable.createdAt,
+      countryName: countriesTable.name,
+      countryFlag: countriesTable.flagEmoji,
+      firstName: usersTable.firstName,
+      lastName: usersTable.lastName,
+      profileImageUrl: usersTable.profileImageUrl,
+    })
+      .from(reviewsTable)
+      .leftJoin(usersTable, eq(reviewsTable.userId, usersTable.id))
+      .leftJoin(countriesTable, eq(reviewsTable.countryCode, countriesTable.code))
+      .orderBy(desc(reviewsTable.createdAt))
+      .limit(limit),
+
+    db.select({
+      id: questionsTable.id,
+      userId: questionsTable.userId,
+      countryCode: questionsTable.countryCode,
+      passportCode: questionsTable.passportCode,
+      title: questionsTable.title,
+      body: questionsTable.body,
+      resolved: questionsTable.resolved,
+      createdAt: questionsTable.createdAt,
+      countryName: countriesTable.name,
+      countryFlag: countriesTable.flagEmoji,
+      firstName: usersTable.firstName,
+      lastName: usersTable.lastName,
+      profileImageUrl: usersTable.profileImageUrl,
+      answersCount: sql<number>`(SELECT COUNT(*) FROM answers WHERE question_id = ${questionsTable.id})`.as("answers_count"),
+    })
+      .from(questionsTable)
+      .leftJoin(usersTable, eq(questionsTable.userId, usersTable.id))
+      .leftJoin(countriesTable, eq(questionsTable.countryCode, countriesTable.code))
+      .orderBy(desc(questionsTable.createdAt))
+      .limit(limit),
+  ]);
+
+  const feedReviews = reviews.map((r) => ({
+    type: "review" as const,
+    id: r.id,
+    createdAt: r.createdAt,
+    countryCode: r.countryCode,
+    countryName: r.countryName,
+    countryFlag: r.countryFlag,
+    user: { firstName: r.firstName, lastName: r.lastName, profileImageUrl: r.profileImageUrl },
+    data: {
+      overallRating: r.overallRating,
+      easeRating: r.easeRating,
+      welcomeRating: r.welcomeRating,
+      body: r.body,
+    },
+  }));
+
+  const feedQuestions = questions.map((q) => ({
+    type: "question" as const,
+    id: q.id,
+    createdAt: q.createdAt,
+    countryCode: q.countryCode,
+    countryName: q.countryName,
+    countryFlag: q.countryFlag,
+    user: { firstName: q.firstName, lastName: q.lastName, profileImageUrl: q.profileImageUrl },
+    data: {
+      title: q.title,
+      body: q.body,
+      passportCode: q.passportCode,
+      resolved: q.resolved,
+      answersCount: Number(q.answersCount),
+    },
+  }));
+
+  const feed = [...feedReviews, ...feedQuestions]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, limit);
+
+  res.json(feed);
+});
+
+// ── Reviews ────────────────────────────────────────────────────────────────
+router.get("/countries/:code/reviews", async (req: Request, res: Response) => {
+  const { code } = req.params;
+
+  const rows = await db.select({
+    id: reviewsTable.id,
+    userId: reviewsTable.userId,
+    countryCode: reviewsTable.countryCode,
+    overallRating: reviewsTable.overallRating,
+    easeRating: reviewsTable.easeRating,
+    welcomeRating: reviewsTable.welcomeRating,
+    body: reviewsTable.body,
+    createdAt: reviewsTable.createdAt,
+    firstName: usersTable.firstName,
+    lastName: usersTable.lastName,
+    profileImageUrl: usersTable.profileImageUrl,
+  })
+    .from(reviewsTable)
+    .leftJoin(usersTable, eq(reviewsTable.userId, usersTable.id))
+    .where(eq(reviewsTable.countryCode, code.toUpperCase()))
+    .orderBy(desc(reviewsTable.createdAt));
+
+  const avgRatings = rows.length
+    ? {
+        overall: +(rows.reduce((s, r) => s + r.overallRating, 0) / rows.length).toFixed(1),
+        ease: +(rows.reduce((s, r) => s + r.easeRating, 0) / rows.length).toFixed(1),
+        welcome: +(rows.reduce((s, r) => s + r.welcomeRating, 0) / rows.length).toFixed(1),
+      }
+    : null;
+
+  res.json({
+    avgRatings,
+    count: rows.length,
+    reviews: rows.map((r) => ({
+      id: r.id,
+      overallRating: r.overallRating,
+      easeRating: r.easeRating,
+      welcomeRating: r.welcomeRating,
+      body: r.body,
+      createdAt: r.createdAt,
+      user: userSnippet(r),
+    })),
+  });
+});
+
+router.post("/countries/:code/reviews", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Login required" });
+    return;
+  }
+
+  const { code } = req.params;
+  const { overallRating, easeRating, welcomeRating, body } = req.body;
+
+  if (!overallRating || !easeRating || !welcomeRating) {
+    res.status(400).json({ error: "overallRating, easeRating, welcomeRating are required" });
+    return;
+  }
+
+  const [review] = await db
+    .insert(reviewsTable)
+    .values({
+      userId: req.user.id,
+      countryCode: code.toUpperCase(),
+      overallRating: Number(overallRating),
+      easeRating: Number(easeRating),
+      welcomeRating: Number(welcomeRating),
+      body: body || null,
+    })
+    .onConflictDoUpdate({
+      target: [reviewsTable.userId, reviewsTable.countryCode],
+      set: {
+        overallRating: Number(overallRating),
+        easeRating: Number(easeRating),
+        welcomeRating: Number(welcomeRating),
+        body: body || null,
+      },
+    })
+    .returning();
+
+  res.status(201).json(review);
+});
+
+// ── Questions ──────────────────────────────────────────────────────────────
+router.get("/countries/:code/questions", async (req: Request, res: Response) => {
+  const { code } = req.params;
+
+  const rows = await db.select({
+    id: questionsTable.id,
+    userId: questionsTable.userId,
+    countryCode: questionsTable.countryCode,
+    passportCode: questionsTable.passportCode,
+    title: questionsTable.title,
+    body: questionsTable.body,
+    resolved: questionsTable.resolved,
+    createdAt: questionsTable.createdAt,
+    firstName: usersTable.firstName,
+    lastName: usersTable.lastName,
+    profileImageUrl: usersTable.profileImageUrl,
+    answersCount: sql<number>`(SELECT COUNT(*) FROM answers WHERE question_id = ${questionsTable.id})`.as("answers_count"),
+  })
+    .from(questionsTable)
+    .leftJoin(usersTable, eq(questionsTable.userId, usersTable.id))
+    .where(eq(questionsTable.countryCode, code.toUpperCase()))
+    .orderBy(desc(questionsTable.createdAt));
+
+  res.json(rows.map((q) => ({
+    id: q.id,
+    passportCode: q.passportCode,
+    title: q.title,
+    body: q.body,
+    resolved: q.resolved,
+    createdAt: q.createdAt,
+    answersCount: Number(q.answersCount),
+    user: userSnippet(q),
+  })));
+});
+
+router.post("/countries/:code/questions", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Login required" });
+    return;
+  }
+
+  const { code } = req.params;
+  const { title, body, passportCode } = req.body;
+
+  if (!title || !body) {
+    res.status(400).json({ error: "title and body are required" });
+    return;
+  }
+
+  const [question] = await db
+    .insert(questionsTable)
+    .values({
+      userId: req.user.id,
+      countryCode: code.toUpperCase(),
+      title,
+      body,
+      passportCode: passportCode?.toUpperCase() || null,
+    })
+    .returning();
+
+  res.status(201).json(question);
+});
+
+// ── Answers ────────────────────────────────────────────────────────────────
+router.get("/questions/:id/answers", async (req: Request, res: Response) => {
+  const questionId = Number(req.params.id);
+
+  const [question, answers] = await Promise.all([
+    db.select().from(questionsTable).where(eq(questionsTable.id, questionId)).limit(1),
+    db.select({
+      id: answersTable.id,
+      userId: answersTable.userId,
+      body: answersTable.body,
+      isAccepted: answersTable.isAccepted,
+      createdAt: answersTable.createdAt,
+      firstName: usersTable.firstName,
+      lastName: usersTable.lastName,
+      profileImageUrl: usersTable.profileImageUrl,
+    })
+      .from(answersTable)
+      .leftJoin(usersTable, eq(answersTable.userId, usersTable.id))
+      .where(eq(answersTable.questionId, questionId))
+      .orderBy(desc(answersTable.isAccepted), desc(answersTable.createdAt)),
+  ]);
+
+  if (!question[0]) {
+    res.status(404).json({ error: "Question not found" });
+    return;
+  }
+
+  res.json({
+    question: question[0],
+    answers: answers.map((a) => ({
+      id: a.id,
+      body: a.body,
+      isAccepted: a.isAccepted,
+      createdAt: a.createdAt,
+      user: userSnippet(a),
+    })),
+  });
+});
+
+router.post("/questions/:id/answers", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Login required" });
+    return;
+  }
+
+  const questionId = Number(req.params.id);
+  const { body } = req.body;
+
+  if (!body) {
+    res.status(400).json({ error: "body is required" });
+    return;
+  }
+
+  const [q] = await db.select().from(questionsTable).where(eq(questionsTable.id, questionId)).limit(1);
+  if (!q) {
+    res.status(404).json({ error: "Question not found" });
+    return;
+  }
+
+  const [answer] = await db
+    .insert(answersTable)
+    .values({ userId: req.user.id, questionId, body })
+    .returning();
+
+  res.status(201).json(answer);
+});
+
+router.post("/questions/:id/resolve", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Login required" });
+    return;
+  }
+
+  const questionId = Number(req.params.id);
+
+  const [q] = await db.select().from(questionsTable).where(eq(questionsTable.id, questionId)).limit(1);
+  if (!q) {
+    res.status(404).json({ error: "Question not found" });
+    return;
+  }
+  if (q.userId !== req.user.id) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+
+  const [answerId] = req.body.answerId ? [Number(req.body.answerId)] : [null];
+  if (answerId) {
+    await db.update(answersTable).set({ isAccepted: false }).where(eq(answersTable.questionId, questionId));
+    await db.update(answersTable).set({ isAccepted: true }).where(and(eq(answersTable.id, answerId), eq(answersTable.questionId, questionId)));
+  }
+
+  const [updated] = await db.update(questionsTable).set({ resolved: true }).where(eq(questionsTable.id, questionId)).returning();
+  res.json(updated);
+});
+
+// ── Travel Map ─────────────────────────────────────────────────────────────
+router.get("/travel-map", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Login required" });
+    return;
+  }
+
+  const entries = await db
+    .select({
+      id: travelEntriesTable.id,
+      countryCode: travelEntriesTable.countryCode,
+      status: travelEntriesTable.status,
+      notes: travelEntriesTable.notes,
+      createdAt: travelEntriesTable.createdAt,
+      countryName: countriesTable.name,
+      countryFlag: countriesTable.flagEmoji,
+      continent: countriesTable.continent,
+    })
+    .from(travelEntriesTable)
+    .leftJoin(countriesTable, eq(travelEntriesTable.countryCode, countriesTable.code))
+    .where(eq(travelEntriesTable.userId, req.user.id))
+    .orderBy(desc(travelEntriesTable.createdAt));
+
+  res.json(entries);
+});
+
+router.put("/travel-map/:code", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Login required" });
+    return;
+  }
+
+  const code = req.params.code.toUpperCase();
+  const { status, notes } = req.body;
+
+  if (!["visited", "want_to_visit"].includes(status)) {
+    res.status(400).json({ error: "status must be 'visited' or 'want_to_visit'" });
+    return;
+  }
+
+  const [entry] = await db
+    .insert(travelEntriesTable)
+    .values({ userId: req.user.id, countryCode: code, status, notes: notes || null })
+    .onConflictDoUpdate({
+      target: [travelEntriesTable.userId, travelEntriesTable.countryCode],
+      set: { status, notes: notes || null },
+    })
+    .returning();
+
+  res.json(entry);
+});
+
+router.delete("/travel-map/:code", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Login required" });
+    return;
+  }
+
+  const code = req.params.code.toUpperCase();
+
+  await db.delete(travelEntriesTable).where(
+    and(eq(travelEntriesTable.userId, req.user.id), eq(travelEntriesTable.countryCode, code))
+  );
+
+  res.json({ ok: true });
+});
+
+export default router;

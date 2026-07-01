@@ -1,29 +1,29 @@
 import { Link, useLocation } from "wouter";
-import { Compass, Globe, BookOpen, Map as MapIcon } from "lucide-react";
+import { Compass, Globe, BookOpen, Map as MapIcon, Users, User, LogIn, LogOut, Loader2 } from "lucide-react";
 import React from "react";
 import { useHealthCheck, getHealthCheckQueryKey } from "@workspace/api-client-react";
+import { useAuth } from "@workspace/replit-auth-web";
+import { Button } from "@/components/ui/button";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
-
   const { data: health } = useHealthCheck({
-    query: {
-      queryKey: getHealthCheckQueryKey(),
-      refetchInterval: 60000,
-    }
+    query: { queryKey: getHealthCheckQueryKey(), refetchInterval: 60000 },
   });
+  const { user, isAuthenticated, isLoading: authLoading, login, logout } = useAuth();
 
   const links = [
     { href: "/", label: "Home", icon: Compass },
     { href: "/explore", label: "Explore", icon: MapIcon },
     { href: "/passport", label: "Passport Power", icon: BookOpen },
+    { href: "/community", label: "Community", icon: Users },
   ];
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background selection:bg-primary/20 selection:text-primary">
       <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
+          <Link href="/" className="flex items-center gap-2.5 group shrink-0">
             <div className="w-8 h-8 rounded-lg gradient-hero flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
               <Globe className="w-4 h-4 text-white" />
             </div>
@@ -32,7 +32,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1">
+          {/* Desktop nav */}
+          <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
             {links.map((link) => {
               const Icon = link.icon;
               const isActive = location === link.href || (link.href !== "/" && location.startsWith(link.href));
@@ -53,7 +54,45 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
-          <nav className="flex md:hidden items-center gap-1">
+          {/* Auth section */}
+          <div className="flex items-center gap-2 shrink-0">
+            {authLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+            ) : isAuthenticated ? (
+              <>
+                <Link
+                  href="/profile"
+                  className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    location.startsWith("/profile")
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <User className="w-4 h-4" />
+                  {user?.firstName ?? "Profile"}
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={logout}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="hidden md:inline ml-1.5">Sign out</span>
+                </Button>
+              </>
+            ) : (
+              <Button size="sm" onClick={login}>
+                <LogIn className="w-4 h-4 mr-1.5" />
+                Sign in
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile nav */}
+        <div className="md:hidden border-t border-border/40 bg-background/95">
+          <div className="flex items-center overflow-x-auto px-2 py-1 gap-1">
             {links.map((link) => {
               const Icon = link.icon;
               const isActive = location === link.href || (link.href !== "/" && location.startsWith(link.href));
@@ -61,15 +100,27 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`p-2 rounded-lg transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
                     isActive ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <Icon className="w-5 h-5" />
+                  <Icon className="w-3.5 h-3.5" />
+                  {link.label}
                 </Link>
               );
             })}
-          </nav>
+            {isAuthenticated && (
+              <Link
+                href="/profile"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+                  location.startsWith("/profile") ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <User className="w-3.5 h-3.5" />
+                Profile
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 
@@ -92,7 +143,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <div>&copy; {new Date().getFullYear()} Visafy. Data is for informational purposes only.</div>
             {health && (
               <div className="flex items-center gap-1.5 text-xs">
-                <div className={`w-1.5 h-1.5 rounded-full ${health.status === 'ok' ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
+                <div className={`w-1.5 h-1.5 rounded-full ${health.status === "ok" ? "bg-emerald-500" : "bg-red-500"}`} />
                 <span>All systems {health.status}</span>
               </div>
             )}

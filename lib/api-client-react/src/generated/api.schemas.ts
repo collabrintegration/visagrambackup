@@ -9,6 +9,165 @@ export interface HealthStatus {
   status: string;
 }
 
+export interface OkResponse {
+  ok: boolean;
+}
+
+export interface AuthUser {
+  id: string;
+  /** @nullable */
+  email: string | null;
+  /** @nullable */
+  firstName: string | null;
+  /** @nullable */
+  lastName: string | null;
+  /** @nullable */
+  profileImageUrl: string | null;
+}
+
+export interface AuthUserEnvelope {
+  user: AuthUser | null;
+}
+
+export interface UserSnippet {
+  /** @nullable */
+  firstName?: string | null;
+  /** @nullable */
+  lastName?: string | null;
+  /** @nullable */
+  profileImageUrl?: string | null;
+}
+
+export interface Review {
+  id: number;
+  overallRating: number;
+  easeRating: number;
+  welcomeRating: number;
+  /** @nullable */
+  body?: string | null;
+  createdAt: string;
+  user: UserSnippet;
+}
+
+export type ReviewsResponseAvgRatings = {
+  overall?: number;
+  ease?: number;
+  welcome?: number;
+} | null;
+
+export interface ReviewsResponse {
+  count: number;
+  avgRatings?: ReviewsResponseAvgRatings;
+  reviews: Review[];
+}
+
+export interface CreateReviewBody {
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  overallRating: number;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  easeRating: number;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  welcomeRating: number;
+  body?: string;
+}
+
+export interface QuestionSummary {
+  id: number;
+  /** @nullable */
+  passportCode?: string | null;
+  title: string;
+  body: string;
+  resolved: boolean;
+  createdAt: string;
+  answersCount: number;
+  user: UserSnippet;
+}
+
+export interface CreateQuestionBody {
+  title: string;
+  body: string;
+  passportCode?: string;
+}
+
+export interface Answer {
+  id: number;
+  body: string;
+  isAccepted: boolean;
+  createdAt: string;
+  user: UserSnippet;
+}
+
+export interface CreateAnswerBody {
+  body: string;
+}
+
+export type QuestionWithAnswersQuestion = { [key: string]: unknown };
+
+export interface QuestionWithAnswers {
+  question: QuestionWithAnswersQuestion;
+  answers: Answer[];
+}
+
+export interface TravelEntry {
+  id: number;
+  countryCode: string;
+  status: string;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+  /** @nullable */
+  countryName?: string | null;
+  /** @nullable */
+  countryFlag?: string | null;
+  /** @nullable */
+  continent?: string | null;
+}
+
+export type UpsertTravelEntryBodyStatus = typeof UpsertTravelEntryBodyStatus[keyof typeof UpsertTravelEntryBodyStatus];
+
+
+export const UpsertTravelEntryBodyStatus = {
+  visited: 'visited',
+  want_to_visit: 'want_to_visit',
+} as const;
+
+export interface UpsertTravelEntryBody {
+  status: UpsertTravelEntryBodyStatus;
+  notes?: string;
+}
+
+export type FeedItemType = typeof FeedItemType[keyof typeof FeedItemType];
+
+
+export const FeedItemType = {
+  review: 'review',
+  question: 'question',
+} as const;
+
+export type FeedItemData = { [key: string]: unknown };
+
+export interface FeedItem {
+  type: FeedItemType;
+  id: number;
+  createdAt: string;
+  countryCode: string;
+  /** @nullable */
+  countryName?: string | null;
+  /** @nullable */
+  countryFlag?: string | null;
+  user: UserSnippet;
+  data: FeedItemData;
+}
+
 export interface ErrorResponse {
   error: string;
 }
@@ -256,5 +415,9 @@ sortBy?: string;
  * Sort order (asc, desc)
  */
 order?: string;
+};
+
+export type GetCommunityFeedParams = {
+limit?: number;
 };
 

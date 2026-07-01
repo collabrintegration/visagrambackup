@@ -14,6 +14,10 @@ tags:
     description: Country operations
   - name: visas
     description: Visa operations
+  - name: auth
+    description: Authentication operations
+  - name: community
+    description: Community features
 paths:
   /healthz:
     get:
@@ -274,6 +278,237 @@ paths:
               schema:
                 $ref: "#/components/schemas/StatsOverview"
 
+  /auth/user:
+    get:
+      tags: [auth]
+      operationId: getCurrentAuthUser
+      summary: Get the currently authenticated user
+      responses:
+        "200":
+          description: Auth status resolved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUserEnvelope"
+
+  /community/feed:
+    get:
+      tags: [community]
+      operationId: getCommunityFeed
+      summary: Get community activity feed
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Feed items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FeedItem"
+
+  /countries/{code}/reviews:
+    get:
+      tags: [community]
+      operationId: getCountryReviews
+      summary: Get reviews for a country
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Reviews list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewsResponse"
+    post:
+      tags: [community]
+      operationId: createCountryReview
+      summary: Create or update a review for a country
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReviewBody"
+      responses:
+        "201":
+          description: Review created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+        "401":
+          description: Unauthorized
+
+  /countries/{code}/questions:
+    get:
+      tags: [community]
+      operationId: getCountryQuestions
+      summary: Get Q&A questions for a country
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Questions list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QuestionSummary"
+    post:
+      tags: [community]
+      operationId: createCountryQuestion
+      summary: Post a question about a country
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateQuestionBody"
+      responses:
+        "201":
+          description: Question created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestionSummary"
+        "401":
+          description: Unauthorized
+
+  /questions/{id}/answers:
+    get:
+      tags: [community]
+      operationId: getQuestionAnswers
+      summary: Get answers for a question
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Question with answers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestionWithAnswers"
+    post:
+      tags: [community]
+      operationId: postAnswer
+      summary: Post an answer to a question
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAnswerBody"
+      responses:
+        "201":
+          description: Answer posted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Answer"
+        "401":
+          description: Unauthorized
+
+  /travel-map:
+    get:
+      tags: [community]
+      operationId: getTravelMap
+      summary: Get the authenticated user's travel map
+      responses:
+        "200":
+          description: Travel entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TravelEntry"
+        "401":
+          description: Unauthorized
+
+  /travel-map/{code}:
+    put:
+      tags: [community]
+      operationId: upsertTravelEntry
+      summary: Add or update a country in the travel map
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertTravelEntryBody"
+      responses:
+        "200":
+          description: Entry saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TravelEntry"
+        "401":
+          description: Unauthorized
+    delete:
+      tags: [community]
+      operationId: deleteTravelEntry
+      summary: Remove a country from the travel map
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "401":
+          description: Unauthorized
+
 components:
   schemas:
     HealthStatus:
@@ -283,6 +518,224 @@ components:
           type: string
       required:
         - status
+
+    OkResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+      required: [ok]
+
+    AuthUser:
+      type: object
+      required: [id, email, firstName, lastName, profileImageUrl]
+      properties:
+        id:
+          type: string
+        email:
+          type: ["string", "null"]
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
+        profileImageUrl:
+          type: ["string", "null"]
+
+    AuthUserEnvelope:
+      type: object
+      required: [user]
+      properties:
+        user:
+          oneOf:
+            - $ref: "#/components/schemas/AuthUser"
+            - type: "null"
+
+    UserSnippet:
+      type: object
+      properties:
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
+        profileImageUrl:
+          type: ["string", "null"]
+
+    Review:
+      type: object
+      required: [id, overallRating, easeRating, welcomeRating, createdAt, user]
+      properties:
+        id:
+          type: integer
+        overallRating:
+          type: integer
+        easeRating:
+          type: integer
+        welcomeRating:
+          type: integer
+        body:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserSnippet"
+
+    ReviewsResponse:
+      type: object
+      required: [count, reviews]
+      properties:
+        count:
+          type: integer
+        avgRatings:
+          type: object
+          nullable: true
+          properties:
+            overall:
+              type: number
+            ease:
+              type: number
+            welcome:
+              type: number
+        reviews:
+          type: array
+          items:
+            $ref: "#/components/schemas/Review"
+
+    CreateReviewBody:
+      type: object
+      required: [overallRating, easeRating, welcomeRating]
+      properties:
+        overallRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        easeRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        welcomeRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        body:
+          type: string
+
+    QuestionSummary:
+      type: object
+      required: [id, title, body, resolved, createdAt, answersCount, user]
+      properties:
+        id:
+          type: integer
+        passportCode:
+          type: ["string", "null"]
+        title:
+          type: string
+        body:
+          type: string
+        resolved:
+          type: boolean
+        createdAt:
+          type: string
+        answersCount:
+          type: integer
+        user:
+          $ref: "#/components/schemas/UserSnippet"
+
+    CreateQuestionBody:
+      type: object
+      required: [title, body]
+      properties:
+        title:
+          type: string
+        body:
+          type: string
+        passportCode:
+          type: string
+
+    Answer:
+      type: object
+      required: [id, body, isAccepted, createdAt, user]
+      properties:
+        id:
+          type: integer
+        body:
+          type: string
+        isAccepted:
+          type: boolean
+        createdAt:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserSnippet"
+
+    CreateAnswerBody:
+      type: object
+      required: [body]
+      properties:
+        body:
+          type: string
+
+    QuestionWithAnswers:
+      type: object
+      required: [question, answers]
+      properties:
+        question:
+          type: object
+        answers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Answer"
+
+    TravelEntry:
+      type: object
+      required: [id, countryCode, status, createdAt]
+      properties:
+        id:
+          type: integer
+        countryCode:
+          type: string
+        status:
+          type: string
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        countryName:
+          type: ["string", "null"]
+        countryFlag:
+          type: ["string", "null"]
+        continent:
+          type: ["string", "null"]
+
+    UpsertTravelEntryBody:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [visited, want_to_visit]
+        notes:
+          type: string
+
+    FeedItem:
+      type: object
+      required: [type, id, createdAt, countryCode, user, data]
+      properties:
+        type:
+          type: string
+          enum: [review, question]
+        id:
+          type: integer
+        createdAt:
+          type: string
+        countryCode:
+          type: string
+        countryName:
+          type: ["string", "null"]
+        countryFlag:
+          type: ["string", "null"]
+        user:
+          $ref: "#/components/schemas/UserSnippet"
+        data:
+          type: object
 
     ErrorResponse:
       type: object
