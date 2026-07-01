@@ -1,5 +1,5 @@
 import { db, countriesTable, visasTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { logger } from "./logger";
 
 // Passport Index public dataset (ISO-2 column headers version)
@@ -112,7 +112,16 @@ export async function refreshVisaData(): Promise<{ updated: number; source: stri
   const supportedRows = await db.select({ code: countriesTable.code }).from(countriesTable);
   const supported = new Set(supportedRows.map((r) => r.code));
 
-  let updated = 0;
+  // Batch upserts for efficiency — collect all rows then insert in chunks
+  type UpsertRow = {
+    passportCountryCode: string;
+    destinationCountryCode: string;
+    visaType: string;
+    entryType: string;
+    durationDays: number | null;
+  };
+
+  const rows: UpsertRow[] = [];
 
   for (const line of lines.slice(1)) {
     const cols = line.split(",");
@@ -126,23 +135,44 @@ export async function refreshVisaData(): Promise<{ updated: number; source: stri
       const parsed = parseValue(cols[i] ?? "");
       if (!parsed) continue;
 
-      const updateFields: Record<string, unknown> = { entryType: parsed.entryType };
-      if (parsed.durationDays !== null) updateFields.durationDays = parsed.durationDays;
-
-      const result = await db
-        .update(visasTable)
-        .set(updateFields)
-        .where(
-          and(
-            eq(visasTable.passportCountryCode, passportCode),
-            eq(visasTable.destinationCountryCode, destCode),
-          )
-        );
-
-      if ((result as { rowCount?: number }).rowCount ?? 0) updated++;
+      rows.push({
+        passportCountryCode: passportCode,
+        destinationCountryCode: destCode,
+        visaType: "tourist",
+        entryType: parsed.entryType,
+        durationDays: parsed.durationDays,
+      });
     }
   }
 
-  logger.info({ updated, source }, "Visa data refresh: complete");
-  return { updated, source };
+  if (rows.length === 0) {
+    logger.warn("Visa data refresh: no usable rows parsed from CSV");
+    return { updated: 0, source };
+  }
+
+  // Upsert in chunks of 200 to avoid parameter limits
+  const CHUNK = 200;
+  let upserted = 0;
+
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const chunk = rows.slice(i, i + CHUNK);
+    await db
+      .insert(visasTable)
+      .values(chunk)
+      .onConflictDoUpdate({
+        target: [
+          visasTable.passportCountryCode,
+          visasTable.destinationCountryCode,
+          visasTable.visaType,
+        ],
+        set: {
+          entryType: sql`EXCLUDED.entry_type`,
+          durationDays: sql`EXCLUDED.duration_days`,
+        },
+      });
+    upserted += chunk.length;
+  }
+
+  logger.info({ updated: upserted, source }, "Visa data refresh: complete");
+  return { updated: upserted, source };
 }

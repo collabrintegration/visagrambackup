@@ -1,4 +1,4 @@
-import { pgTable, integer, text, numeric, serial } from "drizzle-orm/pg-core";
+import { pgTable, integer, text, numeric, serial, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -17,7 +17,9 @@ export const visasTable = pgTable("visas", {
   requirements: text("requirements"),
   notes: text("notes"),
   officialUrl: text("official_url"),
-});
+}, (t) => [
+  unique("visas_passport_dest_type_unique").on(t.passportCountryCode, t.destinationCountryCode, t.visaType),
+]);
 
 export const insertVisaSchema = createInsertSchema(visasTable).omit({ id: true });
 export type InsertVisa = z.infer<typeof insertVisaSchema>;
