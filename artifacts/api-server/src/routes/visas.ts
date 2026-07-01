@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { getRefreshState, triggerRefresh } from "../lib/scheduler";
 import { db, visasTable, countriesTable } from "@workspace/db";
 import { eq, and, lte, gte, ilike, sql, asc, desc } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
@@ -282,6 +283,8 @@ router.get("/stats/overview", async (req, res) => {
   const visaFreePercent =
     totalVisaRecords > 0 ? (visaFreeCount / totalVisaRecords) * 100 : 0;
 
+  const { lastRefreshedAt, refreshInProgress } = getRefreshState();
+
   res.json({
     totalCountries: totalCountries[0]?.count ?? 0,
     totalVisaRecords,
@@ -293,7 +296,19 @@ router.get("/stats/overview", async (req, res) => {
       countryCount: c.countryCount,
       avgVisaFee: null,
     })),
+    lastRefreshedAt,
+    refreshInProgress,
   });
+});
+
+// Manual refresh trigger (admin only — no auth for demo purposes)
+router.post("/admin/refresh", async (req, res) => {
+  try {
+    const result = await triggerRefresh();
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err) });
+  }
 });
 
 export default router;

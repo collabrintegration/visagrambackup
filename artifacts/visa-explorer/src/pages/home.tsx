@@ -1,8 +1,21 @@
 import { useGetStatsOverview, getGetStatsOverviewQueryKey } from "@workspace/api-client-react";
 import { Link } from "wouter";
-import { ArrowRight, Zap, Globe2, ShieldCheck, MapPin, CheckCircle2, Compass } from "lucide-react";
+import { ArrowRight, Zap, Globe2, ShieldCheck, MapPin, CheckCircle2, Compass, RefreshCw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCountryImageUrl, getCountryFallbackImageUrl } from "@/lib/countryImages";
+
+function formatRefreshTime(iso: string | null | undefined): string {
+  if (!iso) return "checking…";
+  const d = new Date(iso);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffH = Math.floor(diffMs / 3_600_000);
+  const diffM = Math.floor(diffMs / 60_000);
+  if (diffM < 2) return "just now";
+  if (diffH < 1) return `${diffM}m ago`;
+  if (diffH < 24) return `${diffH}h ago`;
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
 
 const floatingPhotos = [
   { code: "JP", pos: "top-[12%] right-[8%]",  size: "w-36 h-36", cls: "float-a", delay: "0s" },
@@ -17,7 +30,10 @@ const marqueePhotos = ["JP", "FR", "GR", "AU", "IT", "BR", "MX", "ZA", "IN", "CA
 
 export default function Home() {
   const { data: stats, isLoading } = useGetStatsOverview({
-    query: { queryKey: getGetStatsOverviewQueryKey() }
+    query: {
+      queryKey: getGetStatsOverviewQueryKey(),
+      refetchInterval: 5 * 60 * 1000,   // re-poll stats every 5 minutes
+    }
   });
 
   return (
@@ -52,8 +68,12 @@ export default function Home() {
         {/* Hero content */}
         <div className="relative z-10 container mx-auto px-4 flex flex-col items-center justify-center text-center pt-28 pb-16">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary/80 text-sm font-medium mb-8 border border-primary/20">
-            <Zap className="w-3.5 h-3.5" />
-            Real-time visa requirements updated daily
+            {stats?.refreshInProgress ? (
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Zap className="w-3.5 h-3.5" />
+            )}
+            Live data · refreshed {formatRefreshTime(stats?.lastRefreshedAt)}
           </div>
 
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold font-serif leading-[1.05] mb-6 tracking-tight text-white max-w-4xl">

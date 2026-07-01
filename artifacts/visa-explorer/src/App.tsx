@@ -14,7 +14,9 @@ import VisaDetail from "@/pages/visa";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: false,
+      staleTime: 2 * 60 * 1000,       // data is fresh for 2 minutes
+      refetchOnWindowFocus: true,      // re-validate when user returns to tab
+      refetchOnReconnect: true,        // re-validate after a network drop
       retry: 1,
     },
   },

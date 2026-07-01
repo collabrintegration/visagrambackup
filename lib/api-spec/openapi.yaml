@@ -509,6 +509,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ContinentStat"
+        lastRefreshedAt:
+          type: ["string", "null"]
+          description: ISO 8601 timestamp of last successful visa data refresh
+        refreshInProgress:
+          type: boolean
+          description: Whether a data refresh is currently running
       required:
         - totalCountries
         - totalVisaRecords
@@ -516,6 +522,7 @@ components:
         - mostAccessiblePassports
         - popularDestinations
         - continentBreakdown
+        - refreshInProgress
 
     PassportRank:
       type: object

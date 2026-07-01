@@ -212,7 +212,9 @@ export const GetStatsOverviewResponse = zod.object({
   "continent": zod.string(),
   "countryCount": zod.number(),
   "avgVisaFee": zod.number().nullish()
-}))
+})),
+  "lastRefreshedAt": zod.string().nullish().describe('ISO 8601 timestamp of last successful visa data refresh'),
+  "refreshInProgress": zod.boolean().describe('Whether a data refresh is currently running')
 })
 
 

@@ -16,4 +16,11 @@ export interface StatsOverview {
   mostAccessiblePassports: PassportRank[];
   popularDestinations: DestinationStat[];
   continentBreakdown: ContinentStat[];
+  /**
+     * ISO 8601 timestamp of last successful visa data refresh
+     * @nullable
+     */
+  lastRefreshedAt?: string | null;
+  /** Whether a data refresh is currently running */
+  refreshInProgress: boolean;
 }
