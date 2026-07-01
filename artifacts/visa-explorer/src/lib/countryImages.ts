@@ -62,6 +62,15 @@ export function getCountryImageUrl(code: string, width = 1600, height = 900): st
   return `https://images.unsplash.com/photo-${entry.photoId}?w=${width}&h=${height}&q=80&fit=crop&crop=entropy`;
 }
 
+/**
+ * Always returns a beautiful fallback image (Picsum Photos).
+ * Seeded by country code so each country gets a consistent, appealing photo.
+ * Use this as the `onError` replacement when the primary Unsplash image fails.
+ */
+export function getCountryFallbackImageUrl(code: string, width = 800, height = 400): string {
+  return `https://picsum.photos/seed/${code.toLowerCase()}-country/${width}/${height}`;
+}
+
 export function getCountryLandmarkInfo(code: string) {
   return countryLandmarkPhotos[code.toUpperCase()] ?? null;
 }

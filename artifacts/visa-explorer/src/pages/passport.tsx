@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useListCountries, getListCountriesQueryKey, useListDestinationsByPassport, getListDestinationsByPassportQueryKey } from "@workspace/api-client-react";
 import { CheckCircle2, FileWarning, HelpCircle, AlertCircle, Loader2, Globe, ChevronDown, Search } from "lucide-react";
-import { getCountryImageUrl, getCountryLandmarkInfo } from "@/lib/countryImages";
+import { getCountryImageUrl, getCountryFallbackImageUrl, getCountryLandmarkInfo } from "@/lib/countryImages";
 
 type EntryType = "visa_free" | "visa_on_arrival" | "evisa" | "visa_required";
 
@@ -89,14 +89,12 @@ export default function PassportPower() {
       {/* ── Identity hero ── */}
       <div className="relative overflow-hidden h-64 md:h-72">
         {/* Background landmark photo of selected passport country */}
-        {heroImg && (
-          <img
-            src={heroImg}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover"
-            onError={(e) => { e.currentTarget.style.display = "none"; }}
-          />
-        )}
+        <img
+          src={heroImg ?? getCountryFallbackImageUrl(selectedPassport, 1200, 400)}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+          onError={(e) => { e.currentTarget.src = getCountryFallbackImageUrl(selectedPassport, 1200, 400); }}
+        />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/85" />
 
         <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-end pb-8">
@@ -228,16 +226,14 @@ export default function PassportPower() {
                           href={`/country/${dest.destinationCountryCode}`}
                           className="group relative bg-card border border-border rounded-xl overflow-hidden hover:border-primary/25 transition-all"
                         >
-                          {imgUrl && (
-                            <div className="h-20 overflow-hidden">
-                              <img
-                                src={imgUrl}
-                                alt=""
-                                className="w-full h-full object-cover opacity-35 group-hover:opacity-50 group-hover:scale-105 transition-all duration-500"
-                                onError={(e) => { e.currentTarget.style.display = "none"; }}
-                              />
-                            </div>
-                          )}
+                          <div className="h-20 overflow-hidden">
+                            <img
+                              src={imgUrl ?? getCountryFallbackImageUrl(dest.destinationCountryCode ?? "xx", 400, 180)}
+                              alt=""
+                              className="w-full h-full object-cover opacity-35 group-hover:opacity-50 group-hover:scale-105 transition-all duration-500"
+                              onError={(e) => { e.currentTarget.src = getCountryFallbackImageUrl(dest.destinationCountryCode ?? "xx", 400, 180); }}
+                            />
+                          </div>
                           <div className="px-3.5 py-3 flex items-center gap-2.5">
                             <span className="text-2xl">{dest.destinationCountryFlag}</span>
                             <span className="font-semibold text-sm leading-tight group-hover:text-primary transition-colors">

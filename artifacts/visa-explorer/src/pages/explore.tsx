@@ -5,7 +5,7 @@ import { Search, Map as MapIcon, Globe, ArrowRight, Filter, DollarSign, Clock } 
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { getCountryImageUrl } from "@/lib/countryImages";
+import { getCountryImageUrl, getCountryFallbackImageUrl } from "@/lib/countryImages";
 
 export default function Explore() {
   const [activeTab, setActiveTab] = useState<"countries" | "visas">("countries");
@@ -136,16 +136,12 @@ export default function Explore() {
                   >
                     {/* Thumbnail */}
                     <div className="relative h-32 overflow-hidden bg-muted">
-                      {imgUrl ? (
-                        <img
-                          src={imgUrl}
-                          alt={country.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          onError={(e) => { e.currentTarget.style.display = "none"; }}
-                        />
-                      ) : (
-                        <div className="w-full h-full gradient-hero opacity-40" />
-                      )}
+                      <img
+                        src={imgUrl ?? getCountryFallbackImageUrl(country.code, 480, 220)}
+                        alt={country.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        onError={(e) => { e.currentTarget.src = getCountryFallbackImageUrl(country.code, 480, 220); }}
+                      />
                       {/* Flag overlay */}
                       <div className="absolute bottom-2 left-3 text-3xl drop-shadow-md">
                         {country.flagEmoji}
@@ -193,11 +189,14 @@ export default function Explore() {
                     href={`/visa/${visa.id}`}
                     className="group block bg-card border border-border rounded-2xl overflow-hidden hover:border-primary/30 hover:shadow-md transition-all"
                   >
-                    {imgUrl && (
-                      <div className="h-24 overflow-hidden">
-                        <img src={imgUrl} alt="" className="w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity group-hover:scale-105 duration-500" />
-                      </div>
-                    )}
+                    <div className="h-24 overflow-hidden">
+                      <img
+                        src={imgUrl ?? getCountryFallbackImageUrl(visa.destinationCountryCode ?? "xx", 480, 220)}
+                        alt=""
+                        className="w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity group-hover:scale-105 duration-500"
+                        onError={(e) => { e.currentTarget.src = getCountryFallbackImageUrl(visa.destinationCountryCode ?? "xx", 480, 220); }}
+                      />
+                    </div>
                     <div className="p-5">
                       <div className="flex items-center gap-2.5 mb-3">
                         <span className="text-3xl">{visa.destinationCountryFlag}</span>

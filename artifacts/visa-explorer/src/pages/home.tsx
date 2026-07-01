@@ -2,7 +2,7 @@ import { useGetStatsOverview, getGetStatsOverviewQueryKey } from "@workspace/api
 import { Link } from "wouter";
 import { ArrowRight, Zap, Globe2, ShieldCheck, MapPin, CheckCircle2, Compass } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getCountryImageUrl } from "@/lib/countryImages";
+import { getCountryImageUrl, getCountryFallbackImageUrl } from "@/lib/countryImages";
 
 const floatingPhotos = [
   { code: "JP", pos: "top-[12%] right-[8%]",  size: "w-36 h-36", cls: "float-a", delay: "0s" },
@@ -181,11 +181,14 @@ export default function Home() {
                     href={`/passport?code=${passport.countryCode}`}
                     className="group relative bg-card border border-border rounded-2xl overflow-hidden hover:border-primary/30 transition-all"
                   >
-                    {imgUrl && (
-                      <div className="h-24 overflow-hidden">
-                        <img src={imgUrl} alt={passport.countryName} className="w-full h-full object-cover opacity-30 group-hover:opacity-45 transition-opacity" />
-                      </div>
-                    )}
+                    <div className="h-24 overflow-hidden">
+                      <img
+                        src={imgUrl ?? getCountryFallbackImageUrl(passport.countryCode, 600, 200)}
+                        alt={passport.countryName}
+                        className="w-full h-full object-cover opacity-30 group-hover:opacity-45 transition-opacity"
+                        onError={(e) => { e.currentTarget.src = getCountryFallbackImageUrl(passport.countryCode, 600, 200); }}
+                      />
+                    </div>
                     <div className="p-5 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <span className="text-3xl">{passport.flagEmoji}</span>

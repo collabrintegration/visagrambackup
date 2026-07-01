@@ -3,7 +3,7 @@ import { useGetCountry, getGetCountryQueryKey } from "@workspace/api-client-reac
 import { Globe, MapPin, Coins, Languages, ArrowLeft, Loader2, Camera } from "lucide-react";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
-import { getCountryImageUrl, getCountryLandmarkInfo } from "@/lib/countryImages";
+import { getCountryImageUrl, getCountryFallbackImageUrl, getCountryLandmarkInfo } from "@/lib/countryImages";
 
 export default function CountryDetail() {
   const { code } = useParams<{ code: string }>();
@@ -41,22 +41,14 @@ export default function CountryDetail() {
     <div className="min-h-screen bg-background">
       {/* Hero with landmark photo */}
       <div className="relative h-[55vh] min-h-[400px] max-h-[600px] overflow-hidden">
-        {/* Background image with gradient fallback on error */}
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={landmarkInfo?.landmark ?? country.name}
-            className="absolute inset-0 w-full h-full object-cover"
-            loading="eager"
-            onError={(e) => {
-              const target = e.currentTarget;
-              target.style.display = "none";
-              const fallback = target.nextElementSibling as HTMLElement | null;
-              if (fallback) fallback.style.display = "block";
-            }}
-          />
-        ) : null}
-        <div className="absolute inset-0 gradient-hero" style={{ display: imageUrl ? "none" : "block" }} />
+        {/* Background image — falls back to Picsum if Unsplash fails */}
+        <img
+          src={imageUrl ?? getCountryFallbackImageUrl(code ?? "xx", 1600, 900)}
+          alt={landmarkInfo?.landmark ?? country.name}
+          className="absolute inset-0 w-full h-full object-cover"
+          loading="eager"
+          onError={(e) => { e.currentTarget.src = getCountryFallbackImageUrl(code ?? "xx", 1600, 900); }}
+        />
 
         {/* Dark overlay — stronger at top for nav readability, fades to solid at bottom */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80" />
