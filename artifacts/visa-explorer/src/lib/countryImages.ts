@@ -4,10 +4,10 @@
  */
 export const countryLandmarkPhotos: Record<string, { photoId: string; landmark: string; credit: string }> = {
   AE: { photoId: "1512453979798-5ea266f8880c", landmark: "Burj Khalifa, Dubai",            credit: "Dan Novac" },
-  AR: { photoId: "1589820296156-2454bb8a6ad1", landmark: "Perito Moreno Glacier",          credit: "Agustín Lautaro" },
+  AR: { photoId: "1612294037637-ec328d0e075e", landmark: "Perito Moreno Glacier",          credit: "Agustín Lautaro" },
   AT: { photoId: "1516483638261-f4dbaf036963", landmark: "Hallstatt, Austria",             credit: "Ionut Comanici" },
   AU: { photoId: "1506905925346-21bda4d32df4", landmark: "Sydney Opera House",             credit: "Dan Freeman" },
-  BR: { photoId: "1483729600585-bf16ef26f61f", landmark: "Christ the Redeemer, Rio",       credit: "Raphael Nogueira" },
+  BR: { photoId: "1619546813-6bc0b153ac0c",    landmark: "Christ the Redeemer, Rio",       credit: "Raphael Nogueira" },
   CA: { photoId: "1517935706615-2717063c2225", landmark: "Banff National Park",            credit: "Sebastian Unrau" },
   CH: { photoId: "1491555103944-7c647fd857e6", landmark: "Swiss Alps, Matterhorn",         credit: "Daniel Seßler" },
   CL: { photoId: "1489824904134-891ab64532f1", landmark: "Torres del Paine, Patagonia",   credit: "Sebastián Morales" },

@@ -68,7 +68,7 @@
 
   --border: 240 4% 16%;
   --input: 240 4% 18%;
-  --ring: 347 50% 42%;
+  --ring: 347 30% 32%;
 
   --card: 240 5% 8%;
   --card-foreground: 240 5% 75%;
@@ -78,12 +78,11 @@
   --popover-foreground: 0 0% 98%;
   --popover-border: 240 4% 16%;
 
-  /* Dusty rose primary — muted, less flashy */
-  --primary: 347 52% 46%;
+  /* Deep wine rose — muted, sophisticated */
+  --primary: 347 36% 38%;
   --primary-foreground: 0 0% 100%;
-  --primary-border: 347 52% 38%;
+  --primary-border: 347 36% 30%;
 
-  /* Zinc-800 secondary (dark button) */
   --secondary: 240 4% 16%;
   --secondary-foreground: 0 0% 100%;
   --secondary-border: 240 4% 22%;
@@ -92,9 +91,9 @@
   --muted-foreground: 240 4% 48%;
   --muted-border: 240 5% 12%;
 
-  --accent: 347 52% 46%;
+  --accent: 347 36% 38%;
   --accent-foreground: 0 0% 100%;
-  --accent-border: 347 52% 34%;
+  --accent-border: 347 36% 28%;
 
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
@@ -103,11 +102,11 @@
   --sidebar: 240 6% 4%;
   --sidebar-foreground: 0 0% 98%;
   --sidebar-border: 240 4% 14%;
-  --sidebar-primary: 347 52% 46%;
+  --sidebar-primary: 347 36% 38%;
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 240 4% 16%;
   --sidebar-accent-foreground: 0 0% 98%;
-  --sidebar-ring: 347 52% 46%;
+  --sidebar-ring: 347 36% 38%;
 
   --app-font-sans: 'Inter', system-ui, sans-serif;
   --app-font-serif: 'Space Grotesk', system-ui, sans-serif;
@@ -115,12 +114,12 @@
 
   --radius: 0.75rem;
 
-  --primary-border: hsl(347 52% 38%);
+  --primary-border: hsl(347 36% 30%);
   --secondary-border: hsl(240 4% 22%);
   --muted-border: hsl(240 5% 12%);
-  --accent-border: hsl(347 52% 34%);
+  --accent-border: hsl(347 36% 28%);
   --destructive-border: hsl(0 84% 52%);
-  --sidebar-primary-border: hsl(347 52% 40%);
+  --sidebar-primary-border: hsl(347 36% 34%);
   --sidebar-accent-border: hsl(240 4% 22%);
 }
 
@@ -140,9 +139,9 @@
   .hide-scrollbar::-webkit-scrollbar { display: none; }
   .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-  /* Dusty rose gradient — hero fallback and CTA sections */
+  /* Deep wine gradient */
   .gradient-hero {
-    background: linear-gradient(135deg, hsl(347 52% 32%) 0%, hsl(333 48% 28%) 60%, hsl(320 38% 20%) 100%);
+    background: linear-gradient(135deg, hsl(347 36% 26%) 0%, hsl(333 32% 22%) 60%, hsl(320 28% 16%) 100%);
   }
 
   /* Dark glass overlay */
@@ -154,17 +153,43 @@
 
   /* Muted rose text gradient */
   .text-rose-gradient {
-    background: linear-gradient(90deg, hsl(347 60% 62%), hsl(333 52% 52%));
+    background: linear-gradient(90deg, hsl(347 50% 58%), hsl(333 42% 48%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  /* Soft rose glow shadow on buttons */
+  /* Soft rose glow */
   .shadow-rose-glow {
-    box-shadow: 0 0 20px rgba(175, 65, 85, 0.28);
+    box-shadow: 0 0 18px rgba(140, 48, 62, 0.22);
   }
   .shadow-rose-glow:hover {
-    box-shadow: 0 0 30px rgba(175, 65, 85, 0.4);
+    box-shadow: 0 0 28px rgba(140, 48, 62, 0.32);
   }
 }
+
+/* Floating animation for hero elements */
+@keyframes float-a {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50% { transform: translateY(-18px) scale(1.02); }
+}
+@keyframes float-b {
+  0%, 100% { transform: translateY(-8px) scale(1.01); }
+  50% { transform: translateY(12px) scale(0.99); }
+}
+@keyframes float-c {
+  0%, 100% { transform: translateY(6px) rotate(-1deg); }
+  50% { transform: translateY(-14px) rotate(1deg); }
+}
+
+.float-a { animation: float-a 7s ease-in-out infinite; }
+.float-b { animation: float-b 9s ease-in-out infinite; }
+.float-c { animation: float-c 11s ease-in-out infinite; }
+
+/* Marquee scroll */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.marquee-track { animation: marquee 28s linear infinite; }
+.marquee-track:hover { animation-play-state: paused; }
