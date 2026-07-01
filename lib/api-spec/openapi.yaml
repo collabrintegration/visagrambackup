@@ -3,13 +3,17 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Visa Explorer API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: countries
+    description: Country operations
+  - name: visas
+    description: Visa operations
 paths:
   /healthz:
     get:
@@ -24,6 +28,236 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /countries:
+    get:
+      operationId: listCountries
+      tags: [countries]
+      summary: List all countries
+      description: Returns a list of all countries with basic information
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Search by country name
+        - name: continent
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by continent
+      responses:
+        "200":
+          description: List of countries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Country"
+
+  /countries/{code}:
+    get:
+      operationId: getCountry
+      tags: [countries]
+      summary: Get country details
+      description: Returns detailed information about a country including all visas available for that destination
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ISO 3166-1 alpha-2 country code
+      responses:
+        "200":
+          description: Country detail with visas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CountryDetail"
+        "404":
+          description: Country not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /visas:
+    get:
+      operationId: listVisas
+      tags: [visas]
+      summary: List visas with filtering and sorting
+      description: Returns a list of visas with optional filters for passport country, destination, type, fee range, etc.
+      parameters:
+        - name: passportCountry
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by passport country code (e.g. US, IN, GB)
+        - name: destinationCountry
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by destination country code
+        - name: visaType
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by visa type (tourist, business, student, work, transit, digital_nomad)
+        - name: entryType
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by entry policy (visa_free, visa_on_arrival, evisa, visa_required)
+        - name: continent
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by destination continent
+        - name: maxFee
+          in: query
+          required: false
+          schema:
+            type: number
+          description: Maximum visa fee in USD
+        - name: minDuration
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Minimum stay duration in days
+        - name: sortBy
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Sort field (fee, duration, processingDays, country)
+        - name: order
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Sort order (asc, desc)
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Max results to return
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Pagination offset
+      responses:
+        "200":
+          description: List of visas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisaListResponse"
+
+  /visas/{id}:
+    get:
+      operationId: getVisa
+      tags: [visas]
+      summary: Get visa details
+      description: Returns detailed information about a specific visa including requirements
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Visa ID
+      responses:
+        "200":
+          description: Visa detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisaDetail"
+        "404":
+          description: Visa not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /passport/destinations:
+    get:
+      operationId: listDestinationsByPassport
+      tags: [visas]
+      summary: Get all destinations for a passport
+      description: Returns all countries and visa policies for a given passport country
+      parameters:
+        - name: passportCode
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Passport country code (e.g. US, IN, GB)
+        - name: entryType
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by entry type (visa_free, visa_on_arrival, evisa, visa_required)
+        - name: continent
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by destination continent
+        - name: sortBy
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Sort field (country, fee, duration)
+        - name: order
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Sort order (asc, desc)
+      responses:
+        "200":
+          description: Passport destinations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PassportDestinationsResponse"
+        "404":
+          description: Passport country not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /stats/overview:
+    get:
+      operationId: getStatsOverview
+      tags: [visas]
+      summary: Get global stats overview
+      description: Returns aggregated statistics about visas and countries
+      responses:
+        "200":
+          description: Global stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatsOverview"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +268,289 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    Country:
+      type: object
+      properties:
+        code:
+          type: string
+          description: ISO 3166-1 alpha-2 code
+        name:
+          type: string
+        continent:
+          type: string
+        flagEmoji:
+          type: string
+        capital:
+          type: string
+        currency:
+          type: string
+        language:
+          type: string
+        visaFreeCount:
+          type: integer
+          description: Number of countries a passport from here can visit visa-free
+      required:
+        - code
+        - name
+        - continent
+        - flagEmoji
+
+    CountryDetail:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        continent:
+          type: string
+        flagEmoji:
+          type: string
+        capital:
+          type: string
+        currency:
+          type: string
+        language:
+          type: string
+        description:
+          type: string
+        visas:
+          type: array
+          items:
+            $ref: "#/components/schemas/VisaSummary"
+      required:
+        - code
+        - name
+        - continent
+        - flagEmoji
+        - visas
+
+    VisaSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        passportCountryCode:
+          type: string
+        passportCountryName:
+          type: string
+        passportCountryFlag:
+          type: string
+        destinationCountryCode:
+          type: string
+        destinationCountryName:
+          type: string
+        destinationCountryFlag:
+          type: string
+        visaType:
+          type: string
+        entryType:
+          type: string
+          description: visa_free, visa_on_arrival, evisa, visa_required
+        fee:
+          type: ["number", "null"]
+          description: Fee in USD
+        durationDays:
+          type: ["integer", "null"]
+          description: Maximum stay in days
+        processingDays:
+          type: ["integer", "null"]
+          description: Processing time in days
+      required:
+        - id
+        - passportCountryCode
+        - passportCountryName
+        - passportCountryFlag
+        - destinationCountryCode
+        - destinationCountryName
+        - destinationCountryFlag
+        - visaType
+        - entryType
+
+    VisaDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        passportCountryCode:
+          type: string
+        passportCountryName:
+          type: string
+        passportCountryFlag:
+          type: string
+        destinationCountryCode:
+          type: string
+        destinationCountryName:
+          type: string
+        destinationCountryFlag:
+          type: string
+        destinationContinent:
+          type: string
+        visaType:
+          type: string
+        entryType:
+          type: string
+        fee:
+          type: ["number", "null"]
+        feeCurrency:
+          type: ["string", "null"]
+        durationDays:
+          type: ["integer", "null"]
+        validityDays:
+          type: ["integer", "null"]
+        processingDays:
+          type: ["integer", "null"]
+        entries:
+          type: ["string", "null"]
+          description: single, double, multiple
+        requirements:
+          type: array
+          items:
+            type: string
+        notes:
+          type: ["string", "null"]
+        officialUrl:
+          type: ["string", "null"]
+      required:
+        - id
+        - passportCountryCode
+        - passportCountryName
+        - passportCountryFlag
+        - destinationCountryCode
+        - destinationCountryName
+        - destinationCountryFlag
+        - destinationContinent
+        - visaType
+        - entryType
+        - requirements
+
+    VisaListResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+        visas:
+          type: array
+          items:
+            $ref: "#/components/schemas/VisaSummary"
+      required:
+        - total
+        - visas
+
+    PassportDestinationsResponse:
+      type: object
+      properties:
+        passportCountryCode:
+          type: string
+        passportCountryName:
+          type: string
+        passportCountryFlag:
+          type: string
+        totalDestinations:
+          type: integer
+        visaFreeCount:
+          type: integer
+        visaOnArrivalCount:
+          type: integer
+        evisaCount:
+          type: integer
+        visaRequiredCount:
+          type: integer
+        destinations:
+          type: array
+          items:
+            $ref: "#/components/schemas/VisaSummary"
+      required:
+        - passportCountryCode
+        - passportCountryName
+        - passportCountryFlag
+        - totalDestinations
+        - visaFreeCount
+        - visaOnArrivalCount
+        - evisaCount
+        - visaRequiredCount
+        - destinations
+
+    StatsOverview:
+      type: object
+      properties:
+        totalCountries:
+          type: integer
+        totalVisaRecords:
+          type: integer
+        visaFreePercent:
+          type: number
+        mostAccessiblePassports:
+          type: array
+          items:
+            $ref: "#/components/schemas/PassportRank"
+        popularDestinations:
+          type: array
+          items:
+            $ref: "#/components/schemas/DestinationStat"
+        continentBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContinentStat"
+      required:
+        - totalCountries
+        - totalVisaRecords
+        - visaFreePercent
+        - mostAccessiblePassports
+        - popularDestinations
+        - continentBreakdown
+
+    PassportRank:
+      type: object
+      properties:
+        countryCode:
+          type: string
+        countryName:
+          type: string
+        flagEmoji:
+          type: string
+        visaFreeCount:
+          type: integer
+      required:
+        - countryCode
+        - countryName
+        - flagEmoji
+        - visaFreeCount
+
+    DestinationStat:
+      type: object
+      properties:
+        countryCode:
+          type: string
+        countryName:
+          type: string
+        flagEmoji:
+          type: string
+        visaFreePassportCount:
+          type: integer
+      required:
+        - countryCode
+        - countryName
+        - flagEmoji
+        - visaFreePassportCount
+
+    ContinentStat:
+      type: object
+      properties:
+        continent:
+          type: string
+        countryCount:
+          type: integer
+        avgVisaFee:
+          type: ["number", "null"]
+      required:
+        - continent
+        - countryCount
