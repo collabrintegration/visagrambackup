@@ -68,7 +68,10 @@ export const GetCountryResponse = zod.object({
   "entryType": zod.string().describe('visa_free, visa_on_arrival, evisa, visa_required'),
   "fee": zod.number().nullish().describe('Fee in USD'),
   "durationDays": zod.number().nullish().describe('Maximum stay in days'),
-  "processingDays": zod.number().nullish().describe('Processing time in days')
+  "validityDays": zod.number().nullish().describe('Visa validity period in days'),
+  "processingDays": zod.number().nullish().describe('Processing time in days'),
+  "entries": zod.string().nullish().describe('single, double, or multiple'),
+  "officialUrl": zod.string().nullish().describe('Official government application or information URL')
 }))
 })
 
@@ -105,7 +108,10 @@ export const ListVisasResponse = zod.object({
   "entryType": zod.string().describe('visa_free, visa_on_arrival, evisa, visa_required'),
   "fee": zod.number().nullish().describe('Fee in USD'),
   "durationDays": zod.number().nullish().describe('Maximum stay in days'),
-  "processingDays": zod.number().nullish().describe('Processing time in days')
+  "validityDays": zod.number().nullish().describe('Visa validity period in days'),
+  "processingDays": zod.number().nullish().describe('Processing time in days'),
+  "entries": zod.string().nullish().describe('single, double, or multiple'),
+  "officialUrl": zod.string().nullish().describe('Official government application or information URL')
 }))
 })
 
@@ -174,7 +180,10 @@ export const ListDestinationsByPassportResponse = zod.object({
   "entryType": zod.string().describe('visa_free, visa_on_arrival, evisa, visa_required'),
   "fee": zod.number().nullish().describe('Fee in USD'),
   "durationDays": zod.number().nullish().describe('Maximum stay in days'),
-  "processingDays": zod.number().nullish().describe('Processing time in days')
+  "validityDays": zod.number().nullish().describe('Visa validity period in days'),
+  "processingDays": zod.number().nullish().describe('Processing time in days'),
+  "entries": zod.string().nullish().describe('single, double, or multiple'),
+  "officialUrl": zod.string().nullish().describe('Official government application or information URL')
 }))
 })
 

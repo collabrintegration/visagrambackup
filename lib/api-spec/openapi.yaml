@@ -361,9 +361,18 @@ components:
         durationDays:
           type: ["integer", "null"]
           description: Maximum stay in days
+        validityDays:
+          type: ["integer", "null"]
+          description: Visa validity period in days
         processingDays:
           type: ["integer", "null"]
           description: Processing time in days
+        entries:
+          type: ["string", "null"]
+          description: single, double, or multiple
+        officialUrl:
+          type: ["string", "null"]
+          description: Official government application or information URL
       required:
         - id
         - passportCountryCode

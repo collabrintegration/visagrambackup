@@ -28,8 +28,23 @@ export interface VisaSummary {
      */
   durationDays?: number | null;
   /**
+     * Visa validity period in days
+     * @nullable
+     */
+  validityDays?: number | null;
+  /**
      * Processing time in days
      * @nullable
      */
   processingDays?: number | null;
+  /**
+     * single, double, or multiple
+     * @nullable
+     */
+  entries?: string | null;
+  /**
+     * Official government application or information URL
+     * @nullable
+     */
+  officialUrl?: string | null;
 }

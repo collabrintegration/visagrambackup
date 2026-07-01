@@ -1,9 +1,36 @@
 import { useParams } from "wouter";
 import { useGetCountry, getGetCountryQueryKey } from "@workspace/api-client-react";
-import { Globe, MapPin, Coins, Languages, ArrowLeft, Loader2, Camera } from "lucide-react";
+import { Globe, MapPin, Coins, Languages, ArrowLeft, Loader2, Camera, Clock, DollarSign, CalendarDays, RefreshCw, Repeat, ExternalLink, FileText } from "lucide-react";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { getCountryImageUrl, getCountryFallbackImageUrl, getCountryLandmarkInfo } from "@/lib/countryImages";
+
+const ENTRY_STYLE: Record<string, { label: string; pill: string }> = {
+  visa_free:       { label: "Visa-Free",       pill: "bg-emerald-500/10 text-emerald-400" },
+  visa_on_arrival: { label: "Visa on Arrival",  pill: "bg-blue-500/10 text-blue-400" },
+  evisa:           { label: "eVisa",            pill: "bg-amber-500/10 text-amber-400" },
+  visa_required:   { label: "Visa Required",    pill: "bg-rose-500/10 text-rose-400" },
+};
+
+function visaTypeLabel(type: string) {
+  const map: Record<string, string> = {
+    tourist:       "Tourist Visa",
+    business:      "Business Visa",
+    student:       "Student Visa",
+    work:          "Work Visa",
+    transit:       "Transit Visa",
+    digital_nomad: "Digital Nomad Visa",
+    retirement:    "Retirement Visa",
+    investor:      "Investor Visa",
+  };
+  return map[type] ?? type.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+}
+
+function entriesLabel(entries: string | null | undefined) {
+  if (!entries) return null;
+  const map: Record<string, string> = { single: "Single Entry", double: "Double Entry", multiple: "Multiple Entry" };
+  return map[entries.toLowerCase()] ?? entries;
+}
 
 export default function CountryDetail() {
   const { code } = useParams<{ code: string }>();
@@ -39,9 +66,8 @@ export default function CountryDetail() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero with landmark photo */}
+      {/* Hero */}
       <div className="relative h-[55vh] min-h-[400px] max-h-[600px] overflow-hidden">
-        {/* Background image — falls back to Picsum if Unsplash fails */}
         <img
           src={imageUrl ?? getCountryFallbackImageUrl(code ?? "xx", 1600, 900)}
           alt={landmarkInfo?.landmark ?? country.name}
@@ -49,21 +75,14 @@ export default function CountryDetail() {
           loading="eager"
           onError={(e) => { e.currentTarget.src = getCountryFallbackImageUrl(code ?? "xx", 1600, 900); }}
         />
-
-        {/* Dark overlay — stronger at top for nav readability, fades to solid at bottom */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80" />
-
-        {/* Content */}
         <div className="relative z-10 h-full flex flex-col justify-between p-6 md:px-8">
-          {/* Back link */}
           <Link
             href="/explore"
             className="inline-flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium transition-colors w-fit"
           >
             <ArrowLeft className="w-4 h-4" /> Back to destinations
           </Link>
-
-          {/* Country info at bottom of hero */}
           <div>
             <div className="flex items-end gap-5 mb-4">
               <span className="text-7xl md:text-8xl drop-shadow-lg leading-none">{country.flagEmoji}</span>
@@ -95,8 +114,6 @@ export default function CountryDetail() {
                 </div>
               </div>
             </div>
-
-            {/* Photo credit */}
             {landmarkInfo && (
               <div className="flex items-center gap-1.5 text-white/50 text-xs">
                 <Camera className="w-3 h-3" />
@@ -109,13 +126,15 @@ export default function CountryDetail() {
         </div>
       </div>
 
-      {/* Visa rules content */}
+      {/* Visa rules */}
       <div className="container mx-auto px-4 py-10 pb-24">
         <div className="bg-card border border-border rounded-2xl p-6 md:p-8">
           <div className="flex justify-between items-end mb-8 border-b border-border pb-5">
             <div>
               <h2 className="text-2xl font-bold">Visa Requirements</h2>
-              <p className="text-muted-foreground mt-1 text-sm">Entry rules for travelers visiting {country.name}</p>
+              <p className="text-muted-foreground mt-1 text-sm">
+                Entry rules for travelers visiting {country.name} — duration, fees, and official application links where available.
+              </p>
             </div>
             <div className="text-right">
               <span className="text-3xl font-bold text-primary">{country.visas?.length || 0}</span>
@@ -125,49 +144,104 @@ export default function CountryDetail() {
 
           {country.visas && country.visas.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {country.visas.map((visa) => (
-                <Link
-                  key={visa.id}
-                  href={`/visa/${visa.id}`}
-                  className="block border border-border rounded-xl p-5 hover:border-primary/40 hover:bg-muted/10 transition-all group"
-                >
-                  <div className="flex items-center gap-2.5 mb-4">
-                    <span className="text-2xl">{visa.passportCountryFlag}</span>
-                    <span className="font-bold group-hover:text-primary transition-colors">{visa.passportCountryName}</span>
-                  </div>
+              {country.visas.map((visa) => {
+                const style = ENTRY_STYLE[visa.entryType] ?? { label: visa.entryType, pill: "bg-muted text-muted-foreground" };
+                const el = entriesLabel(visa.entries);
+                const typeLabel = visaTypeLabel(visa.visaType);
 
-                  <div className="space-y-3">
-                    <div>
-                      <div className="text-xs text-muted-foreground uppercase font-semibold tracking-wider mb-1.5">Entry Type</div>
-                      <Badge
-                        variant="secondary"
-                        className={`font-medium border-none text-xs ${
-                          visa.entryType === "visa_free"
-                            ? "bg-emerald-500/10 text-emerald-400"
-                            : visa.entryType === "visa_on_arrival"
-                            ? "bg-blue-500/10 text-blue-400"
-                            : visa.entryType === "evisa"
-                            ? "bg-amber-500/10 text-amber-400"
-                            : "bg-rose-500/10 text-rose-400"
-                        }`}
+                return (
+                  <div
+                    key={visa.id}
+                    className="flex flex-col border border-border rounded-xl overflow-hidden hover:border-primary/30 transition-all group"
+                  >
+                    {/* Card header */}
+                    <div className="p-4 pb-3 border-b border-border/60">
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-2xl">{visa.passportCountryFlag}</span>
+                          <span className="font-bold group-hover:text-primary transition-colors text-sm leading-tight">{visa.passportCountryName}</span>
+                        </div>
+                        <Badge variant="secondary" className={`font-semibold border-none text-xs shrink-0 ${style.pill}`}>
+                          {style.label}
+                        </Badge>
+                      </div>
+
+                      {/* Visa type + entries chips */}
+                      <div className="flex flex-wrap gap-1.5">
+                        <span className="inline-flex items-center gap-1 text-xs font-medium bg-muted/60 text-muted-foreground rounded-full px-2.5 py-0.5">
+                          <FileText className="w-3 h-3" /> {typeLabel}
+                        </span>
+                        {el && (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium bg-muted/60 text-muted-foreground rounded-full px-2.5 py-0.5">
+                            <Repeat className="w-3 h-3" /> {el}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Stats grid */}
+                    <div className="grid grid-cols-2 gap-0 divide-x divide-y divide-border/50 flex-1">
+                      <div className="p-3">
+                        <div className="flex items-center gap-1 text-muted-foreground text-xs mb-0.5">
+                          <Clock className="w-3 h-3" /> Max Stay
+                        </div>
+                        <div className="font-semibold text-sm">
+                          {visa.durationDays ? `${visa.durationDays} days` : "Unlimited"}
+                        </div>
+                      </div>
+                      <div className="p-3">
+                        <div className="flex items-center gap-1 text-muted-foreground text-xs mb-0.5">
+                          <DollarSign className="w-3 h-3" /> Fee
+                        </div>
+                        <div className="font-semibold text-sm">
+                          {visa.fee ? `$${visa.fee}` : "Free"}
+                        </div>
+                      </div>
+                      <div className="p-3">
+                        <div className="flex items-center gap-1 text-muted-foreground text-xs mb-0.5">
+                          <CalendarDays className="w-3 h-3" /> Valid For
+                        </div>
+                        <div className="font-semibold text-sm">
+                          {visa.validityDays ? `${visa.validityDays} days` : "—"}
+                        </div>
+                      </div>
+                      <div className="p-3">
+                        <div className="flex items-center gap-1 text-muted-foreground text-xs mb-0.5">
+                          <RefreshCw className="w-3 h-3" /> Processing
+                        </div>
+                        <div className="font-semibold text-sm">
+                          {visa.processingDays ? `${visa.processingDays} days` : "Instant"}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Footer: detail link + apply button */}
+                    <div className="flex items-center border-t border-border/60 divide-x divide-border/60">
+                      <Link
+                        href={`/visa/${visa.id}`}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-muted-foreground hover:text-primary hover:bg-muted/30 transition-all"
                       >
-                        {visa.entryType.replace(/_/g, " ")}
-                      </Badge>
-                    </div>
-
-                    <div className="flex justify-between text-sm pt-3 border-t border-border/50">
-                      <div>
-                        <div className="text-muted-foreground text-xs mb-0.5">Duration</div>
-                        <div className="font-medium">{visa.durationDays ? `${visa.durationDays} days` : "Unlimited"}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-muted-foreground text-xs mb-0.5">Fee</div>
-                        <div className="font-medium">{visa.fee ? `$${visa.fee}` : "Free"}</div>
-                      </div>
+                        Full details
+                      </Link>
+                      {visa.officialUrl ? (
+                        <a
+                          href={visa.officialUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-all"
+                        >
+                          Apply <ExternalLink className="w-3 h-3" />
+                        </a>
+                      ) : (
+                        <span className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs text-muted/40 cursor-default">
+                          No link available
+                        </span>
+                      )}
                     </div>
                   </div>
-                </Link>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-16 text-muted-foreground">

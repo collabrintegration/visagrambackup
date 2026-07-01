@@ -72,8 +72,12 @@ router.get("/countries/:code", async (req, res) => {
       visaType: visasTable.visaType,
       entryType: visasTable.entryType,
       fee: visasTable.fee,
+      feeCurrency: visasTable.feeCurrency,
       durationDays: visasTable.durationDays,
+      validityDays: visasTable.validityDays,
       processingDays: visasTable.processingDays,
+      entries: visasTable.entries,
+      officialUrl: visasTable.officialUrl,
       passportCountryName: countriesTable.name,
       passportCountryFlag: countriesTable.flagEmoji,
     })
@@ -107,7 +111,10 @@ router.get("/countries/:code", async (req, res) => {
       entryType: v.entryType,
       fee: v.fee ? parseFloat(v.fee) : null,
       durationDays: v.durationDays,
+      validityDays: v.validityDays,
       processingDays: v.processingDays,
+      entries: v.entries,
+      officialUrl: v.officialUrl,
     })),
   });
 });
