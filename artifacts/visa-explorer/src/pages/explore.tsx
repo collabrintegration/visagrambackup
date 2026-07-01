@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
 import {
   useListCountries, getListCountriesQueryKey,
@@ -14,55 +14,106 @@ import { getCountryImageUrl, getCountryFallbackImageUrl } from "@/lib/countryIma
 type EntryType = "visa_free" | "visa_on_arrival" | "evisa" | "visa_required";
 
 const ACCESS_GROUPS: { type: EntryType; label: string; short: string; icon: typeof CheckCircle2; color: string; pill: string }[] = [
-  { type: "visa_free",       label: "Visa-Free",       short: "Just show up — no visa paperwork needed.",                       icon: CheckCircle2, color: "text-emerald-400", pill: "bg-emerald-500/10 text-emerald-400" },
-  { type: "visa_on_arrival", label: "Visa on Arrival",  short: "Get stamped at the airport. No advance application.",            icon: HelpCircle,   color: "text-blue-400",    pill: "bg-blue-500/10 text-blue-400" },
-  { type: "evisa",           label: "eVisa",            short: "Apply online beforehand — quick, easy, no embassy visit.",       icon: FileWarning,  color: "text-amber-400",   pill: "bg-amber-500/10 text-amber-400" },
-  { type: "visa_required",   label: "Visa Required",    short: "Embassy visit required. Plan ahead before your trip.",           icon: AlertCircle,  color: "text-rose-400",    pill: "bg-rose-500/10 text-rose-400" },
+  { type: "visa_free",       label: "Visa-Free",       short: "Just show up — no visa paperwork needed.",                 icon: CheckCircle2, color: "text-emerald-400", pill: "bg-emerald-500/10 text-emerald-400" },
+  { type: "visa_on_arrival", label: "Visa on Arrival",  short: "Get stamped at the airport. No advance application.",     icon: HelpCircle,   color: "text-blue-400",    pill: "bg-blue-500/10 text-blue-400" },
+  { type: "evisa",           label: "eVisa",            short: "Apply online beforehand — quick, easy, no embassy visit.", icon: FileWarning,  color: "text-amber-400",   pill: "bg-amber-500/10 text-amber-400" },
+  { type: "visa_required",   label: "Visa Required",    short: "Embassy visit required. Plan ahead before your trip.",    icon: AlertCircle,  color: "text-rose-400",    pill: "bg-rose-500/10 text-rose-400" },
 ];
+
+interface PickedCountry { code: string; name: string; flagEmoji: string }
 
 export default function Explore() {
   const [activeTab, setActiveTab] = useState<"countries" | "visas">("countries");
+
+  // ── Browse Countries state ──
   const [search, setSearch] = useState("");
   const [continent, setContinent] = useState<string>("");
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
 
-  // Passport input for the "Search Visas" tab
-  const [passportCode, setPassportCode] = useState<string>("");
+  // ── Search Visas combobox state ──
+  const [passportQuery, setPassportQuery] = useState("");     // typed text
+  const [pickedPassport, setPickedPassport] = useState<PickedCountry | null>(null); // resolved selection
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const comboRef = useRef<HTMLDivElement>(null);
 
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (comboRef.current && !comboRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // ── Queries ──
   const { data: countries, isLoading: loadingCountries } = useListCountries(
     { search: search || undefined, continent: continent || undefined },
     { query: {
         enabled: activeTab === "countries",
-        queryKey: getListCountriesQueryKey({ search: search || undefined, continent: continent || undefined })
+        queryKey: getListCountriesQueryKey({ search: search || undefined, continent: continent || undefined }),
       }
     }
   );
+
+  // Live suggestions for the passport combobox
+  const isCodeLike = passportQuery.length <= 3 && /^[a-zA-Z]+$/.test(passportQuery);
+  const { data: suggestions, isLoading: loadingSuggestions } = useListCountries(
+    { search: passportQuery || undefined },
+    { query: {
+        enabled: activeTab === "visas" && passportQuery.length >= 1 && !pickedPassport,
+        queryKey: getListCountriesQueryKey({ search: passportQuery || undefined }),
+      }
+    }
+  );
+
+  // Filter suggestions: if it looks like a code (≤3 chars), match by code prefix too
+  const filteredSuggestions = (suggestions?.slice(0, 8) ?? []).filter(c => {
+    if (!passportQuery) return false;
+    const q = passportQuery.toUpperCase();
+    return (
+      c.code.startsWith(q) ||
+      c.name.toUpperCase().includes(q)
+    );
+  });
 
   const { data: destinations, isLoading: loadingDestinations } = useListDestinationsByPassport(
     { passportCode: selectedCode ?? "" },
     { query: {
         enabled: !!selectedCode,
-        queryKey: getListDestinationsByPassportQueryKey({ passportCode: selectedCode ?? "" })
+        queryKey: getListDestinationsByPassportQueryKey({ passportCode: selectedCode ?? "" }),
       }
     }
   );
 
   const { data: visaData, isLoading: loadingVisas } = useListVisas(
-    { passportCountry: passportCode || undefined, continent: continent || undefined, limit: 50 },
+    { passportCountry: pickedPassport?.code || undefined, limit: 50 },
     { query: {
-        enabled: activeTab === "visas",
-        queryKey: getListVisasQueryKey({ passportCountry: passportCode || undefined, continent: continent || undefined, limit: 50 })
+        enabled: activeTab === "visas" && !!pickedPassport,
+        queryKey: getListVisasQueryKey({ passportCountry: pickedPassport?.code || undefined, limit: 50 }),
       }
     }
   );
 
   const selectedCountry = countries?.find(c => c.code === selectedCode);
   const continents = ["Africa", "Asia", "Europe", "North America", "Oceania", "South America"];
-
   const groupedDestinations = ACCESS_GROUPS.map(g => ({
     ...g,
     items: destinations?.destinations.filter(d => d.entryType === g.type) ?? [],
   }));
+
+  function pickPassport(c: PickedCountry) {
+    setPickedPassport(c);
+    setPassportQuery(c.name);
+    setDropdownOpen(false);
+  }
+
+  function clearPassport() {
+    setPickedPassport(null);
+    setPassportQuery("");
+    setDropdownOpen(false);
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -91,33 +142,18 @@ export default function Explore() {
             ))}
           </div>
 
-          {/* Search / filter row */}
-          <div className="flex flex-col md:flex-row gap-3 max-w-4xl">
-            <div className="relative flex-1 max-w-sm">
-              {activeTab === "countries" ? (
-                <>
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search countries..."
-                    className="pl-9 h-11 bg-card border-border"
-                    value={search}
-                    onChange={(e) => { setSearch(e.target.value); setSelectedCode(null); }}
-                  />
-                </>
-              ) : (
-                <>
-                  <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Enter passport code (e.g. US, GB, IN)..."
-                    className="pl-9 h-11 bg-card border-border uppercase"
-                    value={passportCode}
-                    onChange={(e) => setPassportCode(e.target.value.toUpperCase())}
-                    maxLength={2}
-                  />
-                </>
-              )}
-            </div>
-            {activeTab === "countries" && (
+          {/* ── Browse Countries: search + region filters ── */}
+          {activeTab === "countries" && (
+            <div className="flex flex-col md:flex-row gap-3 max-w-4xl">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search countries..."
+                  className="pl-9 h-11 bg-card border-border"
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setSelectedCode(null); }}
+                />
+              </div>
               <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
                 <button
                   onClick={() => setContinent("")}
@@ -139,8 +175,79 @@ export default function Explore() {
                   </button>
                 ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* ── Search Visas: passport combobox ── */}
+          {activeTab === "visas" && (
+            <div className="max-w-sm" ref={comboRef}>
+              <div className="relative">
+                {/* Icon / flag */}
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                  {pickedPassport
+                    ? <span className="text-lg leading-none">{pickedPassport.flagEmoji}</span>
+                    : <Globe className="w-4 h-4 text-muted-foreground" />
+                  }
+                </div>
+
+                <Input
+                  placeholder="Country name or code (e.g. Japan, US)..."
+                  className={`pl-9 h-11 bg-card border-border pr-9 ${pickedPassport ? "font-medium text-foreground" : ""}`}
+                  value={passportQuery}
+                  onFocus={() => { if (!pickedPassport) setDropdownOpen(true); }}
+                  onChange={(e) => {
+                    setPassportQuery(e.target.value);
+                    setPickedPassport(null);
+                    setDropdownOpen(true);
+                  }}
+                  autoComplete="off"
+                />
+
+                {/* Clear button */}
+                {(passportQuery || pickedPassport) && (
+                  <button
+                    onClick={clearPassport}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+
+                {/* Dropdown */}
+                {dropdownOpen && passportQuery.length >= 1 && !pickedPassport && (
+                  <div className="absolute z-50 top-full mt-1.5 left-0 right-0 bg-card border border-border rounded-xl shadow-xl overflow-hidden">
+                    {loadingSuggestions ? (
+                      <div className="flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" /> Searching…
+                      </div>
+                    ) : filteredSuggestions.length === 0 ? (
+                      <div className="px-4 py-3 text-sm text-muted-foreground">No countries match "{passportQuery}"</div>
+                    ) : (
+                      filteredSuggestions.map(c => (
+                        <button
+                          key={c.code}
+                          onMouseDown={(e) => e.preventDefault()}   // keep focus on input
+                          onClick={() => pickPassport({ code: c.code, name: c.name, flagEmoji: c.flagEmoji })}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/60 transition-colors text-left"
+                        >
+                          <span className="text-xl">{c.flagEmoji}</span>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm font-medium">{c.name}</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground font-mono">{c.code}</span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+              {!pickedPassport && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Type a country name like <span className="font-medium text-foreground">Japan</span> or a 2-letter code like <span className="font-medium text-foreground">US</span>
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -150,7 +257,7 @@ export default function Explore() {
         {/* ════════ Browse Countries tab ════════ */}
         {activeTab === "countries" && (
           <>
-            {/* ── STEP 1: country picker (no selection yet) ── */}
+            {/* STEP 1: no selection yet — show country picker */}
             {!selectedCode && (
               <>
                 {loadingCountries ? (
@@ -205,12 +312,11 @@ export default function Explore() {
               </>
             )}
 
-            {/* ── STEP 2: selected country + destinations ── */}
+            {/* STEP 2: country selected — show identity + destinations */}
             {selectedCode && (
               <div>
                 {/* Identity banner */}
                 <div className="relative rounded-2xl overflow-hidden mb-8 border border-border">
-                  {/* Background photo */}
                   <img
                     src={getCountryImageUrl(selectedCode, 1200, 300) ?? getCountryFallbackImageUrl(selectedCode, 1200, 300)}
                     alt=""
@@ -244,10 +350,10 @@ export default function Explore() {
                 {/* Quick stats */}
                 {destinations && (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
-                    {ACCESS_GROUPS.map(({ type, label, icon: Icon, color, pill }) => {
+                    {ACCESS_GROUPS.map(({ type, label, icon: Icon, color }) => {
                       const count = destinations.destinations.filter(d => d.entryType === type).length;
                       return (
-                        <div key={type} className={`rounded-xl p-4 border ${pill.replace("text-", "border-").replace(/\S+$/, "border-opacity-20")} bg-card border-border`}>
+                        <div key={type} className="rounded-xl p-4 border border-border bg-card">
                           <Icon className={`w-4 h-4 ${color} mb-2`} />
                           <div className={`text-2xl font-black ${color}`}>{count}</div>
                           <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-0.5">{label}</div>
@@ -265,9 +371,8 @@ export default function Explore() {
                       if (items.length === 0) return null;
                       return (
                         <section key={type}>
-                          {/* Section header */}
-                          <div className="flex items-start gap-3 mb-1 pb-4 border-b border-border">
-                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 border border-border bg-card`}>
+                          <div className="flex items-start gap-3 mb-5 pb-4 border-b border-border">
+                            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 border border-border bg-card">
                               <Icon className={`w-4 h-4 ${color}`} />
                             </div>
                             <div className="flex-1">
@@ -278,8 +383,6 @@ export default function Explore() {
                               <p className="text-sm text-muted-foreground mt-0.5">{short}</p>
                             </div>
                           </div>
-
-                          {/* Destination cards */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                             {items.map(dest => {
                               const code = dest.destinationCountryCode ?? "xx";
@@ -324,11 +427,14 @@ export default function Explore() {
         {/* ════════ Search Visas tab ════════ */}
         {activeTab === "visas" && (
           <>
-            {!passportCode ? (
+            {!pickedPassport ? (
               <div className="text-center py-20">
                 <Globe className="w-12 h-12 mx-auto text-muted mb-4" />
-                <h3 className="text-xl font-bold mb-2">Enter your passport code above</h3>
-                <p className="text-muted-foreground text-sm max-w-xs mx-auto">Type a two-letter country code — like US, GB, or IN — to see all matching visa rules.</p>
+                <h3 className="text-xl font-bold mb-2">Search by passport</h3>
+                <p className="text-muted-foreground text-sm max-w-xs mx-auto">
+                  Type a country name like <span className="font-medium text-foreground">Japan</span>, or a code like{" "}
+                  <span className="font-medium text-foreground">US</span>, to see all their visa rules.
+                </p>
               </div>
             ) : loadingVisas ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -338,14 +444,20 @@ export default function Explore() {
               <div className="text-center py-24">
                 <Filter className="w-14 h-14 mx-auto text-muted mb-4" />
                 <h3 className="text-xl font-bold mb-2">No visa rules found</h3>
-                <p className="text-muted-foreground text-sm">Try a different passport code or region filter.</p>
+                <p className="text-muted-foreground text-sm">No data yet for this country. Try another.</p>
               </div>
             ) : (
               <>
-                <p className="text-sm text-muted-foreground mb-6">
-                  Showing <span className="font-semibold text-foreground">{visaData?.visas.length} visa rules</span> for{" "}
-                  <span className="font-semibold text-foreground">{passportCode}</span> passport holders
-                </p>
+                {/* Passport identity strip */}
+                <div className="flex items-center gap-3 mb-6 p-4 bg-card border border-border rounded-xl">
+                  <span className="text-3xl">{pickedPassport.flagEmoji}</span>
+                  <div className="flex-1">
+                    <div className="text-xs text-muted-foreground uppercase tracking-widest font-bold mb-0.5">Showing results for</div>
+                    <div className="font-bold text-lg">{pickedPassport.name} passport</div>
+                  </div>
+                  <span className="text-sm text-muted-foreground">{visaData?.visas.length} rules found</span>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   {visaData?.visas.map((visa) => {
                     const imgUrl = getCountryImageUrl(visa.destinationCountryCode ?? "", 480, 220);
@@ -374,9 +486,9 @@ export default function Explore() {
                           <Badge
                             variant="secondary"
                             className={`text-xs font-medium border-none mb-3 ${
-                              visa.entryType === "visa_free" ? "bg-emerald-500/10 text-emerald-400"
+                              visa.entryType === "visa_free"       ? "bg-emerald-500/10 text-emerald-400"
                               : visa.entryType === "visa_on_arrival" ? "bg-blue-500/10 text-blue-400"
-                              : visa.entryType === "evisa" ? "bg-amber-500/10 text-amber-400"
+                              : visa.entryType === "evisa"           ? "bg-amber-500/10 text-amber-400"
                               : "bg-rose-500/10 text-rose-400"
                             }`}
                           >
