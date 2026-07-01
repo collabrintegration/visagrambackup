@@ -49,8 +49,8 @@ export default function Home() {
 
         {/* Floating landmark photos */}
         {floatingPhotos.map(({ code, pos, size, cls, delay }) => {
-          const url = getCountryImageUrl(code, 400, 400);
-          return url ? (
+          const url = getCountryImageUrl(code, 400, 400) ?? getCountryFallbackImageUrl(code, 400, 400);
+          return (
             <div
               key={code}
               className={`absolute ${pos} ${size} ${cls} pointer-events-none hidden lg:block`}
@@ -60,9 +60,14 @@ export default function Home() {
                 src={url}
                 alt=""
                 className="w-full h-full object-cover rounded-2xl opacity-20 shadow-2xl border border-white/5"
+                onError={(e) => {
+                  const img = e.currentTarget;
+                  const fallback = getCountryFallbackImageUrl(code, 400, 400);
+                  if (img.src !== fallback) img.src = fallback;
+                }}
               />
             </div>
-          ) : null;
+          );
         })}
 
         {/* Hero content */}
@@ -140,12 +145,21 @@ export default function Home() {
       <section className="overflow-hidden border-y border-border py-5 bg-card/20">
         <div className="flex marquee-track gap-4 w-max">
           {[...marqueePhotos, ...marqueePhotos].map((code, i) => {
-            const url = getCountryImageUrl(code, 320, 160);
-            return url ? (
+            const url = getCountryImageUrl(code, 320, 160) ?? getCountryFallbackImageUrl(code, 320, 160);
+            return (
               <div key={i} className="w-52 h-28 flex-shrink-0 rounded-xl overflow-hidden">
-                <img src={url} alt={code} className="w-full h-full object-cover opacity-60 hover:opacity-90 transition-opacity" />
+                <img
+                  src={url}
+                  alt={code}
+                  className="w-full h-full object-cover opacity-60 hover:opacity-90 transition-opacity"
+                  onError={(e) => {
+                    const img = e.currentTarget;
+                    const fallback = getCountryFallbackImageUrl(code, 320, 160);
+                    if (img.src !== fallback) img.src = fallback;
+                  }}
+                />
               </div>
-            ) : null;
+            );
           })}
         </div>
       </section>
