@@ -68,6 +68,8 @@ export default function Home() {
         <meta property="og:title" content="Visagram — Discover Visa Requirements & Travel the World" />
         <meta property="og:description" content="Plan your next trip with Visagram. Explore visa requirements for 190+ countries, read real traveler reviews, compare passport power, and track your visa applications." />
         <meta property="og:url" content="https://visagram.io/" />
+        <meta property="og:image" content="https://visagram.io/og-image.png" />
+        <meta name="twitter:image" content="https://visagram.io/og-image.png" />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "WebSite",

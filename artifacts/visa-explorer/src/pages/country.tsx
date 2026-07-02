@@ -150,6 +150,8 @@ export default function CountryDetail() {
         <meta property="og:title" content={`${country.name} Visa Requirements & Reviews — Visagram`} />
         <meta property="og:description" content={`Discover visa requirements, traveler reviews, and entry rules for ${country.name}. Join the community and plan your trip with confidence.`} />
         <meta property="og:url" content={`https://visagram.io/country/${code}`} />
+        <meta property="og:image" content="https://visagram.io/og-image.png" />
+        <meta name="twitter:image" content="https://visagram.io/og-image.png" />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "TouristDestination",

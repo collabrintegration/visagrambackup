@@ -124,6 +124,8 @@ export default function Explore() {
         <meta property="og:title" content="Explore Destinations — Visa Requirements by Country | Visagram" />
         <meta property="og:description" content="Browse visa requirements for 190+ countries. Filter by your passport to instantly see where you can travel visa-free, on arrival, or with a visa." />
         <meta property="og:url" content="https://visagram.io/explore" />
+        <meta property="og:image" content="https://visagram.io/og-image.png" />
+        <meta name="twitter:image" content="https://visagram.io/og-image.png" />
       </Helmet>
       {/* ── Header ── */}
       <div className="bg-card/40 border-b border-border py-10">
