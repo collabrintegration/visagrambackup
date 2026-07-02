@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import {
   useListFriends,
   useListFriendRequests,
@@ -38,7 +38,7 @@ import {
   UserPlus, UserCheck, UserMinus, Search, Users, Inbox,
   Clock, MapPin, LogIn, X, Check, Loader2, Star, Trash2,
   Globe, ChevronLeft, ChevronRight, MessageSquare, Crown, Lock, ArrowLeft, Camera, Mail, Eye, EyeOff,
-  CheckCircle2, Heart, CalendarDays, Venus,
+  CheckCircle2, Heart, CalendarDays, Venus, Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,6 +83,9 @@ function ProfilePanel({ friendCount }: { friendCount: number }) {
   const { data: authData } = useGetCurrentAuthUser();
   const [isUploadingPic, setIsUploadingPic] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [editingUsername, setEditingUsername] = useState(false);
+  const [usernameVal, setUsernameVal] = useState("");
+  const [usernameError, setUsernameError] = useState<string | null>(null);
   const updateProfile = useUpdateMyProfile({
     mutation: {
       onSuccess: () => {
@@ -92,6 +95,32 @@ function ProfilePanel({ friendCount }: { friendCount: number }) {
       onError: () => setIsUploadingPic(false),
     },
   });
+
+  useEffect(() => {
+    if (authData?.user) {
+      const u = authData.user as { username?: string | null };
+      setUsernameVal(u.username ?? "");
+    }
+  }, [authData?.user]);
+
+  const saveUsername = useCallback(() => {
+    const val = usernameVal.trim();
+    if (val && !/^[a-z0-9_]{3,20}$/.test(val)) {
+      setUsernameError("3–20 chars: letters, numbers, underscores only");
+      return;
+    }
+    updateProfile.mutate(
+      { data: { username: val || null } },
+      {
+        onSuccess: () => { setEditingUsername(false); setUsernameError(null); },
+        onError: (err: unknown) => {
+          const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+            ?? "Username already taken";
+          setUsernameError(msg);
+        },
+      },
+    );
+  }, [usernameVal, updateProfile]);
 
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -178,8 +207,59 @@ function ProfilePanel({ friendCount }: { friendCount: number }) {
           {/* Name + username */}
           <div className="mt-3">
             <h2 className="text-xl font-bold leading-tight">{name}</h2>
-            {typedUser.username && (
-              <p className="text-xs text-muted-foreground mt-0.5">@{typedUser.username}</p>
+            {editingUsername ? (
+              <div className="mt-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm text-muted-foreground font-medium">@</span>
+                  <input
+                    value={usernameVal}
+                    onChange={(e) => {
+                      setUsernameVal(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""));
+                      setUsernameError(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") saveUsername();
+                      if (e.key === "Escape") { setEditingUsername(false); setUsernameError(null); }
+                    }}
+                    className="flex-1 bg-muted border border-border rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 font-mono"
+                    placeholder="your_username"
+                    maxLength={20}
+                    autoFocus
+                  />
+                  <button
+                    onClick={saveUsername}
+                    disabled={updateProfile.isPending}
+                    className="text-xs font-medium text-primary hover:text-primary/80 disabled:opacity-50 px-1"
+                  >
+                    {updateProfile.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Save"}
+                  </button>
+                  <button
+                    onClick={() => { setEditingUsername(false); setUsernameError(null); setUsernameVal(typedUser.username ?? ""); }}
+                    className="text-xs text-muted-foreground hover:text-foreground px-1"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                {usernameError && (
+                  <p className="text-[11px] text-red-400 mt-1 leading-tight">{usernameError}</p>
+                )}
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  3–20 chars · letters, numbers, underscores
+                </p>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 mt-0.5 group/uname">
+                <p className="text-xs text-muted-foreground">
+                  {typedUser.username ? `@${typedUser.username}` : <span className="italic opacity-60">No username — click to set one</span>}
+                </p>
+                <button
+                  onClick={() => { setUsernameVal(typedUser.username ?? ""); setEditingUsername(true); setUsernameError(null); }}
+                  className="opacity-0 group-hover/uname:opacity-100 transition-opacity text-muted-foreground hover:text-primary"
+                  title="Edit username"
+                >
+                  <Pencil className="w-3 h-3" />
+                </button>
+              </div>
             )}
           </div>
 

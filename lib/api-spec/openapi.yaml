@@ -3319,6 +3319,9 @@ components:
     UpdateProfileBody:
       type: object
       properties:
+        username:
+          type: ["string", "null"]
+          description: "Unique handle (3–20 chars: letters, numbers, underscores)"
         homeCountry:
           type: ["string", "null"]
         bio:

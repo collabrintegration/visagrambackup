@@ -928,6 +928,7 @@ export const DeleteTravelEntryResponse = zod.object({
  * @summary Update the authenticated user's profile
  */
 export const UpdateMyProfileBody = zod.object({
+  "username": zod.string().nullish().describe('Unique handle (3–20 chars: letters, numbers, underscores)'),
   "homeCountry": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),

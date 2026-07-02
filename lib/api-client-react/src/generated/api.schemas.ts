@@ -543,6 +543,11 @@ export interface PassportRankEntry {
 }
 
 export interface UpdateProfileBody {
+  /**
+     * Unique handle (3–20 chars: letters, numbers, underscores)
+     * @nullable
+     */
+  username?: string | null;
   /** @nullable */
   homeCountry?: string | null;
   /** @nullable */

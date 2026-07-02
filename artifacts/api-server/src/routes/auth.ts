@@ -91,8 +91,23 @@ router.patch("/users/me", async (req: Request, res: Response) => {
     res.status(401).json({ error: "Login required" });
     return;
   }
-  const { homeCountry, bio, profileImageUrl, isPrivate, isEmailPublic, firstName, lastName, dateOfBirth, age, sex, location } = req.body;
+  const { username, homeCountry, bio, profileImageUrl, isPrivate, isEmailPublic, firstName, lastName, dateOfBirth, age, sex, location } = req.body;
   const patch: Partial<typeof usersTable.$inferInsert> = { updatedAt: new Date() };
+  if ("username" in req.body) {
+    const uname = typeof username === "string" ? username.trim() || null : null;
+    if (uname && !/^[a-zA-Z0-9_]{3,20}$/.test(uname)) {
+      res.status(400).json({ error: "Username must be 3–20 characters: letters, numbers, and underscores only." });
+      return;
+    }
+    if (uname) {
+      const [existing] = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.username, uname)).limit(1);
+      if (existing && existing.id !== req.user.id) {
+        res.status(409).json({ error: "That username is already taken. Please choose another." });
+        return;
+      }
+    }
+    patch.username = uname;
+  }
   if ("homeCountry" in req.body) patch.homeCountry = homeCountry ?? null;
   if ("bio" in req.body) patch.bio = bio ?? null;
   if ("profileImageUrl" in req.body) patch.profileImageUrl = profileImageUrl ?? null;
