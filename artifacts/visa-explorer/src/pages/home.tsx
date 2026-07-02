@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { ArrowRight, Zap, Globe2, ShieldCheck, MapPin, CheckCircle2, Compass, RefreshCw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCountryImageUrl, getCountryFallbackImageUrl } from "@/lib/countryImages";
+import AdUnit from "@/components/ad-unit";
 
 function formatRefreshTime(iso: string | null | undefined): string {
   if (!iso) return "checking…";
@@ -161,6 +162,13 @@ export default function Home() {
               </div>
             );
           })}
+        </div>
+      </section>
+
+      {/* ── Ad unit — between hero and how-it-works ── */}
+      <section className="bg-background py-8">
+        <div className="container mx-auto px-4 flex justify-center">
+          <AdUnit slot="1234567890" format="leaderboard" className="pt-5 w-full max-w-3xl" />
         </div>
       </section>
 

@@ -9,6 +9,7 @@ import { useAuth } from "@workspace/replit-auth-web";
 import { MessageSquare, Star, Globe, Users, Loader2, MapPin, LogIn, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import AdUnit from "@/components/ad-unit";
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -96,8 +97,15 @@ export default function Community() {
           </div>
         ) : (
           <div className="space-y-4">
-            {feed.map((item) => (
-              <FeedCard key={`${item.type}-${item.id}`} item={item} />
+            {feed.map((item, idx) => (
+              <>
+                <FeedCard key={`${item.type}-${item.id}`} item={item} />
+                {(idx + 1) % 6 === 0 && idx < feed.length - 1 && (
+                  <div key={`ad-${idx}`} className="py-2">
+                    <AdUnit slot="3456789012" format="fluid" className="pt-5" />
+                  </div>
+                )}
+              </>
             ))}
           </div>
         )}
