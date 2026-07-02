@@ -1,2 +1,4 @@
 - [Drizzle select must match buildGroupResponse](drizzle-select-parentgroupid.md) — every `select()` feeding `buildGroupResponse` must include `parentGroupId`; omitting it causes TS2345.
 - [useGetBlockedUsers requires explicit queryKey](use-get-blocked-users-query.md) — the generated hook's `query` option requires `queryKey` to be set explicitly; `{ enabled }` alone fails TS2741.
+- [Mobile app structure](mobile-app.md) — Expo app at artifacts/visagram-app; 4 tabs: Explore, Community, Passport, Profile; setBaseUrl called at top of _layout.tsx; Midnight Rose dark theme in constants/colors.ts.
+- [API double-prefix routing](api-routing.md) — OpenAPI spec has /api in both server URL and path entries; codegen generates /api/api/... calls; Express router-level routes must include /api/ prefix to match.
