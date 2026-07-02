@@ -580,11 +580,11 @@ export default function Profile() {
           {/* Main tabs */}
           <div className="flex gap-1 mt-8 border-b border-border -mb-px flex-wrap">
             {[
-              { id: "travel" as const, label: "Travel Map", icon: Map },
-              { id: "activity" as const, label: "My Q&A", icon: BookOpen },
-              { id: "cases" as const, label: "Support Cases", icon: ShieldAlert },
-              { id: "groups" as const, label: "My Groups", icon: Users },
               { id: "messages" as const, label: "Messages", icon: MessageSquare, badge: dmBadge },
+              { id: "groups" as const, label: "My Groups", icon: Users },
+              { id: "activity" as const, label: "My Q&A", icon: BookOpen },
+              { id: "travel" as const, label: "Travel Map", icon: Map },
+              { id: "cases" as const, label: "Support Cases", icon: ShieldAlert },
               ...(isSuperAdmin ? [{ id: "admin" as const, label: "Site Stats", icon: BarChart2 }] : []),
             ].map(({ id, label, icon: Icon, ...rest }) => {
               const badge = (rest as { badge?: number }).badge;
