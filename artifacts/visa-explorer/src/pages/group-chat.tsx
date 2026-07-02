@@ -17,6 +17,7 @@ import {
   useBlockUser,
   useUnblockUser,
   useGetBlockedUsers,
+  useReportGroupMessage,
   getGetGroupQueryKey,
   getListGroupMessagesQueryKey,
   getListGroupMembersQueryKey,
@@ -29,7 +30,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, Send, Loader2, Users, Crown, Trash2, UserMinus, Settings,
   X, Lock, Globe, LogIn, UserPlus, Shield, ImageIcon, GitFork, Plus,
-  Ban, Check, ChevronRight, ExternalLink,
+  Ban, Check, ChevronRight, ExternalLink, Flag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -175,6 +176,16 @@ export default function GroupChat() {
         setSgName(""); setSgDesc(""); setSgEmoji("👥"); setSgMemberIds([]);
         // Post invite link to parent chat
         sendMessage({ id: groupId, data: { content: `📢 A new sub-group was created: ${newSg.emoji} ${newSg.name} — join at /groups/${newSg.id}` } });
+      },
+    },
+  });
+
+  const [reportedMsg, setReportedMsg] = useState<number | null>(null);
+  const { mutate: reportMessage } = useReportGroupMessage({
+    mutation: {
+      onSuccess: () => {
+        setReportedMsg(null);
+        alert("Message reported. Thank you — our team will review it.");
       },
     },
   });
@@ -338,6 +349,10 @@ export default function GroupChat() {
                       isOwn={msg.userId === userId}
                       isAdmin={isAdmin}
                       onDelete={() => deleteMessage({ id: groupId, messageId: msg.id })}
+                      onReport={() => {
+                        const choice = window.confirm(`Report this message?\n\nClick OK to report it as inappropriate. Our team will review it.`);
+                        if (choice) reportMessage({ id: groupId, messageId: msg.id, data: { reason: "inappropriate" } });
+                      }}
                       showAvatar={idx === 0 || messages[idx - 1].userId !== msg.userId}
                     />
                   ))
@@ -407,6 +422,7 @@ export default function GroupChat() {
                 <MemberRow
                   key={m.userId}
                   member={m}
+                  isViewerAdmin={isAdmin}
                   isPrimaryAdmin={isPrimaryAdmin}
                   isSelf={m.userId === userId}
                   isBlocked={blockedIds.has(m.userId)}
@@ -481,6 +497,7 @@ export default function GroupChat() {
                   <MemberRow
                     key={m.userId}
                     member={m}
+                    isViewerAdmin={isAdmin}
                     isPrimaryAdmin={isPrimaryAdmin}
                     isSelf={m.userId === userId}
                     isBlocked={blockedIds.has(m.userId)}
@@ -709,12 +726,13 @@ export default function GroupChat() {
 }
 
 function MessageBubble({
-  msg, isOwn, isAdmin, onDelete, showAvatar,
+  msg, isOwn, isAdmin, onDelete, onReport, showAvatar,
 }: {
   msg: GroupMessage;
   isOwn: boolean;
   isAdmin: boolean;
   onDelete: () => void;
+  onReport: () => void;
   showAvatar: boolean;
 }) {
   const [hover, setHover] = useState(false);
@@ -764,13 +782,27 @@ function MessageBubble({
             {msg.content && <span>{msg.content}</span>}
             {msg.gifUrl && <GifPreview url={msg.gifUrl} />}
           </div>
-          {canDelete && hover && (
-            <button
-              onClick={onDelete}
-              className="p-1 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
-            >
-              <Trash2 className="w-3 h-3" />
-            </button>
+          {hover && (
+            <div className={`flex items-center gap-0.5 ${isOwn ? "flex-row-reverse" : ""}`}>
+              {canDelete && (
+                <button
+                  onClick={onDelete}
+                  className="p-1 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+                  title="Delete message"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              )}
+              {!isOwn && (
+                <button
+                  onClick={onReport}
+                  className="p-1 rounded-full text-muted-foreground hover:text-amber-400 hover:bg-amber-400/10 transition-colors shrink-0"
+                  title="Report message"
+                >
+                  <Flag className="w-3 h-3" />
+                </button>
+              )}
+            </div>
           )}
         </div>
         {!showAvatar && (
@@ -782,9 +814,10 @@ function MessageBubble({
 }
 
 function MemberRow({
-  member, isPrimaryAdmin, isSelf, isBlocked, onRemove, onPromote, onDemote, onBlock, onUnblock,
+  member, isViewerAdmin, isPrimaryAdmin, isSelf, isBlocked, onRemove, onPromote, onDemote, onBlock, onUnblock,
 }: {
   member: GroupMember;
+  isViewerAdmin: boolean;
   isPrimaryAdmin: boolean;
   isSelf: boolean;
   isBlocked: boolean;
@@ -795,6 +828,7 @@ function MemberRow({
   onUnblock: () => void;
 }) {
   const isCoAdmin = member.role === "admin" && !member.isPrimary;
+  const canManage = isViewerAdmin && !isSelf && !member.isPrimary && !(isCoAdmin && !isPrimaryAdmin);
   return (
     <div className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors">
       <div className={`w-8 h-8 rounded-full text-xs font-semibold flex items-center justify-center shrink-0 ${isBlocked ? "bg-muted text-muted-foreground" : "bg-primary/20 text-primary"}`}>
@@ -819,27 +853,29 @@ function MemberRow({
         ) : null}
       </div>
       <div className="flex items-center gap-0.5">
-        {isPrimaryAdmin && !isSelf && !member.isPrimary && (
+        {canManage && (
           <>
-            {isCoAdmin ? (
-              <button
-                onClick={onDemote}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-amber-400 hover:bg-amber-400/10 transition-colors"
-                title="Demote to member"
-              >
-                <Shield className="w-3.5 h-3.5" />
-              </button>
-            ) : (
-              <button
-                onClick={onPromote}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-violet-400 hover:bg-violet-400/10 transition-colors"
-                title="Promote to admin"
-              >
-                <Shield className="w-3.5 h-3.5" />
-              </button>
+            {isPrimaryAdmin && (
+              isCoAdmin ? (
+                <button
+                  onClick={onDemote}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-amber-400 hover:bg-amber-400/10 transition-colors"
+                  title="Demote to member"
+                >
+                  <Shield className="w-3.5 h-3.5" />
+                </button>
+              ) : (
+                <button
+                  onClick={onPromote}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-violet-400 hover:bg-violet-400/10 transition-colors"
+                  title="Promote to admin"
+                >
+                  <Shield className="w-3.5 h-3.5" />
+                </button>
+              )
             )}
             <button
-              onClick={onRemove}
+              onClick={() => { if (confirm(`Remove ${displayName(member)} from the group?`)) onRemove(); }}
               className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
               title="Remove member"
             >

@@ -1806,6 +1806,47 @@ paths:
         "404":
           description: Not found
 
+  /groups/{id}/messages/{messageId}/report:
+    post:
+      operationId: reportGroupMessage
+      tags: [groups]
+      summary: Report a message as inappropriate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  enum: [inappropriate, spam, harassment, hate_speech, other]
+      responses:
+        "200":
+          description: Reported
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not found
+
   /groups/{id}/subgroups:
     get:
       operationId: listSubgroups

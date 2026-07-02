@@ -70,6 +70,8 @@ import type {
   QuestionDetail,
   QuestionSummary,
   QuestionWithAnswers,
+  ReportGroupMessage200,
+  ReportGroupMessageBody,
   Review,
   ReviewsResponse,
   SendDmInput,
@@ -5924,6 +5926,79 @@ export const useDeleteGroupMessage = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getDeleteGroupMessageMutationOptions(options));
+    }
+
+export const getReportGroupMessageUrl = (id: number,
+    messageId: number,) => {
+
+
+
+
+  return `/api/groups/${id}/messages/${messageId}/report`
+}
+
+/**
+ * @summary Report a message as inappropriate
+ */
+export const reportGroupMessage = async (id: number,
+    messageId: number,
+    reportGroupMessageBody: ReportGroupMessageBody, options?: RequestInit): Promise<ReportGroupMessage200> => {
+
+  return customFetch<ReportGroupMessage200>(getReportGroupMessageUrl(id,messageId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(reportGroupMessageBody)
+  }
+);}
+
+
+
+
+export const getReportGroupMessageMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportGroupMessage>>, TError,{id: number;messageId: number;data: BodyType<ReportGroupMessageBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reportGroupMessage>>, TError,{id: number;messageId: number;data: BodyType<ReportGroupMessageBody>}, TContext> => {
+
+const mutationKey = ['reportGroupMessage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reportGroupMessage>>, {id: number;messageId: number;data: BodyType<ReportGroupMessageBody>}> = (props) => {
+          const {id,messageId,data} = props ?? {};
+
+          return  reportGroupMessage(id,messageId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReportGroupMessageMutationResult = NonNullable<Awaited<ReturnType<typeof reportGroupMessage>>>
+    export type ReportGroupMessageMutationBody = BodyType<ReportGroupMessageBody>
+    export type ReportGroupMessageMutationError = ErrorType<void>
+
+    /**
+ * @summary Report a message as inappropriate
+ */
+export const useReportGroupMessage = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportGroupMessage>>, TError,{id: number;messageId: number;data: BodyType<ReportGroupMessageBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reportGroupMessage>>,
+        TError,
+        {id: number;messageId: number;data: BodyType<ReportGroupMessageBody>},
+        TContext
+      > => {
+      return useMutation(getReportGroupMessageMutationOptions(options));
     }
 
 export const getListSubgroupsUrl = (id: number,) => {

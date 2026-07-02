@@ -55,6 +55,16 @@ export const blockedUsersTable = pgTable("blocked_users", {
   unique("blocked_users_unique").on(t.blockerId, t.blockedId),
 ]);
 
+export const groupReportsTable = pgTable("group_reports", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id").notNull().references(() => groupsTable.id, { onDelete: "cascade" }),
+  messageId: integer("message_id").references(() => groupMessagesTable.id, { onDelete: "set null" }),
+  reportedUserId: text("reported_user_id").notNull(),
+  reporterUserId: text("reporter_user_id").notNull(),
+  reason: text("reason").notNull().default("inappropriate"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const insertGroupMessageSchema = createInsertSchema(groupMessagesTable).omit({ id: true, userId: true, createdAt: true });
 export type InsertGroupMessage = z.infer<typeof insertGroupMessageSchema>;
 export type GroupMessage = typeof groupMessagesTable.$inferSelect;

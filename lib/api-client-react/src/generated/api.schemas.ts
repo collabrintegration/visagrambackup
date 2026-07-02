@@ -1015,6 +1015,25 @@ before?: number;
 limit?: number;
 };
 
+export type ReportGroupMessageBodyReason = typeof ReportGroupMessageBodyReason[keyof typeof ReportGroupMessageBodyReason];
+
+
+export const ReportGroupMessageBodyReason = {
+  inappropriate: 'inappropriate',
+  spam: 'spam',
+  harassment: 'harassment',
+  hate_speech: 'hate_speech',
+  other: 'other',
+} as const;
+
+export type ReportGroupMessageBody = {
+  reason?: ReportGroupMessageBodyReason;
+};
+
+export type ReportGroupMessage200 = {
+  ok?: boolean;
+};
+
 export type GetBlockedUsers200Item = {
   blockedId: string;
 };

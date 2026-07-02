@@ -1787,6 +1787,23 @@ export const DeleteGroupMessageResponse = zod.void()
 
 
 /**
+ * @summary Report a message as inappropriate
+ */
+export const ReportGroupMessageParams = zod.object({
+  "id": zod.coerce.number(),
+  "messageId": zod.coerce.number()
+})
+
+export const ReportGroupMessageBody = zod.object({
+  "reason": zod.enum(['inappropriate', 'spam', 'harassment', 'hate_speech', 'other']).optional()
+})
+
+export const ReportGroupMessageResponse = zod.object({
+  "ok": zod.boolean().optional()
+})
+
+
+/**
  * @summary List subgroups of a parent group
  */
 export const ListSubgroupsParams = zod.object({

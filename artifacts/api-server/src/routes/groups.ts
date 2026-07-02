@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { db, groupsTable, groupMembersTable, groupMessagesTable, groupJoinRequestsTable, usersTable, blockedUsersTable } from "@workspace/db";
+import { db, groupsTable, groupMembersTable, groupMessagesTable, groupJoinRequestsTable, usersTable, blockedUsersTable, groupReportsTable } from "@workspace/db";
 import { eq, and, desc, lt, count, sql, inArray } from "drizzle-orm";
 import { moderateMessage } from "../lib/moderation";
 
@@ -325,6 +325,27 @@ router.delete("/groups/:id/members/:userId", async (req: Request, res: Response)
     .where(and(eq(groupMembersTable.groupId, groupId), eq(groupMembersTable.userId, targetId)));
 
   res.status(204).end();
+});
+
+// ── Report a message ───────────────────────────────────────────────────────
+router.post("/groups/:id/messages/:messageId/report", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const reporterUserId = req.user.id;
+  const groupId = Number(req.params.id);
+  const messageId = Number(req.params.messageId);
+  const reason = String(req.body.reason ?? "inappropriate");
+
+  const msg = await db.select().from(groupMessagesTable).where(
+    and(eq(groupMessagesTable.id, messageId), eq(groupMessagesTable.groupId, groupId))
+  ).limit(1);
+  if (!msg[0]) { res.status(404).json({ error: "Message not found" }); return; }
+  if (msg[0].userId === reporterUserId) { res.status(400).json({ error: "Cannot report your own message" }); return; }
+
+  await db.insert(groupReportsTable).values({
+    groupId, messageId, reportedUserId: msg[0].userId, reporterUserId, reason,
+  }).onConflictDoNothing();
+
+  res.json({ ok: true });
 });
 
 // ── List join requests (admin only) ────────────────────────────────────────
