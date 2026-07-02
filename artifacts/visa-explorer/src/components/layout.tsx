@@ -35,26 +35,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-[100dvh] flex flex-col bg-background selection:bg-primary/20 selection:text-primary">
       <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
-          <Link href="/" className="flex flex-col items-start shrink-0 group">
-            <div className="overflow-hidden" style={{ width: 150, height: 46 }}>
-              <img
-                src="/visagram-logo.png"
-                alt="Visagram"
-                className="w-full h-full object-cover object-center opacity-90 group-hover:opacity-100 transition-opacity"
-              />
-            </div>
+          <Link href="/" className="shrink-0 group" title="Visagram — The largest travel community">
             <div
-              title="The largest travel community"
               style={{
                 width: 150,
-                height: 17,
-                backgroundImage: "url('/tagline.png')",
-                backgroundSize: "160px 160px",
-                backgroundPosition: "0 -72px",
+                height: 68,
+                backgroundImage: "url('/visagram-combined.png')",
+                backgroundSize: "150px 150px",
+                backgroundPosition: "0px -48px",
                 backgroundRepeat: "no-repeat",
                 mixBlendMode: "screen",
               }}
-              className="opacity-80 group-hover:opacity-100 transition-opacity shrink-0"
+              className="opacity-90 group-hover:opacity-100 transition-opacity"
             />
           </Link>
 
