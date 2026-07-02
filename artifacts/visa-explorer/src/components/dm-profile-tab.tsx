@@ -287,13 +287,13 @@ function ThreadPanel({ conv, myId, onBack }: { conv: DmConversation; myId: strin
   );
 }
 
-export default function DmProfileTab({ myId }: { myId: string }) {
+export default function DmProfileTab({ myId, initialConvUserId }: { myId: string; initialConvUserId?: string | null }) {
   const qc = useQueryClient();
 
   const [tab, setTab] = useState<"inbox" | "requests">("inbox");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(initialConvUserId ?? null);
   const [search, setSearch] = useState("");
-  const [showThread, setShowThread] = useState(false);
+  const [showThread, setShowThread] = useState(!!initialConvUserId);
 
   const inboxKey = getGetDmInboxQueryKey();
   const requestsKey = getGetDmRequestsQueryKey();

@@ -90,10 +90,10 @@ router.patch("/users/me", async (req: Request, res: Response) => {
     res.status(401).json({ error: "Login required" });
     return;
   }
-  const { homeCountry } = req.body;
+  const { homeCountry, bio } = req.body;
   const [updated] = await db
     .update(usersTable)
-    .set({ homeCountry: homeCountry ?? null, updatedAt: new Date() })
+    .set({ homeCountry: homeCountry ?? null, bio: bio ?? null, updatedAt: new Date() })
     .where(eq(usersTable.id, req.user.id))
     .returning();
   res.json(updated);

@@ -381,6 +381,7 @@ export const GetCurrentAuthUserResponse = zod.object({
   "lastName": zod.string().nullable(),
   "profileImageUrl": zod.string().nullable(),
   "homeCountry": zod.string().nullish(),
+  "bio": zod.string().nullish(),
   "isSuperAdmin": zod.boolean().optional()
 }),zod.null()])
 })
@@ -889,6 +890,7 @@ export const UpdateMyProfileResponse = zod.object({
   "lastName": zod.string().nullable(),
   "profileImageUrl": zod.string().nullable(),
   "homeCountry": zod.string().nullish(),
+  "bio": zod.string().nullish(),
   "isSuperAdmin": zod.boolean().optional()
 })
 

@@ -32,7 +32,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   UserPlus, UserCheck, UserMinus, Search, Users, Inbox,
   Clock, MapPin, LogIn, X, Check, Loader2, Star, Trash2,
-  Globe, ChevronRight, MessageSquare, Crown, Lock,
+  Globe, ChevronRight, MessageSquare, Crown, Lock, ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,40 +85,46 @@ function ProfilePanel({ friendCount }: { friendCount: number }) {
         {/* Cover gradient */}
         <div className="h-20 bg-gradient-to-br from-primary/40 via-purple-500/30 to-pink-500/40" />
         <div className="px-5 pb-5 -mt-10">
-          <Avatar url={user.profileImageUrl} name={name} size="xl" />
-          <h2 className="mt-3 text-xl font-bold leading-tight">{name}</h2>
-          {user.email && (
-            <p className="text-sm text-muted-foreground mt-0.5 truncate">{user.email}</p>
-          )}
-          <div className="mt-3 space-y-1.5">
-            {user.homeCountry && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="w-3.5 h-3.5 shrink-0" />
-                <span>{user.homeCountry}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Globe className="w-3.5 h-3.5 shrink-0" />
-              <span>Member of Visagram</span>
+          {/* Avatar + friends count row */}
+          <div className="flex items-end justify-between">
+            <Avatar url={user.profileImageUrl} name={name} size="xl" />
+            <div className="text-right pb-1">
+              <p className="text-4xl font-extrabold leading-none text-foreground">{friendCount}</p>
+              <p className="text-xs text-muted-foreground mt-0.5 flex items-center justify-end gap-1">
+                <Users className="w-3 h-3" />Friends
+              </p>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Stats */}
-      <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Your Stats</h3>
-        <div className="grid grid-cols-2 gap-3">
-          {[
-            { label: "Friends", value: friendCount, icon: <Users className="w-4 h-4 text-primary" /> },
-            { label: "Country", value: user.homeCountry ?? "—", icon: <MapPin className="w-4 h-4 text-pink-500" /> },
-          ].map((s) => (
-            <div key={s.label} className="rounded-xl bg-muted/40 p-3 text-center">
-              <div className="flex justify-center mb-1">{s.icon}</div>
-              <p className="text-lg font-bold leading-tight">{s.value}</p>
-              <p className="text-xs text-muted-foreground">{s.label}</p>
-            </div>
-          ))}
+          {/* Name */}
+          <h2 className="mt-3 text-xl font-bold leading-tight">{name}</h2>
+
+          {/* Status row — right-aligned */}
+          <div className="flex flex-wrap items-center justify-end gap-2 mt-2">
+            {user.homeCountry && (
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
+                <MapPin className="w-3 h-3 shrink-0" />{user.homeCountry}
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
+              <Globe className="w-3 h-3 shrink-0" />Visagram
+            </span>
+          </div>
+
+          {/* Bio */}
+          {user.bio && (
+            <p className="mt-3 text-sm text-muted-foreground leading-relaxed border-t border-border/60 pt-3">
+              {user.bio}
+            </p>
+          )}
+          {!user.bio && (
+            <Link href="/profile"
+              className="mt-3 pt-3 border-t border-border/60 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+            >
+              <span className="text-base leading-none">✏️</span>
+              Add a bio on your profile
+            </Link>
+          )}
         </div>
       </div>
 
@@ -474,6 +480,7 @@ export default function FriendsPage() {
   const queryClient = useQueryClient();
 
   const [rightTab, setRightTab] = useState<RightTab>("friends");
+  const [dmOpenUserId, setDmOpenUserId] = useState<string | null>(null);
   const [searchRaw, setSearchRaw] = useState("");
   const searchQuery = useDebounce(searchRaw, 300);
 
@@ -578,7 +585,7 @@ export default function FriendsPage() {
                       key={f.id}
                       {...f}
                       onRemove={() => removeFriend.mutate({ userId: f.id }, { onSuccess: invalidate })}
-                      onMessage={() => navigate(`/messages/${f.id}`)}
+                      onMessage={() => { setDmOpenUserId(f.id); setRightTab("messages"); }}
                     />
                   ))
                 )}
@@ -683,7 +690,16 @@ export default function FriendsPage() {
 
             {/* ── Messages ── */}
             {rightTab === "messages" && (
-              <DmProfileTab myId={myId} />
+              <div className="space-y-3">
+                <button
+                  onClick={() => setRightTab("friends")}
+                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Back to Friends
+                </button>
+                <DmProfileTab myId={myId} initialConvUserId={dmOpenUserId} />
+              </div>
             )}
 
             {/* ── My Groups ── */}

@@ -93,6 +93,8 @@ export interface AuthUser {
   profileImageUrl: string | null;
   /** @nullable */
   homeCountry?: string | null;
+  /** @nullable */
+  bio?: string | null;
   isSuperAdmin?: boolean;
 }
 
