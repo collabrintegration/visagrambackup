@@ -9,6 +9,7 @@ import type { UserSnippet } from './userSnippet';
 
 export interface Review {
   id: number;
+  title: string;
   overallRating: number;
   easeRating: number;
   welcomeRating: number;

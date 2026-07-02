@@ -35,6 +35,7 @@ router.get("/community/feed", async (req: Request, res: Response) => {
       id: reviewsTable.id,
       userId: reviewsTable.userId,
       countryCode: reviewsTable.countryCode,
+      title: reviewsTable.title,
       overallRating: reviewsTable.overallRating,
       easeRating: reviewsTable.easeRating,
       welcomeRating: reviewsTable.welcomeRating,
@@ -84,6 +85,7 @@ router.get("/community/feed", async (req: Request, res: Response) => {
     countryFlag: r.countryFlag,
     user: userSnippet({ userId: r.userId, firstName: r.firstName, lastName: r.lastName, profileImageUrl: r.profileImageUrl }),
     data: {
+      title: r.title,
       overallRating: r.overallRating,
       easeRating: r.easeRating,
       welcomeRating: r.welcomeRating,
@@ -123,6 +125,7 @@ router.get("/countries/:code/reviews", async (req: Request, res: Response) => {
     id: reviewsTable.id,
     userId: reviewsTable.userId,
     countryCode: reviewsTable.countryCode,
+    title: reviewsTable.title,
     overallRating: reviewsTable.overallRating,
     easeRating: reviewsTable.easeRating,
     welcomeRating: reviewsTable.welcomeRating,
@@ -150,6 +153,7 @@ router.get("/countries/:code/reviews", async (req: Request, res: Response) => {
     count: rows.length,
     reviews: rows.map((r) => ({
       id: r.id,
+      title: r.title,
       overallRating: r.overallRating,
       easeRating: r.easeRating,
       welcomeRating: r.welcomeRating,
@@ -167,8 +171,12 @@ router.post("/countries/:code/reviews", async (req: Request, res: Response) => {
   }
 
   const code = String(req.params.code);
-  const { overallRating, easeRating, welcomeRating, body } = req.body;
+  const { title, overallRating, easeRating, welcomeRating, body } = req.body;
 
+  if (!title?.trim()) {
+    res.status(400).json({ error: "title is required" });
+    return;
+  }
   if (!overallRating || !easeRating || !welcomeRating) {
     res.status(400).json({ error: "overallRating, easeRating, welcomeRating are required" });
     return;
@@ -179,6 +187,7 @@ router.post("/countries/:code/reviews", async (req: Request, res: Response) => {
     .values({
       userId: req.user.id,
       countryCode: code.toUpperCase(),
+      title: title.trim(),
       overallRating: Number(overallRating),
       easeRating: Number(easeRating),
       welcomeRating: Number(welcomeRating),
@@ -187,6 +196,7 @@ router.post("/countries/:code/reviews", async (req: Request, res: Response) => {
     .onConflictDoUpdate({
       target: [reviewsTable.userId, reviewsTable.countryCode],
       set: {
+        title: title.trim(),
         overallRating: Number(overallRating),
         easeRating: Number(easeRating),
         welcomeRating: Number(welcomeRating),

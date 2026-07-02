@@ -1,4 +1,5 @@
 import { db, usersTable, reviewsTable, questionsTable, answersTable } from "@workspace/db";
+import { and, eq } from "drizzle-orm";
 
 const SEED_USERS = [
   { id: "seed-user-1", firstName: "Sofia", lastName: "Marchetti", email: "sofia@example.com" },
@@ -14,14 +15,17 @@ const SEED_USERS = [
 const SEED_REVIEWS: Array<{
   userId: string;
   countryCode: string;
+  title: string;
   overallRating: number;
   easeRating: number;
   welcomeRating: number;
   body: string;
 }> = [
+  // ── Japan ──
   {
     userId: "seed-user-1",
     countryCode: "JP",
+    title: "Best trip of my life — flawless entry process",
     overallRating: 5,
     easeRating: 4,
     welcomeRating: 5,
@@ -30,14 +34,17 @@ const SEED_REVIEWS: Array<{
   {
     userId: "seed-user-2",
     countryCode: "JP",
+    title: "e-Visa from Nigeria in 4 days — smooth arrival at Narita",
     overallRating: 4,
     easeRating: 5,
     welcomeRating: 4,
     body: "The e-visa system Japan rolled out recently is a game changer. Applied online from Lagos, paid the fee, got approved in 4 days. Arrival at Narita was surprisingly quick — the automated gates handle most things. Japanese culture is a bit reserved but once people warm up they're fantastic. Definitely going back.",
   },
+  // ── France ──
   {
     userId: "seed-user-3",
     countryCode: "FR",
+    title: "Schengen paperwork is a marathon, but Paris delivers",
     overallRating: 4,
     easeRating: 3,
     welcomeRating: 4,
@@ -46,14 +53,17 @@ const SEED_REVIEWS: Array<{
   {
     userId: "seed-user-4",
     countryCode: "FR",
+    title: "Visa-free entry as a Mexican — total ease",
     overallRating: 5,
     easeRating: 4,
     welcomeRating: 5,
     body: "Came with a Mexican passport so visa-free entry made everything so relaxed. Just showed up, answered a few questions at immigration, and walked right in. France rewards slow travel — rent an apartment for a month in a small town and you'll see a completely different side of the country. Food is everything they say it is.",
   },
+  // ── Thailand ──
   {
     userId: "seed-user-5",
     countryCode: "TH",
+    title: "Most welcoming country I've ever visited",
     overallRating: 5,
     easeRating: 5,
     welcomeRating: 5,
@@ -62,14 +72,17 @@ const SEED_REVIEWS: Array<{
   {
     userId: "seed-user-6",
     countryCode: "TH",
+    title: "60-day tourist visa is fantastic for longer stays",
     overallRating: 4,
     easeRating: 4,
     welcomeRating: 5,
     body: "My second time in Thailand and it keeps getting better. The new 60-day tourist visa is great value if you're planning a longer stay. Pro tip: do the border run to extend if you want even more time — many expats do it regularly. The food and the people are the real attraction, not just the beaches.",
   },
+  // ── Germany ──
   {
     userId: "seed-user-7",
     countryCode: "DE",
+    title: "Efficient visa process, Berlin is incredibly diverse",
     overallRating: 4,
     easeRating: 3,
     welcomeRating: 3,
@@ -78,14 +91,17 @@ const SEED_REVIEWS: Array<{
   {
     userId: "seed-user-8",
     countryCode: "DE",
+    title: "EU lane in 2 minutes — road trip heaven",
     overallRating: 5,
     easeRating: 5,
     welcomeRating: 4,
     body: "Free entry with a Scandinavian passport — just walked through the EU lane in about 2 minutes. Germany is incredible for road trips: autobahn, incredible rest stops, beautiful countryside. Munich to Berlin is a classic. Germans are direct and honest which I appreciate, even if it takes a little getting used to after sunnier countries.",
   },
+  // ── Italy ──
   {
     userId: "seed-user-1",
     countryCode: "IT",
+    title: "Chaos in the best way — Italians are magic",
     overallRating: 5,
     easeRating: 3,
     welcomeRating: 5,
@@ -94,14 +110,17 @@ const SEED_REVIEWS: Array<{
   {
     userId: "seed-user-3",
     countryCode: "IT",
+    title: "Book skip-the-line tickets months in advance",
     overallRating: 4,
     easeRating: 4,
     welcomeRating: 4,
     body: "Beautiful country but a few things to know: tourist queues everywhere in summer (book skip-the-line tickets for major attractions months in advance), and some areas are noticeably more tourist-friendly than others. The language barrier is more present than in France or Germany. That said, the food alone justifies every hassle.",
   },
+  // ── United States ──
   {
     userId: "seed-user-2",
     countryCode: "US",
+    title: "B-2 visa from Nigeria: 400-day wait but worth it",
     overallRating: 3,
     easeRating: 2,
     welcomeRating: 3,
@@ -110,34 +129,250 @@ const SEED_REVIEWS: Array<{
   {
     userId: "seed-user-4",
     countryCode: "US",
+    title: "CBP officers more relaxed than their reputation at LAX",
     overallRating: 4,
     easeRating: 4,
     welcomeRating: 4,
-    body: "ESTA was a 5-minute process for me with a Mexican passport — well, wait, actually Mexicans need a full B-2 visa. My American wife sorted it. The customs and border protection officers were notably more relaxed than the reputation suggests at LAX. The US is huge and the experience varies wildly by city — New York and LA are entirely different planets.",
+    body: "The customs and border protection officers were notably more relaxed than the reputation suggests at LAX. The US is huge and the experience varies wildly by city — New York and LA are entirely different planets. Highly recommend giving both coasts a proper look.",
   },
+  // ── South Africa ──
   {
     userId: "seed-user-5",
     countryCode: "ZA",
+    title: "Hugely underrated — Cape Town is stunning",
     overallRating: 4,
     easeRating: 4,
     welcomeRating: 5,
     body: "South Africa is hugely underrated as a destination. Visa-free for many African passport holders and the process is simple for others. Cape Town is one of the most stunning cities in the world. Local people are warm and proud of their country in a really infectious way. The wildlife experience at Kruger needs no introduction. Safety requires awareness but is manageable with sensible precautions.",
   },
+  // ── Indonesia ──
   {
     userId: "seed-user-6",
     countryCode: "ID",
+    title: "Bali lives up to the hype — VOA in 20 minutes",
     overallRating: 5,
     easeRating: 5,
     welcomeRating: 5,
     body: "Bali lives up to the hype. Visa on arrival at Denpasar is one of the smoothest I've experienced — a dedicated area, quick process, pay USD 35 and you're through in 20 minutes even on a busy day. Balinese people have a warmth that feels completely genuine. The culture, the food, the landscapes — it's almost too much beauty in one place. Just avoid July–August crowds.",
   },
+  // ── United Kingdom ──
   {
     userId: "seed-user-7",
     countryCode: "GB",
+    title: "Standard Visitor Visa: solid documentation, quick decision",
     overallRating: 4,
     easeRating: 3,
     welcomeRating: 4,
     body: "The UK Standard Visitor Visa requires solid documentation — bank statements, property proof, employer letter, detailed itinerary. Applied online, biometrics at a VFS centre, got a decision in 11 working days. Border officers at Heathrow asked about 5 questions and that was that. London is one of the world's great cities; once you're in, it completely delivers.",
+  },
+  // ── Australia ──
+  {
+    userId: "seed-user-3",
+    countryCode: "AU",
+    title: "eVisitor in 2 days, Sydney exceeded expectations",
+    overallRating: 5,
+    easeRating: 5,
+    welcomeRating: 5,
+    body: "Australia's eVisitor visa for European passport holders was completely painless — applied online, approved in 2 days, free of charge. Sydney airport immigration was quick and friendly. Australians are some of the most relaxed and genuinely welcoming people I've encountered anywhere. The natural landscapes are simply extraordinary. Don't underestimate the distances though — Australia is enormous.",
+  },
+  {
+    userId: "seed-user-8",
+    countryCode: "AU",
+    title: "ETA from Scandinavia — breezy process, endless wildlife",
+    overallRating: 5,
+    easeRating: 5,
+    welcomeRating: 5,
+    body: "Got the ETA (Electronic Travel Authority) in about an hour via the official app. Dead simple. The Great Ocean Road and the Daintree Rainforest were highlights — nowhere else on earth looks like that. Prices are high but the quality of life and the warmth of locals more than compensate. Go for at least a month if you can.",
+  },
+  // ── Canada ──
+  {
+    userId: "seed-user-1",
+    countryCode: "CA",
+    title: "eTA approved instantly, border officers very professional",
+    overallRating: 5,
+    easeRating: 5,
+    welcomeRating: 5,
+    body: "Canada is exceptional. The eTA for EU citizens takes about 5 minutes online and is usually approved within the hour. CBSA officers at YYZ were efficient and professional. Canadians are almost stereotypically friendly — the stereotype exists for good reason. Vancouver, Quebec City, and Banff are must-sees. Cold in winter but indescribably beautiful.",
+  },
+  {
+    userId: "seed-user-4",
+    countryCode: "CA",
+    title: "TRV from Mexico: interview-free, 4-week processing",
+    overallRating: 4,
+    easeRating: 3,
+    welcomeRating: 5,
+    body: "Applied for a Canadian Temporary Resident Visa — took about 4 weeks online with no interview required. Documentation was extensive (bank statements, ties to home country, travel history) but the IRCC portal is user-friendly. Niagara Falls and Toronto are both great but the real gems are the national parks. Canadians were exceptionally warm to me throughout.",
+  },
+  // ── Singapore ──
+  {
+    userId: "seed-user-2",
+    countryCode: "SG",
+    title: "Visa-free, world-class airport — perfect transit hub",
+    overallRating: 5,
+    easeRating: 5,
+    welcomeRating: 5,
+    body: "Singapore grants visa-free access to Nigerian passports for 96 hours, which I used for a layover stay. Changi Airport is genuinely the best airport in the world — you barely want to leave it. Immigration was done in under 10 minutes. Singapore itself is immaculate, efficient, and multicultural in a way that feels very genuine. Expensive but worth every dollar for a few days.",
+  },
+  {
+    userId: "seed-user-5",
+    countryCode: "SG",
+    title: "30-day visa-free stay — most efficient city on earth",
+    overallRating: 5,
+    easeRating: 5,
+    welcomeRating: 4,
+    body: "Senegalese passport allows 30 days visa-free in Singapore. The country works like clockwork. MRT is the cleanest metro I've ever used, hawker centres are incredible for affordable food, and Marina Bay at night is jaw-dropping. The one caveat: it's genuinely expensive for accommodation. Book well in advance and consider hostels in Little India.",
+  },
+  // ── UAE / Dubai ──
+  {
+    userId: "seed-user-6",
+    countryCode: "AE",
+    title: "Visa on arrival, Dubai is a world apart",
+    overallRating: 4,
+    easeRating: 5,
+    welcomeRating: 4,
+    body: "Germany passport enters UAE visa-free for 90 days — immigration at DXB took about 8 minutes including biometrics. Dubai is extraordinary in scale and ambition; it doesn't feel like any other city. The cultural contrast is stark but interesting. Things to note: alcohol laws are strict outside licensed venues, dress codes apply in malls and public spaces. As long as you respect local rules, everyone is very welcoming.",
+  },
+  {
+    userId: "seed-user-7",
+    countryCode: "AE",
+    title: "India e-Visa to Dubai: 4 days, great experience",
+    overallRating: 4,
+    easeRating: 4,
+    welcomeRating: 4,
+    body: "Applied for a UAE e-Visa from India — process took about 4 days through the official portal, cost around $90 for 30 days. The large Indian expat community in Dubai makes it feel almost like home in parts. Abu Dhabi is quieter and worth a day trip. Shopping malls are overwhelming but the desert safari outside the city was the real highlight.",
+  },
+  // ── Vietnam ──
+  {
+    userId: "seed-user-8",
+    countryCode: "VN",
+    title: "e-Visa in 2 days — Hanoi and Ha Long Bay are extraordinary",
+    overallRating: 5,
+    easeRating: 4,
+    welcomeRating: 5,
+    body: "Vietnam's e-Visa was quick and simple — applied on the government portal, got it in 2 days, cost $25 for 90 days. Arrival at Noi Bai in Hanoi was slightly chaotic but the queues moved. The country itself is one of the most visually spectacular in Southeast Asia. Ha Long Bay is not overrated. Street food in Hanoi is among the best in the world. Strong recommendation.",
+  },
+  {
+    userId: "seed-user-1",
+    countryCode: "VN",
+    title: "South to north on a motorbike — visa-free for Italians",
+    overallRating: 5,
+    easeRating: 5,
+    welcomeRating: 5,
+    body: "Italy gets 45 days visa-free in Vietnam — more than enough for the full south-to-north journey. Rented a semi-automatic motorbike in Ho Chi Minh City and rode up to Hanoi over 3 weeks. Vietnamese people along the route were endlessly kind — strangers invited us in for food, kids waved from every roadside. One of the best travel experiences of my life.",
+  },
+  // ── Spain ──
+  {
+    userId: "seed-user-2",
+    countryCode: "ES",
+    title: "Schengen from Nigeria: tough paperwork but Spain is worth it",
+    overallRating: 4,
+    easeRating: 3,
+    welcomeRating: 5,
+    body: "The Spanish consulate in Lagos is efficient for Schengen applications but the document list is extensive. Appointment booking was the hardest part — slots go fast. Once in Spain, the experience is spectacular. Barcelona has a different energy from Madrid entirely. Spaniards are loud, warm, and genuinely love to share their culture. The food scene is phenomenal. Would absolutely go through the visa process again.",
+  },
+  {
+    userId: "seed-user-3",
+    countryCode: "ES",
+    title: "Visa-free Schengen for Japan — walked straight through",
+    overallRating: 5,
+    easeRating: 5,
+    welcomeRating: 5,
+    body: "Japanese passport = visa-free Schengen access, so entry to Spain was zero hassle. The contrast with Japan is striking — everything moves slower, louder, and more joyfully in Spain. The pintxos bars in San Sebastián are worth the trip alone. Architecture in Barcelona and Seville is otherworldly. Locals are very warm once you step outside the most tourist-heavy areas.",
+  },
+  // ── Portugal ──
+  {
+    userId: "seed-user-4",
+    countryCode: "PT",
+    title: "Most affordable Western Europe destination with easy Schengen entry",
+    overallRating: 5,
+    easeRating: 4,
+    welcomeRating: 5,
+    body: "Portugal is the best-value destination in Western Europe right now. Schengen visa from Mexico took 3 weeks but was straightforward. Lisbon and Porto are both stunning — cobblestoned streets, incredible seafood, and some of the friendliest people in Europe. The Alentejo region for a slower pace is completely magical. Highly recommend the Douro Valley wine region too.",
+  },
+  {
+    userId: "seed-user-5",
+    countryCode: "PT",
+    title: "90-day visa-free — Lisbon digital nomad paradise",
+    overallRating: 5,
+    easeRating: 5,
+    welcomeRating: 5,
+    body: "Senegalese passport allows 90 days visa-free in Portugal — incredibly convenient. Spent two months in Lisbon working remotely. The city has an incredible concentration of co-working spaces, good internet, and great coffee. Portuguese people have a calm, open warmth that's different from the Mediterranean exuberance — equally charming. Cost of living is very reasonable compared to the quality of life.",
+  },
+  // ── India ──
+  {
+    userId: "seed-user-6",
+    countryCode: "IN",
+    title: "e-Visa in 72 hours — India is overwhelming in the best way",
+    overallRating: 4,
+    easeRating: 4,
+    welcomeRating: 5,
+    body: "India's e-Tourist Visa is the right way to go — applied on the government portal, paid online, got it in 72 hours. German passport makes this very smooth. India itself is a full sensory assault: colour, noise, heat, incredible food, ancient architecture. Don't try to rush it — plan for things to go sideways and you'll have an extraordinary time. Rajasthan was the highlight. Locals are intensely curious and hospitable.",
+  },
+  {
+    userId: "seed-user-8",
+    countryCode: "IN",
+    title: "Kerala backwaters and Tamil Nadu temples — unforgettable",
+    overallRating: 5,
+    easeRating: 4,
+    welcomeRating: 5,
+    body: "Norwegian passport, e-Visa was approved in about 48 hours — very smooth. Spent 6 weeks focusing on South India which gets far less tourist traffic than the north. Kerala's backwaters are as peaceful as advertised. Tamil Nadu temple towns are overwhelming in scale and spiritual intensity. South Indians are exceptionally welcoming — strangers on trains will share their lunch with you. India changed how I think about the world.",
+  },
+  // ── Brazil ──
+  {
+    userId: "seed-user-7",
+    countryCode: "BR",
+    title: "Visa-free for India in 2024 — Rio is electric",
+    overallRating: 4,
+    easeRating: 4,
+    welcomeRating: 5,
+    body: "India and Brazil have a reciprocal visa-free agreement — showed up with my passport and walked right in at GRU. Brazilian immigration was very fast and friendly. Rio de Janeiro has a chaotic energy that's genuinely addictive. Cariocas (Rio locals) are among the most welcoming people on earth — strangers invited us to a family barbecue within two hours of landing. Safety precautions apply in certain areas but nothing that should deter you.",
+  },
+  {
+    userId: "seed-user-1",
+    countryCode: "BR",
+    title: "Amazon and Pantanal from São Paulo — Italy enters visa-free",
+    overallRating: 5,
+    easeRating: 4,
+    welcomeRating: 5,
+    body: "Italy has visa-free access to Brazil up to 90 days. The sheer size and diversity of the country is staggering — coastal cities, Amazon jungle, Pantanal wetlands, and the cultural diversity of São Paulo all in one trip. Portuguese is more accessible than I expected for an Italian. Brazilians are warm, expressive, and love foreigners who make any effort at all with the language.",
+  },
+  // ── Turkey ──
+  {
+    userId: "seed-user-3",
+    countryCode: "TR",
+    title: "e-Visa in 15 minutes — Istanbul is unmissable",
+    overallRating: 5,
+    easeRating: 5,
+    welcomeRating: 5,
+    body: "Turkey's e-Visa for Japanese passport holders takes about 15 minutes online and costs €60. Istanbul is one of the world's truly great cities — the Hagia Sophia, Grand Bazaar, and Bosphorus alone justify the trip. Turkish people are extraordinarily hospitable; you will be offered tea in every shop whether you buy anything or not. The food is exceptional and incredibly affordable. Cappadocia is unlike anything else on earth.",
+  },
+  {
+    userId: "seed-user-2",
+    countryCode: "TR",
+    title: "Nigerian e-Visa for Turkey — smooth process, incredible hospitality",
+    overallRating: 4,
+    easeRating: 4,
+    welcomeRating: 5,
+    body: "Applied for the Turkish e-Visa as a Nigerian — cost around $50, approved in 24 hours. Istanbul airport is modern and immigration was efficient. The Turkish people have a reputation for hospitality that is entirely deserved. Stayed in a family-run guesthouse in Cappadocia where the owner prepared breakfast, told us the history of the region, and drove us to the hot air balloon site at 5am. Extraordinary country.",
+  },
+  // ── Morocco ──
+  {
+    userId: "seed-user-4",
+    countryCode: "MA",
+    title: "Visa-free for Mexico — Marrakech medina is a world unto itself",
+    overallRating: 5,
+    easeRating: 5,
+    welcomeRating: 4,
+    body: "Mexican passport gets 90 days visa-free in Morocco. Entry at Casablanca was quick and friendly. Marrakech is intense — the medina is a labyrinth where you will get lost and it's wonderful. The souks are overwhelming but fascinating. Moroccans are direct salespeople in tourist areas but genuinely warm outside of that context. Chefchaouen, Fes, and the Sahara desert are extraordinary. Don't leave without a night in the desert.",
+  },
+  {
+    userId: "seed-user-5",
+    countryCode: "MA",
+    title: "Senegal to Morocco — shared language makes everything easier",
+    overallRating: 5,
+    easeRating: 5,
+    welcomeRating: 5,
+    body: "Senegalese passport has 90-day visa-free access to Morocco — very convenient. Speaking French and basic Arabic made navigating the country so much easier. The Atlantic coast towns like Essaouira are calmer than Marrakech and incredibly beautiful. Moroccan mint tea culture is a genuine ritual — you'll be offered it everywhere. The mix of Arab, Berber, and French influences in the food is outstanding.",
   },
 ];
 
@@ -152,6 +387,7 @@ type QA = {
 };
 
 const SEED_QA: QA[] = [
+  // ── Japan ──
   {
     userId: "seed-user-2",
     countryCode: "JP",
@@ -206,6 +442,7 @@ const SEED_QA: QA[] = [
       },
     ],
   },
+  // ── Thailand ──
   {
     userId: "seed-user-5",
     countryCode: "TH",
@@ -239,6 +476,7 @@ const SEED_QA: QA[] = [
       },
     ],
   },
+  // ── France ──
   {
     userId: "seed-user-6",
     countryCode: "FR",
@@ -259,6 +497,7 @@ const SEED_QA: QA[] = [
       },
     ],
   },
+  // ── Italy ──
   {
     userId: "seed-user-1",
     countryCode: "IT",
@@ -273,6 +512,7 @@ const SEED_QA: QA[] = [
       },
     ],
   },
+  // ── Germany ──
   {
     userId: "seed-user-3",
     countryCode: "DE",
@@ -288,6 +528,7 @@ const SEED_QA: QA[] = [
       },
     ],
   },
+  // ── United States ──
   {
     userId: "seed-user-4",
     countryCode: "US",
@@ -308,6 +549,7 @@ const SEED_QA: QA[] = [
       },
     ],
   },
+  // ── United Kingdom ──
   {
     userId: "seed-user-8",
     countryCode: "GB",
@@ -323,6 +565,7 @@ const SEED_QA: QA[] = [
       },
     ],
   },
+  // ── Indonesia ──
   {
     userId: "seed-user-5",
     countryCode: "ID",
@@ -337,6 +580,7 @@ const SEED_QA: QA[] = [
       },
     ],
   },
+  // ── South Africa ──
   {
     userId: "seed-user-7",
     countryCode: "ZA",
@@ -348,6 +592,149 @@ const SEED_QA: QA[] = [
         userId: "seed-user-5",
         body: "Cape Town is very enjoyable for tourists who take sensible precautions. The key: stay in well-known tourist areas (Atlantic Seaboard, City Bowl, Southern Suburbs), use Uber or a reputable car service rather than hailing cabs, don't flash expensive equipment in busy areas, and avoid the Cape Flats townships unless on an organised tour. Car crime exists — park in secure parking, never leave bags visible. The Winelands and Garden Route are generally considered quite safe and are lovely. Most tourists have excellent experiences; the headlines don't reflect the tourist experience accurately.",
         isAccepted: false,
+      },
+    ],
+  },
+  // ── Australia ──
+  {
+    userId: "seed-user-4",
+    countryCode: "AU",
+    passportCode: "MX",
+    title: "Can I get an Australian tourist visa from Mexico? How long does it take?",
+    body: "I'm planning a 6-week trip to Australia and New Zealand. What visa do I need and what's the typical processing time from Mexico?",
+    resolved: true,
+    answers: [
+      {
+        userId: "seed-user-3",
+        body: "Mexican passport holders need a Visitor Visa (subclass 600) for Australia — not an eVisitor, which is EU-only. Apply online through the ImmiAccount portal. Processing times vary widely: anywhere from 1 day to 6 weeks, with most decisions in 2–4 weeks. Required docs: bank statements, employment evidence, travel history, return ticket. Cost is AUD 190. Once you have it, it's usually valid for 12 months with multiple entries, 3 months per stay — so plan accordingly for the 6-week trip.",
+        isAccepted: true,
+      },
+      {
+        userId: "seed-user-8",
+        body: "Add travel insurance to your documents even if not strictly required — it demonstrates good faith and is genuinely essential in Australia where medical costs for non-residents are very high. Also apply 2–3 months before travel to be safe. August is the best time to visit the southeast (it's winter but mild). The northwest (WA) is best in the dry season, May–October.",
+        isAccepted: false,
+      },
+    ],
+  },
+  // ── Singapore ──
+  {
+    userId: "seed-user-1",
+    countryCode: "SG",
+    title: "How much spending money do I need for a week in Singapore?",
+    body: "Singapore has a reputation for being expensive. How much should I budget per day for a week of comfortable travel — not luxury, but not backpacker-hostel level either?",
+    resolved: true,
+    answers: [
+      {
+        userId: "seed-user-2",
+        body: "For mid-range travel in Singapore: budget around SGD 150–200/day (roughly USD 110–150). Breakdown: accommodation SGD 80–120 for a decent 3-star or boutique hostel private room, food SGD 30–50 if you mix hawker centres (SGD 4–8 per meal) with one nicer dinner, transport SGD 10–15 on the MRT, activities/admissions SGD 30–40. The good news: hawker food is both excellent and affordable. Gardens by the Bay, Sentosa, and the Botanic Gardens are free or cheap.",
+        isAccepted: true,
+      },
+    ],
+  },
+  // ── UAE ──
+  {
+    userId: "seed-user-3",
+    countryCode: "AE",
+    title: "What should I know about dress codes and cultural rules in Dubai?",
+    body: "First visit to Dubai as a young European woman. I've heard there are strict rules — what's actually enforced vs. what's just a guideline?",
+    resolved: true,
+    answers: [
+      {
+        userId: "seed-user-6",
+        body: "Dubai is far more relaxed than other Gulf countries but rules exist. Practically: cover shoulders and knees in malls and government buildings (many malls have reminder signs). On the beach and at beach clubs, normal swimwear is completely fine. Avoid public displays of affection — a stern word from security is possible. Alcohol is legal in licensed venues (hotels, licensed restaurants, bars) but not in public. Photography: always ask before photographing people, especially Emirati women. The rules are applied with context — tourists get far more leeway than residents. Be respectful and you'll be absolutely fine.",
+        isAccepted: true,
+      },
+    ],
+  },
+  // ── Vietnam ──
+  {
+    userId: "seed-user-4",
+    countryCode: "VN",
+    title: "Is the Vietnam e-visa process reliable? Any pitfalls?",
+    body: "I've heard the official Vietnam e-visa portal can be glitchy. Any tips for making the application go smoothly?",
+    resolved: true,
+    answers: [
+      {
+        userId: "seed-user-8",
+        body: "The official portal (evisa.xuatnhapcanh.gov.vn) works but has a reputation for timeouts and slow loading. Tips: use Chrome, avoid peak times (Vietnamese business hours), save your application number immediately, and upload photos/scans that are compressed below 2MB. The e-visa allows single entry — if you're doing a border run to Laos or Cambodia, you'll need a new e-visa or switch to a visa on arrival arrangement. Processing is usually 3 business days; apply 2 weeks before just in case.",
+        isAccepted: true,
+      },
+    ],
+  },
+  // ── India ──
+  {
+    userId: "seed-user-5",
+    countryCode: "IN",
+    passportCode: "SN",
+    title: "Can Senegalese passport holders get an India e-visa?",
+    body: "I want to visit Rajasthan for about 3 weeks. I've heard India's e-visa depends on nationality — does it work for Senegalese passports?",
+    resolved: true,
+    answers: [
+      {
+        userId: "seed-user-7",
+        body: "Yes! Senegalese passport holders are eligible for the India e-Tourist Visa. Apply at indianvisaonline.gov.in at least 4 business days before arrival. Cost is USD 25 for 30 days or USD 40 for 1 year. You'll need a passport-size photo (white background), front and back scan of your passport bio page, and a credit/debit card for payment. The e-visa is emailed as a PDF — print it and carry it with your passport. Rajasthan is absolutely spectacular; plan at least Jaipur, Jodhpur, and Jaisalmer.",
+        isAccepted: true,
+      },
+    ],
+  },
+  // ── Brazil ──
+  {
+    userId: "seed-user-2",
+    countryCode: "BR",
+    passportCode: "NG",
+    title: "Do Nigerians need a visa for Brazil? Planning a World Cup 2026 trip",
+    body: "Looking ahead to 2026. Does Nigeria have visa-free access to Brazil, or do I need to apply in advance?",
+    resolved: false,
+    answers: [
+      {
+        userId: "seed-user-4",
+        body: "Nigerian passport holders currently need a Brazilian visa. Apply at the Brazilian consulate in Lagos or Abuja — it's not an e-visa; you'll attend in person. Required docs: bank statements, return ticket, hotel booking, employment/income proof, and a completed form. Cost is around USD 80. The good news: Brazilian consulates in Nigeria have a relatively straightforward process compared to some others, with decisions usually in 1–2 weeks for tourism. For World Cup 2026, apply at least 3–4 months before travel as demand will be very high.",
+        isAccepted: false,
+      },
+    ],
+  },
+  // ── Turkey ──
+  {
+    userId: "seed-user-6",
+    countryCode: "TR",
+    title: "Is Turkey a good base for exploring multiple countries?",
+    body: "I have 3 weeks and want to use Istanbul as a hub and potentially do day trips or short trips to nearby countries. What's feasible?",
+    resolved: true,
+    answers: [
+      {
+        userId: "seed-user-3",
+        body: "Istanbul is an excellent hub. Feasible nearby trips: Bulgaria (2.5 hours by bus to Sofia or Plovdiv, no visa needed for most nationalities), Greece via ferry from Istanbul or fly to Athens (1.5 hours), Georgia (2-hour flight to Tbilisi, visa-free for most), and Albania/North Macedonia if you're adventurous. Within Turkey itself: Cappadocia is 1.5 hours by domestic flight, Ephesus/Selçuk is 1 hour from Izmir, and the Turquoise Coast (Antalya) is a short flight. Three weeks gives you Istanbul (4–5 days minimum) + Cappadocia (2–3 days) + one or two international hops comfortably.",
+        isAccepted: true,
+      },
+    ],
+  },
+  // ── Portugal ──
+  {
+    userId: "seed-user-8",
+    countryCode: "PT",
+    title: "Is Portugal's D8 Digital Nomad Visa worth applying for?",
+    body: "I'm a freelancer earning around USD 2,500/month. I'd love to live in Lisbon for 6–12 months. Is the Digital Nomad Visa the right route?",
+    resolved: true,
+    answers: [
+      {
+        userId: "seed-user-5",
+        body: "The D8 (Digital Nomad Visa) is worth it for stays over 90 days. Requirements: proof of remote work or freelance income of at least €3,280/month (4× the Portuguese minimum wage as of 2024), NHR or regular tax status application, NIF (Portuguese tax number), and a Portuguese bank account or proof of international income. The process is done through the Portuguese consulate in your country; it typically takes 2–4 months. Once in Portugal, you register with SEF/AIMA for a residence permit. For shorter stays (under 90 days), your tourist entry still works without any visa application.",
+        isAccepted: true,
+      },
+    ],
+  },
+  // ── Morocco ──
+  {
+    userId: "seed-user-7",
+    countryCode: "MA",
+    title: "How safe is Morocco for solo female travelers?",
+    body: "I'm planning a solo trip through Marrakech, Fes, and the Sahara as a woman traveling alone. What should I expect and prepare for?",
+    resolved: true,
+    answers: [
+      {
+        userId: "seed-user-4",
+        body: "Morocco is absolutely doable solo as a woman but it requires more mental preparation than, say, Japan or Portugal. Street harassment (verbal) is common in tourist areas — direct, confident non-engagement works best ('La shukran' — no thank you). Stay in riads in the medina (they're safe and social). Dress modestly outside tourist areas — covered shoulders and knees are respected even if not legally required. The desert and mountain regions are generally very safe. The experiences of connection with Moroccan families and the sheer beauty of the landscape are worth it. Many solo women travel Morocco regularly with great experiences.",
+        isAccepted: true,
       },
     ],
   },
@@ -371,7 +758,16 @@ async function seed() {
     await db
       .insert(reviewsTable)
       .values(review)
-      .onConflictDoNothing();
+      .onConflictDoUpdate({
+        target: [reviewsTable.userId, reviewsTable.countryCode],
+        set: {
+          title: review.title,
+          overallRating: review.overallRating,
+          easeRating: review.easeRating,
+          welcomeRating: review.welcomeRating,
+          body: review.body,
+        },
+      });
     reviewCount++;
   }
   console.log(`  ✓ ${reviewCount} reviews`);
@@ -381,6 +777,15 @@ async function seed() {
   let answerCount = 0;
   for (const qa of SEED_QA) {
     const { answers, ...questionData } = qa;
+    const existing = await db
+      .select({ id: questionsTable.id })
+      .from(questionsTable)
+      .where(and(eq(questionsTable.userId, questionData.userId), eq(questionsTable.title, questionData.title)))
+      .limit(1);
+    if (existing.length > 0) {
+      questionCount++;
+      continue;
+    }
     const [inserted] = await db
       .insert(questionsTable)
       .values(questionData)

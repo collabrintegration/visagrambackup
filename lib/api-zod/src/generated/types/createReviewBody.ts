@@ -7,6 +7,8 @@
  */
 
 export interface CreateReviewBody {
+  /** @minLength 1 */
+  title: string;
   /**
      * @minimum 1
      * @maximum 5

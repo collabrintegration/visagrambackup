@@ -45,6 +45,7 @@ export interface UserSnippet {
 
 export interface Review {
   id: number;
+  title: string;
   overallRating: number;
   easeRating: number;
   welcomeRating: number;
@@ -67,6 +68,8 @@ export interface ReviewsResponse {
 }
 
 export interface CreateReviewBody {
+  /** @minLength 1 */
+  title: string;
   /**
      * @minimum 1
      * @maximum 5

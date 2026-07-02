@@ -541,6 +541,7 @@ function ReviewsSection({ code, countryName }: { code: string; countryName: stri
   const { isAuthenticated, login } = useAuth();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+  const [title, setTitle] = useState("");
   const [overall, setOverall] = useState(0);
   const [ease, setEase] = useState(0);
   const [welcome, setWelcome] = useState(0);
@@ -555,7 +556,7 @@ function ReviewsSection({ code, countryName }: { code: string; countryName: stri
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: getGetCountryReviewsQueryKey(code) });
         setShowForm(false);
-        setOverall(0); setEase(0); setWelcome(0); setBody("");
+        setTitle(""); setOverall(0); setEase(0); setWelcome(0); setBody("");
       },
     },
   });
@@ -597,12 +598,24 @@ function ReviewsSection({ code, countryName }: { code: string; countryName: stri
           className="bg-muted/30 rounded-xl p-5 space-y-4 border border-border/60"
           onSubmit={(e) => {
             e.preventDefault();
-            if (!overall) return;
-            submitReview({ code, data: { overallRating: overall, easeRating: ease || overall, welcomeRating: welcome || overall, body: body.trim() || undefined } });
+            if (!title.trim() || !overall) return;
+            submitReview({ code, data: { title: title.trim(), overallRating: overall, easeRating: ease || overall, welcomeRating: welcome || overall, body: body.trim() || undefined } });
           }}
         >
           <h3 className="font-semibold text-sm">Your review of {countryName}</h3>
           <div className="space-y-3">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Title *</label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Summarize your experience in one line…"
+                maxLength={120}
+                required
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+              />
+            </div>
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">Overall *</label>
               <StarInput value={overall} onChange={setOverall} />
@@ -625,7 +638,7 @@ function ReviewsSection({ code, countryName }: { code: string; countryName: stri
             />
           </div>
           <div className="flex gap-2">
-            <Button type="submit" size="sm" disabled={submitting || !overall}>
+            <Button type="submit" size="sm" disabled={submitting || !overall || !title.trim()}>
               {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 mr-1.5" />}
               Submit
             </Button>
@@ -652,6 +665,7 @@ function ReviewsSection({ code, countryName }: { code: string; countryName: stri
                 </div>
                 <span className="text-xs text-muted-foreground">{timeAgo(r.createdAt)}</span>
               </div>
+              {r.title && <p className="text-sm font-semibold mb-1">{r.title}</p>}
               <StarRow rating={r.overallRating} />
               {r.body && <p className="text-sm text-muted-foreground mt-2">{r.body}</p>}
             </div>

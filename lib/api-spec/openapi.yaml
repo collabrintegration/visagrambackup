@@ -1685,10 +1685,12 @@ components:
 
     Review:
       type: object
-      required: [id, overallRating, easeRating, welcomeRating, createdAt, user]
+      required: [id, title, overallRating, easeRating, welcomeRating, createdAt, user]
       properties:
         id:
           type: integer
+        title:
+          type: string
         overallRating:
           type: integer
         easeRating:
@@ -1725,8 +1727,11 @@ components:
 
     CreateReviewBody:
       type: object
-      required: [overallRating, easeRating, welcomeRating]
+      required: [title, overallRating, easeRating, welcomeRating]
       properties:
+        title:
+          type: string
+          minLength: 1
         overallRating:
           type: integer
           minimum: 1

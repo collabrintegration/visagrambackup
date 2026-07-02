@@ -6,6 +6,7 @@ export const reviewsTable = pgTable("reviews", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull(),
   countryCode: text("country_code").notNull(),
+  title: text("title").notNull().default(""),
   overallRating: integer("overall_rating").notNull(),
   easeRating: integer("ease_rating").notNull(),
   welcomeRating: integer("welcome_rating").notNull(),

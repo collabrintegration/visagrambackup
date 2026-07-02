@@ -379,6 +379,7 @@ export const GetCountryReviewsResponse = zod.object({
 }).nullish(),
   "reviews": zod.array(zod.object({
   "id": zod.number(),
+  "title": zod.string(),
   "overallRating": zod.number(),
   "easeRating": zod.number(),
   "welcomeRating": zod.number(),
@@ -402,6 +403,7 @@ export const CreateCountryReviewParams = zod.object({
   "code": zod.coerce.string()
 })
 
+
 export const createCountryReviewBodyOverallRatingMax = 5;
 
 export const createCountryReviewBodyEaseRatingMax = 5;
@@ -411,6 +413,7 @@ export const createCountryReviewBodyWelcomeRatingMax = 5;
 
 
 export const CreateCountryReviewBody = zod.object({
+  "title": zod.string().min(1),
   "overallRating": zod.number().min(1).max(createCountryReviewBodyOverallRatingMax),
   "easeRating": zod.number().min(1).max(createCountryReviewBodyEaseRatingMax),
   "welcomeRating": zod.number().min(1).max(createCountryReviewBodyWelcomeRatingMax),
@@ -419,6 +422,7 @@ export const CreateCountryReviewBody = zod.object({
 
 export const CreateCountryReviewResponse = zod.object({
   "id": zod.number(),
+  "title": zod.string(),
   "overallRating": zod.number(),
   "easeRating": zod.number(),
   "welcomeRating": zod.number(),
