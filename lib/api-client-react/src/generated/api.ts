@@ -42,6 +42,9 @@ import type {
   CreateReviewBody,
   CreateSupportCaseBody,
   CreateVisaApplicationInput,
+  DmConversation,
+  DmMessage,
+  DmUnreadCount,
   ErrorResponse,
   FeedItem,
   FollowStatus,
@@ -65,6 +68,7 @@ import type {
   QuestionWithAnswers,
   Review,
   ReviewsResponse,
+  SendDmInput,
   StatsOverview,
   SubmitVisaReportBody,
   SupportCase,
@@ -3496,6 +3500,735 @@ export const useJoinGroup = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getJoinGroupMutationOptions(options));
+    }
+
+export const getGetDmInboxUrl = () => {
+
+
+
+
+  return `/api/dm`
+}
+
+/**
+ * @summary Get my active conversations (inbox)
+ */
+export const getDmInbox = async ( options?: RequestInit): Promise<DmConversation[]> => {
+
+  return customFetch<DmConversation[]>(getGetDmInboxUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDmInboxQueryKey = () => {
+    return [
+    `/api/dm`
+    ] as const;
+    }
+
+
+export const getGetDmInboxQueryOptions = <TData = Awaited<ReturnType<typeof getDmInbox>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDmInbox>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDmInboxQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDmInbox>>> = ({ signal }) => getDmInbox({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDmInbox>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetDmInboxQueryResult = NonNullable<Awaited<ReturnType<typeof getDmInbox>>>
+export type GetDmInboxQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get my active conversations (inbox)
+ */
+
+export function useGetDmInbox<TData = Awaited<ReturnType<typeof getDmInbox>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDmInbox>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetDmInboxQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetDmRequestsUrl = () => {
+
+
+
+
+  return `/api/dm/requests`
+}
+
+/**
+ * @summary Get message requests sent to me
+ */
+export const getDmRequests = async ( options?: RequestInit): Promise<DmConversation[]> => {
+
+  return customFetch<DmConversation[]>(getGetDmRequestsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDmRequestsQueryKey = () => {
+    return [
+    `/api/dm/requests`
+    ] as const;
+    }
+
+
+export const getGetDmRequestsQueryOptions = <TData = Awaited<ReturnType<typeof getDmRequests>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDmRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDmRequestsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDmRequests>>> = ({ signal }) => getDmRequests({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDmRequests>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetDmRequestsQueryResult = NonNullable<Awaited<ReturnType<typeof getDmRequests>>>
+export type GetDmRequestsQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get message requests sent to me
+ */
+
+export function useGetDmRequests<TData = Awaited<ReturnType<typeof getDmRequests>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDmRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetDmRequestsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetDmUnreadCountUrl = () => {
+
+
+
+
+  return `/api/dm/unread-count`
+}
+
+/**
+ * @summary Get total unread message count and pending request count
+ */
+export const getDmUnreadCount = async ( options?: RequestInit): Promise<DmUnreadCount> => {
+
+  return customFetch<DmUnreadCount>(getGetDmUnreadCountUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDmUnreadCountQueryKey = () => {
+    return [
+    `/api/dm/unread-count`
+    ] as const;
+    }
+
+
+export const getGetDmUnreadCountQueryOptions = <TData = Awaited<ReturnType<typeof getDmUnreadCount>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDmUnreadCount>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDmUnreadCountQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDmUnreadCount>>> = ({ signal }) => getDmUnreadCount({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDmUnreadCount>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetDmUnreadCountQueryResult = NonNullable<Awaited<ReturnType<typeof getDmUnreadCount>>>
+export type GetDmUnreadCountQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get total unread message count and pending request count
+ */
+
+export function useGetDmUnreadCount<TData = Awaited<ReturnType<typeof getDmUnreadCount>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDmUnreadCount>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetDmUnreadCountQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetDmThreadUrl = (userId: string,) => {
+
+
+
+
+  return `/api/dm/${userId}`
+}
+
+/**
+ * @summary Get message thread with a user
+ */
+export const getDmThread = async (userId: string, options?: RequestInit): Promise<DmMessage[]> => {
+
+  return customFetch<DmMessage[]>(getGetDmThreadUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDmThreadQueryKey = (userId: string,) => {
+    return [
+    `/api/dm/${userId}`
+    ] as const;
+    }
+
+
+export const getGetDmThreadQueryOptions = <TData = Awaited<ReturnType<typeof getDmThread>>, TError = ErrorType<void>>(userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDmThread>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDmThreadQueryKey(userId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDmThread>>> = ({ signal }) => getDmThread(userId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: userId !== null && userId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDmThread>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetDmThreadQueryResult = NonNullable<Awaited<ReturnType<typeof getDmThread>>>
+export type GetDmThreadQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get message thread with a user
+ */
+
+export function useGetDmThread<TData = Awaited<ReturnType<typeof getDmThread>>, TError = ErrorType<void>>(
+ userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDmThread>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetDmThreadQueryOptions(userId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSendDmUrl = (userId: string,) => {
+
+
+
+
+  return `/api/dm/${userId}`
+}
+
+/**
+ * @summary Send a direct message to a user
+ */
+export const sendDm = async (userId: string,
+    sendDmInput: SendDmInput, options?: RequestInit): Promise<DmMessage> => {
+
+  return customFetch<DmMessage>(getSendDmUrl(userId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(sendDmInput)
+  }
+);}
+
+
+
+
+export const getSendDmMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendDm>>, TError,{userId: string;data: BodyType<SendDmInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof sendDm>>, TError,{userId: string;data: BodyType<SendDmInput>}, TContext> => {
+
+const mutationKey = ['sendDm'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sendDm>>, {userId: string;data: BodyType<SendDmInput>}> = (props) => {
+          const {userId,data} = props ?? {};
+
+          return  sendDm(userId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SendDmMutationResult = NonNullable<Awaited<ReturnType<typeof sendDm>>>
+    export type SendDmMutationBody = BodyType<SendDmInput>
+    export type SendDmMutationError = ErrorType<void>
+
+    /**
+ * @summary Send a direct message to a user
+ */
+export const useSendDm = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendDm>>, TError,{userId: string;data: BodyType<SendDmInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof sendDm>>,
+        TError,
+        {userId: string;data: BodyType<SendDmInput>},
+        TContext
+      > => {
+      return useMutation(getSendDmMutationOptions(options));
+    }
+
+export const getAcceptDmRequestUrl = (userId: string,) => {
+
+
+
+
+  return `/api/dm/${userId}/accept`
+}
+
+/**
+ * @summary Accept a message request
+ */
+export const acceptDmRequest = async (userId: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getAcceptDmRequestUrl(userId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getAcceptDmRequestMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptDmRequest>>, TError,{userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof acceptDmRequest>>, TError,{userId: string}, TContext> => {
+
+const mutationKey = ['acceptDmRequest'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof acceptDmRequest>>, {userId: string}> = (props) => {
+          const {userId} = props ?? {};
+
+          return  acceptDmRequest(userId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AcceptDmRequestMutationResult = NonNullable<Awaited<ReturnType<typeof acceptDmRequest>>>
+
+    export type AcceptDmRequestMutationError = ErrorType<void>
+
+    /**
+ * @summary Accept a message request
+ */
+export const useAcceptDmRequest = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptDmRequest>>, TError,{userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof acceptDmRequest>>,
+        TError,
+        {userId: string},
+        TContext
+      > => {
+      return useMutation(getAcceptDmRequestMutationOptions(options));
+    }
+
+export const getBlockDmUserUrl = (userId: string,) => {
+
+
+
+
+  return `/api/dm/${userId}/block`
+}
+
+/**
+ * @summary Block a user from messaging you
+ */
+export const blockDmUser = async (userId: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getBlockDmUserUrl(userId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getBlockDmUserMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof blockDmUser>>, TError,{userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof blockDmUser>>, TError,{userId: string}, TContext> => {
+
+const mutationKey = ['blockDmUser'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof blockDmUser>>, {userId: string}> = (props) => {
+          const {userId} = props ?? {};
+
+          return  blockDmUser(userId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BlockDmUserMutationResult = NonNullable<Awaited<ReturnType<typeof blockDmUser>>>
+
+    export type BlockDmUserMutationError = ErrorType<void>
+
+    /**
+ * @summary Block a user from messaging you
+ */
+export const useBlockDmUser = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof blockDmUser>>, TError,{userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof blockDmUser>>,
+        TError,
+        {userId: string},
+        TContext
+      > => {
+      return useMutation(getBlockDmUserMutationOptions(options));
+    }
+
+export const getUnblockDmUserUrl = (userId: string,) => {
+
+
+
+
+  return `/api/dm/${userId}/block`
+}
+
+/**
+ * @summary Unblock a user
+ */
+export const unblockDmUser = async (userId: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getUnblockDmUserUrl(userId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getUnblockDmUserMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unblockDmUser>>, TError,{userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unblockDmUser>>, TError,{userId: string}, TContext> => {
+
+const mutationKey = ['unblockDmUser'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unblockDmUser>>, {userId: string}> = (props) => {
+          const {userId} = props ?? {};
+
+          return  unblockDmUser(userId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnblockDmUserMutationResult = NonNullable<Awaited<ReturnType<typeof unblockDmUser>>>
+
+    export type UnblockDmUserMutationError = ErrorType<void>
+
+    /**
+ * @summary Unblock a user
+ */
+export const useUnblockDmUser = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unblockDmUser>>, TError,{userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof unblockDmUser>>,
+        TError,
+        {userId: string},
+        TContext
+      > => {
+      return useMutation(getUnblockDmUserMutationOptions(options));
+    }
+
+export const getReportDmSpamUrl = (userId: string,) => {
+
+
+
+
+  return `/api/dm/${userId}/spam`
+}
+
+/**
+ * @summary Report user as spam and block
+ */
+export const reportDmSpam = async (userId: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getReportDmSpamUrl(userId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getReportDmSpamMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportDmSpam>>, TError,{userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reportDmSpam>>, TError,{userId: string}, TContext> => {
+
+const mutationKey = ['reportDmSpam'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reportDmSpam>>, {userId: string}> = (props) => {
+          const {userId} = props ?? {};
+
+          return  reportDmSpam(userId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReportDmSpamMutationResult = NonNullable<Awaited<ReturnType<typeof reportDmSpam>>>
+
+    export type ReportDmSpamMutationError = ErrorType<void>
+
+    /**
+ * @summary Report user as spam and block
+ */
+export const useReportDmSpam = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportDmSpam>>, TError,{userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reportDmSpam>>,
+        TError,
+        {userId: string},
+        TContext
+      > => {
+      return useMutation(getReportDmSpamMutationOptions(options));
+    }
+
+export const getMarkDmReadUrl = (userId: string,) => {
+
+
+
+
+  return `/api/dm/${userId}/read`
+}
+
+/**
+ * @summary Mark all messages from user as read
+ */
+export const markDmRead = async (userId: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getMarkDmReadUrl(userId),
+  {
+    ...options,
+    method: 'PATCH'
+
+
+  }
+);}
+
+
+
+
+export const getMarkDmReadMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markDmRead>>, TError,{userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof markDmRead>>, TError,{userId: string}, TContext> => {
+
+const mutationKey = ['markDmRead'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof markDmRead>>, {userId: string}> = (props) => {
+          const {userId} = props ?? {};
+
+          return  markDmRead(userId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MarkDmReadMutationResult = NonNullable<Awaited<ReturnType<typeof markDmRead>>>
+
+    export type MarkDmReadMutationError = ErrorType<void>
+
+    /**
+ * @summary Mark all messages from user as read
+ */
+export const useMarkDmRead = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markDmRead>>, TError,{userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof markDmRead>>,
+        TError,
+        {userId: string},
+        TContext
+      > => {
+      return useMutation(getMarkDmReadMutationOptions(options));
     }
 
 export const getListVisaApplicationsUrl = () => {

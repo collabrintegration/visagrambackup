@@ -68,44 +68,56 @@ function StarRow({ rating }: { rating: number }) {
   );
 }
 
-function FeedCard({ item }: { item: FeedItem }) {
+function FeedCard({ item, myId }: { item: FeedItem; myId?: string }) {
   const isReview = item.type === "review";
   const href = isReview
     ? `/country/${item.countryCode}`
     : `/questions/${item.id}`;
+  const authorId = item.user?.userId;
+  const canMessage = authorId && authorId !== myId;
 
   return (
-    <Link href={href}>
-      <div className="bg-card border border-border rounded-2xl p-5 hover:border-primary/30 transition-all group cursor-pointer">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-primary text-xs font-bold">
-              {(item.user?.firstName || "A")[0].toUpperCase()}
-            </div>
-            <div className="min-w-0">
-              <span className="font-semibold text-sm truncate block">
-                {item.user?.firstName || "Anonymous"}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {timeAgo(item.createdAt)}
-              </span>
-            </div>
+    <div className="bg-card border border-border rounded-2xl p-5 hover:border-primary/30 transition-all group">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <Link href={href} className="flex items-center gap-2.5 min-w-0 flex-1">
+          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-primary text-xs font-bold">
+            {(item.user?.firstName || "A")[0].toUpperCase()}
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Badge
-              variant="secondary"
-              className={`text-xs border-none ${isReview ? "bg-primary/10 text-primary" : "bg-amber-500/10 text-amber-400"}`}
+          <div className="min-w-0">
+            <span className="font-semibold text-sm truncate block">
+              {item.user?.firstName || "Anonymous"}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {timeAgo(item.createdAt)}
+            </span>
+          </div>
+        </Link>
+        <div className="flex items-center gap-2 shrink-0">
+          {canMessage && (
+            <Link
+              href={`/messages/${authorId}`}
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+              title="Send message"
             >
-              {isReview ? (
-                <><Star className="w-3 h-3 mr-1" /> Review</>
-              ) : (
-                <><MessageSquare className="w-3 h-3 mr-1" /> Q&A</>
-              )}
-            </Badge>
-          </div>
+              <MessageSquare className="w-3.5 h-3.5" />
+            </Link>
+          )}
+          <Badge
+            variant="secondary"
+            className={`text-xs border-none ${isReview ? "bg-primary/10 text-primary" : "bg-amber-500/10 text-amber-400"}`}
+          >
+            {isReview ? (
+              <><Star className="w-3 h-3 mr-1" /> Review</>
+            ) : (
+              <><MessageSquare className="w-3 h-3 mr-1" /> Q&A</>
+            )}
+          </Badge>
         </div>
+      </div>
 
+      <Link href={href} className="block mt-1">
         {/* Country badge */}
         <div className="flex items-center gap-1.5 mb-3">
           <Globe className="w-3.5 h-3.5 text-muted-foreground" />
@@ -152,15 +164,16 @@ function FeedCard({ item }: { item: FeedItem }) {
             )}
           </>
         )}
-      </div>
-    </Link>
+      </Link>
+    </div>
   );
 }
 
 type FeedType = "all" | "question" | "review";
 
 export default function Community() {
-  const { isAuthenticated, isLoading: authLoading, login } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, login } = useAuth();
+  const myId = (user as { id?: string })?.id;
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<FeedType>("all");
@@ -483,7 +496,7 @@ export default function Community() {
                 <div className="space-y-4">
                   {filtered.map((item, idx) => (
                     <div key={`${item.type}-${item.id}`}>
-                      <FeedCard item={item} />
+                      <FeedCard item={item} myId={myId} />
                       {(idx + 1) % 6 === 0 && idx < filtered.length - 1 && (
                         <div className="py-2">
                           <AdUnit slot="3456789012" format="fluid" className="pt-5" />

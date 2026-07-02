@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
-import { Compass, BookOpen, Map as MapIcon, Users, User, LogIn, LogOut, Loader2, Globe, ClipboardList } from "lucide-react";
+import { Compass, BookOpen, Map as MapIcon, Users, User, LogIn, LogOut, Loader2, Globe, ClipboardList, MessageSquare } from "lucide-react";
 import React from "react";
-import { useHealthCheck, getHealthCheckQueryKey } from "@workspace/api-client-react";
+import { useHealthCheck, getHealthCheckQueryKey, useGetDmUnreadCount, getGetDmUnreadCountQueryKey } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { Button } from "@/components/ui/button";
 
@@ -12,6 +12,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   });
   const { user, isAuthenticated, isLoading: authLoading, login, logout } = useAuth();
 
+  const { data: unreadData } = useGetDmUnreadCount({
+    query: {
+      queryKey: getGetDmUnreadCountQueryKey(),
+      enabled: isAuthenticated,
+      refetchInterval: 15000,
+    },
+  });
+
+  const totalBadge = (unreadData?.unreadMessages ?? 0) + (unreadData?.pendingRequests ?? 0);
+
   const links = [
     { href: "/", label: "Home", icon: Compass },
     { href: "/explore", label: "Explore", icon: MapIcon },
@@ -19,6 +29,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { href: "/community", label: "Community", icon: Users },
     { href: "/groups", label: "Groups", icon: Globe },
     { href: "/tracker", label: "Tracker", icon: ClipboardList },
+    { href: "/messages", label: "Messages", icon: MessageSquare, badge: totalBadge },
   ];
 
   return (
@@ -42,7 +53,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                     isActive
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -50,6 +61,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 >
                   <Icon className="w-4 h-4" />
                   {link.label}
+                  {!!link.badge && link.badge > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[17px] h-[17px] bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                      {link.badge > 99 ? "99+" : link.badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -101,12 +117,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+                  className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
                     isActive ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
                   {link.label}
+                  {link.badge && link.badge > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] bg-primary text-primary-foreground text-[9px] font-bold rounded-full flex items-center justify-center px-0.5">
+                      {link.badge > 9 ? "9+" : link.badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}

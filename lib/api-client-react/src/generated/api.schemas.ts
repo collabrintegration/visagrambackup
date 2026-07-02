@@ -32,6 +32,7 @@ export interface AuthUserEnvelope {
 }
 
 export interface UserSnippet {
+  userId?: string | null;
   /** @nullable */
   firstName?: string | null;
   /** @nullable */
@@ -648,6 +649,50 @@ export interface UpdateGroupInput {
 }
 
 export interface CreateGroupMessageInput {
+  content?: string;
+  gifUrl?: string | null;
+}
+
+export type DmConversationStatus = typeof DmConversationStatus[keyof typeof DmConversationStatus];
+
+
+export const DmConversationStatus = {
+  request: 'request',
+  active: 'active',
+  blocked: 'blocked',
+  spam: 'spam',
+} as const;
+
+export interface DmConversation {
+  id: number;
+  status: DmConversationStatus;
+  requestedBy: string;
+  blockedBy?: string | null;
+  otherUserId: string;
+  otherUserFirstName?: string | null;
+  otherUserLastName?: string | null;
+  otherUserProfileImageUrl?: string | null;
+  lastMessage?: string | null;
+  lastMessageAt: string | null;
+  unreadCount: number;
+}
+
+export interface DmMessage {
+  id: number;
+  conversationId: number;
+  fromUserId: string;
+  content: string;
+  gifUrl?: string | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface DmUnreadCount {
+  unreadMessages: number;
+  pendingRequests: number;
+}
+
+export interface SendDmInput {
   content?: string;
   gifUrl?: string | null;
 }

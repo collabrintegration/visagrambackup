@@ -28,6 +28,8 @@ tags:
     description: Travel groups with group chat
   - name: tracker
     description: Community visa application tracker
+  - name: dm
+    description: Private direct messages between users
 paths:
   /anthropic/conversations:
     get:
@@ -1067,6 +1069,190 @@ paths:
         "404":
           description: Not found
 
+  /dm:
+    get:
+      operationId: getDmInbox
+      tags: [dm]
+      summary: Get my active conversations (inbox)
+      responses:
+        "200":
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DmConversation"
+        "401":
+          description: Unauthorized
+
+  /dm/requests:
+    get:
+      operationId: getDmRequests
+      tags: [dm]
+      summary: Get message requests sent to me
+      responses:
+        "200":
+          description: List of requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DmConversation"
+        "401":
+          description: Unauthorized
+
+  /dm/unread-count:
+    get:
+      operationId: getDmUnreadCount
+      tags: [dm]
+      summary: Get total unread message count and pending request count
+      responses:
+        "200":
+          description: Counts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DmUnreadCount"
+        "401":
+          description: Unauthorized
+
+  /dm/{userId}:
+    get:
+      operationId: getDmThread
+      tags: [dm]
+      summary: Get message thread with a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DmMessage"
+        "401":
+          description: Unauthorized
+    post:
+      operationId: sendDm
+      tags: [dm]
+      summary: Send a direct message to a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendDmInput"
+      responses:
+        "201":
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DmMessage"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Blocked
+
+  /dm/{userId}/accept:
+    post:
+      operationId: acceptDmRequest
+      tags: [dm]
+      summary: Accept a message request
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Accepted
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not found
+
+  /dm/{userId}/block:
+    post:
+      operationId: blockDmUser
+      tags: [dm]
+      summary: Block a user from messaging you
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Blocked
+        "401":
+          description: Unauthorized
+    delete:
+      operationId: unblockDmUser
+      tags: [dm]
+      summary: Unblock a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Unblocked
+        "401":
+          description: Unauthorized
+
+  /dm/{userId}/spam:
+    post:
+      operationId: reportDmSpam
+      tags: [dm]
+      summary: Report user as spam and block
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Reported
+        "401":
+          description: Unauthorized
+
+  /dm/{userId}/read:
+    patch:
+      operationId: markDmRead
+      tags: [dm]
+      summary: Mark all messages from user as read
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Marked read
+        "401":
+          description: Unauthorized
+
   /visa-tracker:
     get:
       operationId: listVisaApplications
@@ -1435,6 +1621,9 @@ components:
     UserSnippet:
       type: object
       properties:
+        userId:
+          type: string
+          nullable: true
         firstName:
           type: ["string", "null"]
         lastName:
@@ -2447,6 +2636,80 @@ components:
           type: boolean
 
     CreateGroupMessageInput:
+      type: object
+      properties:
+        content:
+          type: string
+        gifUrl:
+          type: string
+          nullable: true
+
+    DmConversation:
+      type: object
+      required: [id, status, requestedBy, otherUserId, unreadCount, lastMessageAt]
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+          enum: [request, active, blocked, spam]
+        requestedBy:
+          type: string
+        blockedBy:
+          type: string
+          nullable: true
+        otherUserId:
+          type: string
+        otherUserFirstName:
+          type: string
+          nullable: true
+        otherUserLastName:
+          type: string
+          nullable: true
+        otherUserProfileImageUrl:
+          type: string
+          nullable: true
+        lastMessage:
+          type: string
+          nullable: true
+        lastMessageAt:
+          type: string
+          format: date-time
+          nullable: true
+        unreadCount:
+          type: integer
+
+    DmMessage:
+      type: object
+      required: [id, conversationId, fromUserId, content, isRead, createdAt]
+      properties:
+        id:
+          type: integer
+        conversationId:
+          type: integer
+        fromUserId:
+          type: string
+        content:
+          type: string
+        gifUrl:
+          type: string
+          nullable: true
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    DmUnreadCount:
+      type: object
+      required: [unreadMessages, pendingRequests]
+      properties:
+        unreadMessages:
+          type: integer
+        pendingRequests:
+          type: integer
+
+    SendDmInput:
       type: object
       properties:
         content:

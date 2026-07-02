@@ -4,9 +4,9 @@ import { eq, and, desc, sql, count } from "drizzle-orm";
 
 const router: IRouter = Router();
 
-function userSnippet(u: { firstName: string | null; lastName: string | null; profileImageUrl: string | null; homeCountry?: string | null } | undefined) {
-  if (!u) return { firstName: null, lastName: null, profileImageUrl: null, homeCountry: null };
-  return { firstName: u.firstName, lastName: u.lastName, profileImageUrl: u.profileImageUrl, homeCountry: u.homeCountry ?? null };
+function userSnippet(u: { userId?: string | null; firstName: string | null; lastName: string | null; profileImageUrl: string | null; homeCountry?: string | null } | undefined) {
+  if (!u) return { userId: null, firstName: null, lastName: null, profileImageUrl: null, homeCountry: null };
+  return { userId: u.userId ?? null, firstName: u.firstName, lastName: u.lastName, profileImageUrl: u.profileImageUrl, homeCountry: u.homeCountry ?? null };
 }
 
 async function questionFollowStats(questionId: number, userId?: string): Promise<{ followersCount: number; isFollowing: boolean }> {
@@ -82,7 +82,7 @@ router.get("/community/feed", async (req: Request, res: Response) => {
     countryCode: r.countryCode,
     countryName: r.countryName,
     countryFlag: r.countryFlag,
-    user: { firstName: r.firstName, lastName: r.lastName, profileImageUrl: r.profileImageUrl },
+    user: userSnippet({ userId: r.userId, firstName: r.firstName, lastName: r.lastName, profileImageUrl: r.profileImageUrl }),
     data: {
       overallRating: r.overallRating,
       easeRating: r.easeRating,
@@ -98,7 +98,7 @@ router.get("/community/feed", async (req: Request, res: Response) => {
     countryCode: q.countryCode,
     countryName: q.countryName,
     countryFlag: q.countryFlag,
-    user: { firstName: q.firstName, lastName: q.lastName, profileImageUrl: q.profileImageUrl },
+    user: userSnippet({ userId: q.userId, firstName: q.firstName, lastName: q.lastName, profileImageUrl: q.profileImageUrl }),
     data: {
       title: q.title,
       body: q.body,

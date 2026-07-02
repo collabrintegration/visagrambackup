@@ -7,6 +7,7 @@
  */
 
 export interface UserSnippet {
+  userId?: string | null;
   /** @nullable */
   firstName?: string | null;
   /** @nullable */

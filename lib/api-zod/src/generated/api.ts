@@ -350,6 +350,7 @@ export const GetCommunityFeedResponseItem = zod.object({
   "countryName": zod.string().nullish(),
   "countryFlag": zod.string().nullish(),
   "user": zod.object({
+  "userId": zod.string().nullish(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
@@ -384,6 +385,7 @@ export const GetCountryReviewsResponse = zod.object({
   "body": zod.string().nullish(),
   "createdAt": zod.string(),
   "user": zod.object({
+  "userId": zod.string().nullish(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
@@ -423,6 +425,7 @@ export const CreateCountryReviewResponse = zod.object({
   "body": zod.string().nullish(),
   "createdAt": zod.string(),
   "user": zod.object({
+  "userId": zod.string().nullish(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
@@ -452,6 +455,7 @@ export const GetCountryQuestionsResponseItem = zod.object({
   "followersCount": zod.number().optional(),
   "isFollowing": zod.boolean().optional(),
   "user": zod.object({
+  "userId": zod.string().nullish(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
@@ -488,6 +492,7 @@ export const CreateCountryQuestionResponse = zod.object({
   "followersCount": zod.number().optional(),
   "isFollowing": zod.boolean().optional(),
   "user": zod.object({
+  "userId": zod.string().nullish(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
@@ -515,6 +520,7 @@ export const GetQuestionAnswersResponse = zod.object({
   "repliesCount": zod.number().optional(),
   "createdAt": zod.string(),
   "user": zod.object({
+  "userId": zod.string().nullish(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
@@ -544,6 +550,7 @@ export const PostAnswerResponse = zod.object({
   "repliesCount": zod.number().optional(),
   "createdAt": zod.string(),
   "user": zod.object({
+  "userId": zod.string().nullish(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
@@ -576,6 +583,7 @@ export const CreateQuestionResponse = zod.object({
   "followersCount": zod.number().optional(),
   "isFollowing": zod.boolean().optional(),
   "user": zod.object({
+  "userId": zod.string().nullish(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
@@ -605,6 +613,7 @@ export const GetQuestionResponse = zod.object({
   "followersCount": zod.number(),
   "isFollowing": zod.boolean().optional(),
   "user": zod.object({
+  "userId": zod.string().nullish(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
@@ -618,6 +627,7 @@ export const GetQuestionResponse = zod.object({
   "repliesCount": zod.number().optional(),
   "createdAt": zod.string(),
   "user": zod.object({
+  "userId": zod.string().nullish(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
@@ -653,6 +663,7 @@ export const GetAnswerRepliesResponseItem = zod.object({
   "gifUrl": zod.string().nullish(),
   "createdAt": zod.string(),
   "user": zod.object({
+  "userId": zod.string().nullish(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
@@ -680,6 +691,7 @@ export const PostAnswerReplyResponse = zod.object({
   "gifUrl": zod.string().nullish(),
   "createdAt": zod.string(),
   "user": zod.object({
+  "userId": zod.string().nullish(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
@@ -705,6 +717,7 @@ export const GetFollowedQuestionsResponseItem = zod.object({
   "followersCount": zod.number().optional(),
   "isFollowing": zod.boolean().optional(),
   "user": zod.object({
+  "userId": zod.string().nullish(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
@@ -853,6 +866,7 @@ export const GetVisaReportsResponse = zod.object({
   "notes": zod.string().nullish(),
   "createdAt": zod.string(),
   "user": zod.object({
+  "userId": zod.string().nullish(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
@@ -889,6 +903,7 @@ export const SubmitVisaReportResponse = zod.object({
   "notes": zod.string().nullish(),
   "createdAt": zod.string(),
   "user": zod.object({
+  "userId": zod.string().nullish(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
@@ -1155,6 +1170,145 @@ export const JoinGroupResponse = zod.object({
   "ok": zod.boolean(),
   "status": zod.enum(['joined', 'requested', 'already_member'])
 })
+
+
+/**
+ * @summary Get my active conversations (inbox)
+ */
+export const GetDmInboxResponseItem = zod.object({
+  "id": zod.number(),
+  "status": zod.enum(['request', 'active', 'blocked', 'spam']),
+  "requestedBy": zod.string(),
+  "blockedBy": zod.string().nullish(),
+  "otherUserId": zod.string(),
+  "otherUserFirstName": zod.string().nullish(),
+  "otherUserLastName": zod.string().nullish(),
+  "otherUserProfileImageUrl": zod.string().nullish(),
+  "lastMessage": zod.string().nullish(),
+  "lastMessageAt": zod.coerce.date().nullable(),
+  "unreadCount": zod.number()
+})
+export const GetDmInboxResponse = zod.array(GetDmInboxResponseItem)
+
+
+/**
+ * @summary Get message requests sent to me
+ */
+export const GetDmRequestsResponseItem = zod.object({
+  "id": zod.number(),
+  "status": zod.enum(['request', 'active', 'blocked', 'spam']),
+  "requestedBy": zod.string(),
+  "blockedBy": zod.string().nullish(),
+  "otherUserId": zod.string(),
+  "otherUserFirstName": zod.string().nullish(),
+  "otherUserLastName": zod.string().nullish(),
+  "otherUserProfileImageUrl": zod.string().nullish(),
+  "lastMessage": zod.string().nullish(),
+  "lastMessageAt": zod.coerce.date().nullable(),
+  "unreadCount": zod.number()
+})
+export const GetDmRequestsResponse = zod.array(GetDmRequestsResponseItem)
+
+
+/**
+ * @summary Get total unread message count and pending request count
+ */
+export const GetDmUnreadCountResponse = zod.object({
+  "unreadMessages": zod.number(),
+  "pendingRequests": zod.number()
+})
+
+
+/**
+ * @summary Get message thread with a user
+ */
+export const GetDmThreadParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const GetDmThreadResponseItem = zod.object({
+  "id": zod.number(),
+  "conversationId": zod.number(),
+  "fromUserId": zod.string(),
+  "content": zod.string(),
+  "gifUrl": zod.string().nullish(),
+  "isRead": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+export const GetDmThreadResponse = zod.array(GetDmThreadResponseItem)
+
+
+/**
+ * @summary Send a direct message to a user
+ */
+export const SendDmParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const SendDmBody = zod.object({
+  "content": zod.string().optional(),
+  "gifUrl": zod.string().nullish()
+})
+
+export const SendDmResponse = zod.object({
+  "id": zod.number(),
+  "conversationId": zod.number(),
+  "fromUserId": zod.string(),
+  "content": zod.string(),
+  "gifUrl": zod.string().nullish(),
+  "isRead": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Accept a message request
+ */
+export const AcceptDmRequestParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const AcceptDmRequestResponse = zod.unknown()
+
+
+/**
+ * @summary Block a user from messaging you
+ */
+export const BlockDmUserParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const BlockDmUserResponse = zod.unknown()
+
+
+/**
+ * @summary Unblock a user
+ */
+export const UnblockDmUserParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const UnblockDmUserResponse = zod.unknown()
+
+
+/**
+ * @summary Report user as spam and block
+ */
+export const ReportDmSpamParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const ReportDmSpamResponse = zod.unknown()
+
+
+/**
+ * @summary Mark all messages from user as read
+ */
+export const MarkDmReadParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const MarkDmReadResponse = zod.unknown()
 
 
 /**
