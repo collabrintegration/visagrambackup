@@ -64,7 +64,7 @@ export default function Home() {
     <div className="w-full">
       <Helmet>
         <title>Visagram — Discover Visa Requirements & Travel the World</title>
-        <meta name="description" content="Plan your next trip with Visagram. Explore visa requirements for 190+ countries, read real traveler reviews, compare passport power, and track your visa applications." />
+        <meta name="description" content="Discover visa requirements for 190+ countries, read real traveler reviews, compare passport power, and track your visa applications." />
         <meta property="og:title" content="Visagram — Discover Visa Requirements & Travel the World" />
         <meta property="og:description" content="Plan your next trip with Visagram. Explore visa requirements for 190+ countries, read real traveler reviews, compare passport power, and track your visa applications." />
         <meta property="og:url" content="https://visagram.io/" />
