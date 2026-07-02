@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
-import { Compass, BookOpen, Map as MapIcon, Users, User, LogIn, LogOut, Loader2, Globe, ClipboardList, UserPlus } from "lucide-react";
-import React from "react";
+import { Compass, Map as MapIcon, Users, User, LogIn, LogOut, Loader2, ClipboardList, UserPlus, ChevronDown, Settings, MapPin } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
 import { useHealthCheck, getHealthCheckQueryKey, useGetDmUnreadCount, getGetDmUnreadCountQueryKey } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,18 @@ import ProfileCompletionGate from "@/components/profile-completion-gate";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location, navigate] = useLocation();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    }
+    if (profileOpen) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [profileOpen]);
   const { data: health } = useHealthCheck({
     query: { queryKey: getHealthCheckQueryKey(), refetchInterval: 60000 },
   });
@@ -30,7 +42,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { href: "/community", label: "Community", icon: Users },
     { href: "/explore", label: "Explore\u00a0Visa", icon: MapIcon, matchPaths: ["/explore", "/passport"] },
     { href: "/tracker", label: "Tracker", icon: ClipboardList },
-    ...(isAuthenticated ? [{ href: "/profile", label: "My Profile", icon: User }] : []),
   ];
 
   return (
@@ -91,30 +102,96 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
             ) : isAuthenticated ? (
               <>
-                <Link
-                  href="/profile"
-                  className={`relative hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    location.startsWith("/profile")
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  }`}
-                >
-                  <User className="w-4 h-4" />
-                  {user?.firstName ?? "Profile"}
-                  {totalBadge > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 min-w-[17px] h-[17px] bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
-                      {totalBadge > 99 ? "99+" : totalBadge}
-                    </span>
+                {/* Profile dropdown */}
+                <div className="relative hidden md:block" ref={profileRef}>
+                  <button
+                    onClick={() => setProfileOpen(o => !o)}
+                    className={`relative flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                      profileOpen ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {user?.profileImageUrl ? (
+                      <img src={user.profileImageUrl} alt="" className="w-6 h-6 rounded-full object-cover" />
+                    ) : (
+                      <User className="w-4 h-4" />
+                    )}
+                    {user?.firstName ?? "Profile"}
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${profileOpen ? "rotate-180" : ""}`} />
+                    {totalBadge > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 min-w-[17px] h-[17px] bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                        {totalBadge > 99 ? "99+" : totalBadge}
+                      </span>
+                    )}
+                  </button>
+
+                  {profileOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-72 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden z-[200]">
+                      {/* User identity */}
+                      <div className="px-4 py-4 border-b border-border/60 flex items-center gap-3">
+                        {user?.profileImageUrl ? (
+                          <img src={user.profileImageUrl} alt="" className="w-12 h-12 rounded-full object-cover ring-2 ring-border" />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                            <User className="w-6 h-6 text-primary" />
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-sm leading-tight truncate">
+                            {[user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Traveler"}
+                          </p>
+                          {(user as { username?: string | null })?.username && (
+                            <p className="text-xs text-muted-foreground truncate">@{(user as { username?: string | null }).username}</p>
+                          )}
+                          {(user as { location?: string | null })?.location && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                              <MapPin className="w-2.5 h-2.5" />{(user as { location?: string | null }).location}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Quick links */}
+                      <div className="py-1">
+                        <Link
+                          href="/friends"
+                          onClick={() => setProfileOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+                        >
+                          <User className="w-4 h-4 text-muted-foreground" />
+                          My Profile & Photos
+                        </Link>
+                        <Link
+                          href="/profile"
+                          onClick={() => setProfileOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+                        >
+                          <Settings className="w-4 h-4 text-muted-foreground" />
+                          Edit Profile Settings
+                        </Link>
+                      </div>
+
+                      {/* Sign out */}
+                      <div className="border-t border-border/60 py-1">
+                        <button
+                          onClick={() => { setProfileOpen(false); logout(); }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Sign out
+                        </button>
+                      </div>
+                    </div>
                   )}
-                </Link>
+                </div>
+
+                {/* Mobile sign-out */}
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={logout}
-                  className="text-muted-foreground hover:text-foreground"
+                  className="md:hidden text-muted-foreground hover:text-foreground"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span className="hidden md:inline ml-1.5">Sign out</span>
                 </Button>
               </>
             ) : (
@@ -153,17 +230,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </Link>
               );
             })}
-            {isAuthenticated && (
-              <Link
-                href="/profile"
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
-                  location.startsWith("/profile") ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <User className="w-3.5 h-3.5" />
-                Profile
-              </Link>
-            )}
           </div>
         </div>
       </header>
