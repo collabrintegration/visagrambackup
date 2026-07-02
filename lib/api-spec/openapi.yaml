@@ -2467,6 +2467,8 @@ components:
           type: ["string", "null"]
         isPrivate:
           type: boolean
+        isEmailPublic:
+          type: boolean
         isSuperAdmin:
           type: boolean
 
@@ -3109,6 +3111,8 @@ components:
         profileImageUrl:
           type: ["string", "null"]
         isPrivate:
+          type: boolean
+        isEmailPublic:
           type: boolean
 
     UserActivity:

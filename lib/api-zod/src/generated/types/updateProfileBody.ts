@@ -14,4 +14,5 @@ export interface UpdateProfileBody {
   /** @nullable */
   profileImageUrl?: string | null;
   isPrivate?: boolean;
+  isEmailPublic?: boolean;
 }

@@ -384,6 +384,7 @@ export const GetCurrentAuthUserResponse = zod.object({
   "homeCountry": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isPrivate": zod.boolean().optional(),
+  "isEmailPublic": zod.boolean().optional(),
   "isSuperAdmin": zod.boolean().optional()
 }),zod.null()])
 })
@@ -885,7 +886,8 @@ export const UpdateMyProfileBody = zod.object({
   "homeCountry": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
-  "isPrivate": zod.boolean().optional()
+  "isPrivate": zod.boolean().optional(),
+  "isEmailPublic": zod.boolean().optional()
 })
 
 export const UpdateMyProfileResponse = zod.object({
@@ -898,6 +900,7 @@ export const UpdateMyProfileResponse = zod.object({
   "homeCountry": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isPrivate": zod.boolean().optional(),
+  "isEmailPublic": zod.boolean().optional(),
   "isSuperAdmin": zod.boolean().optional()
 })
 

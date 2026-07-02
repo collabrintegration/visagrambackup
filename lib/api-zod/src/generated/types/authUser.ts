@@ -23,5 +23,6 @@ export interface AuthUser {
   /** @nullable */
   bio?: string | null;
   isPrivate?: boolean;
+  isEmailPublic?: boolean;
   isSuperAdmin?: boolean;
 }

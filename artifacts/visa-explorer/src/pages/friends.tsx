@@ -34,7 +34,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   UserPlus, UserCheck, UserMinus, Search, Users, Inbox,
   Clock, MapPin, LogIn, X, Check, Loader2, Star, Trash2,
-  Globe, ChevronRight, MessageSquare, Crown, Lock, ArrowLeft, Camera,
+  Globe, ChevronRight, MessageSquare, Crown, Lock, ArrowLeft, Camera, Mail, Eye, EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -151,11 +151,36 @@ function ProfilePanel({ friendCount }: { friendCount: number }) {
             </div>
           </div>
 
-          {/* Name */}
-          <h2 className="mt-3 text-xl font-bold leading-tight">{name}</h2>
+          {/* Name + username */}
+          <div className="mt-3">
+            <h2 className="text-xl font-bold leading-tight">{name}</h2>
+            {(user as { username?: string | null }).username && (
+              <p className="text-xs text-muted-foreground mt-0.5">@{(user as { username?: string | null }).username}</p>
+            )}
+          </div>
 
-          {/* Status row — right-aligned */}
-          <div className="flex flex-wrap items-center justify-end gap-2 mt-2">
+          {/* Email row with privacy toggle */}
+          {user.email && (
+            <div className="mt-2 flex items-center gap-2">
+              <Mail className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <span className="text-xs text-muted-foreground truncate flex-1">
+                {(user as { isEmailPublic?: boolean }).isEmailPublic !== false ? user.email : "••••@••••"}
+              </span>
+              <button
+                title={(user as { isEmailPublic?: boolean }).isEmailPublic !== false ? "Email visible to others — click to hide" : "Email hidden from others — click to show"}
+                onClick={() => updateProfile.mutate({ data: { isEmailPublic: !((user as { isEmailPublic?: boolean }).isEmailPublic !== false) } })}
+                className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {(user as { isEmailPublic?: boolean }).isEmailPublic !== false
+                  ? <Eye className="w-3.5 h-3.5" />
+                  : <EyeOff className="w-3.5 h-3.5 text-amber-400" />
+                }
+              </button>
+            </div>
+          )}
+
+          {/* Status pills */}
+          <div className="flex flex-wrap items-center gap-2 mt-2">
             {user.homeCountry && (
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
                 <MapPin className="w-3 h-3 shrink-0" />{user.homeCountry}
