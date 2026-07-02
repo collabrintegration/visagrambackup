@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link } from "wouter";
 import {
   useListVisaApplications,
@@ -16,7 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Plus, Loader2, Trash2, ChevronDown, ChevronUp, LogIn,
   ClipboardList, CheckCircle2, Clock, XCircle, AlertCircle,
-  MinusCircle, Globe, Pencil, Check, X, BarChart3, TrendingUp, Timer, Search,
+  MinusCircle, Globe, Pencil, Check, X, BarChart3, TrendingUp, Timer, Search, Pin, PinOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -454,6 +454,20 @@ export default function TrackerPage() {
   const [prefillType, setPrefillType] = useState<string>("travel");
   const [countrySearch, setCountrySearch] = useState("");
 
+  const LS_KEY = "visagram_pinned_countries";
+  const [userPinned, setUserPinned] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem(LS_KEY) ?? "[]") as string[]; }
+    catch { return []; }
+  });
+  useEffect(() => {
+    localStorage.setItem(LS_KEY, JSON.stringify(userPinned));
+  }, [userPinned]);
+  function togglePin(code: string) {
+    setUserPinned((prev) =>
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
+    );
+  }
+
   // Form state
   const [fTitle, setFTitle] = useState("");
   const [fCountry, setFCountry] = useState<string | null>(null);
@@ -534,30 +548,40 @@ export default function TrackerPage() {
     return m;
   }, [apps]);
 
-  type TabCountry = { code: string; name: string; flag: string; count: number; pinned: boolean };
+  type TabCountry = { code: string; name: string; flag: string; count: number; pinned: boolean; userPinned: boolean };
 
-  // Default tabs: pinned 7 popular + any data countries not already pinned
+  // Default tabs: system-pinned 7 popular + user-pinned + data countries
   const defaultCountryTabs = useMemo<TabCountry[]>(() => {
-    const pinnedTabs: TabCountry[] = POPULAR_COUNTRIES.slice(0, 7).map((p) => ({
-      code: p.code, name: p.name, flag: p.flag,
-      count: entryCountMap.get(p.code) ?? 0,
-      pinned: true,
-    }));
+    const allPinnedCodes = [...new Set([...PINNED_CODES, ...userPinned])];
+    const pinnedTabs: TabCountry[] = allPinnedCodes.map((code) => {
+      const pop = POPULAR_COUNTRIES.find((p) => p.code === code);
+      const dbCountry = (countries as Array<{ code: string; name: string }>).find((c) => c.code.toUpperCase() === code);
+      const dataApp = apps.find((a) => a.countryCode.toUpperCase() === code);
+      return {
+        code,
+        name: pop?.name ?? dataApp?.countryName ?? dbCountry?.name ?? code,
+        flag: pop?.flag ?? "🏳",
+        count: entryCountMap.get(code) ?? 0,
+        pinned: true,
+        userPinned: userPinned.includes(code),
+      };
+    });
     const extraTabs: TabCountry[] = [];
     for (const a of apps) {
       const key = a.countryCode.toUpperCase();
-      if (!PINNED_CODES.includes(key) && !extraTabs.find((e) => e.code === key)) {
+      if (!allPinnedCodes.includes(key) && !extraTabs.find((e) => e.code === key)) {
         extraTabs.push({
           code: key, name: a.countryName,
           flag: POPULAR_COUNTRIES.find((p) => p.code === key)?.flag ?? "🏳",
           count: entryCountMap.get(key) ?? 0,
           pinned: false,
+          userPinned: false,
         });
       }
     }
     extraTabs.sort((a, b) => b.count - a.count);
     return [...pinnedTabs, ...extraTabs];
-  }, [apps, entryCountMap]);
+  }, [apps, entryCountMap, userPinned, countries]);
 
   // Filtered by search — searches full countries list from DB
   const visibleCountryTabs = useMemo<TabCountry[]>(() => {
@@ -565,14 +589,18 @@ export default function TrackerPage() {
     if (!q) return defaultCountryTabs;
     return (countries as Array<{ code: string; name: string }>)
       .filter((c) => c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q))
-      .map((c) => ({
-        code: c.code.toUpperCase(),
-        name: c.name,
-        flag: POPULAR_COUNTRIES.find((p) => p.code === c.code.toUpperCase())?.flag ?? "🏳",
-        count: entryCountMap.get(c.code.toUpperCase()) ?? 0,
-        pinned: PINNED_CODES.includes(c.code.toUpperCase()),
-      }));
-  }, [countrySearch, defaultCountryTabs, countries, entryCountMap]);
+      .map((c) => {
+        const code = c.code.toUpperCase();
+        return {
+          code,
+          name: c.name,
+          flag: POPULAR_COUNTRIES.find((p) => p.code === code)?.flag ?? "🏳",
+          count: entryCountMap.get(code) ?? 0,
+          pinned: PINNED_CODES.includes(code) || userPinned.includes(code),
+          userPinned: userPinned.includes(code),
+        };
+      });
+  }, [countrySearch, defaultCountryTabs, countries, entryCountMap, userPinned]);
 
   // Filter apps by selected country
   const filteredByCountry = useMemo(
@@ -688,15 +716,38 @@ export default function TrackerPage() {
               {visibleCountryTabs.map((c) => {
                 const isActive = selectedCountry === c.code;
                 const hasData = c.count > 0;
+                const isSystemPinned = PINNED_CODES.includes(c.code);
                 return (
-                  <button key={c.code} onClick={() => setSelectedCountry(c.code)}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all shrink-0 ${isActive ? "bg-primary text-primary-foreground" : `bg-card border border-border hover:border-primary/30 hover:text-foreground ${hasData ? "text-muted-foreground" : "text-muted-foreground/50"}`}`}
-                  >
-                    {c.flag} {c.name}
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center ${isActive ? "bg-white/20" : hasData ? "bg-muted" : "bg-muted/40 text-muted-foreground/40"}`}>
-                      {c.count}
-                    </span>
-                  </button>
+                  <div key={c.code} className="relative group/tab shrink-0">
+                    <button
+                      onClick={() => setSelectedCountry(c.code)}
+                      className={`flex items-center gap-1.5 pl-4 pr-8 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all w-full ${
+                        isActive ? "bg-primary text-primary-foreground" : `bg-card border border-border hover:border-primary/30 hover:text-foreground ${hasData ? "text-muted-foreground" : "text-muted-foreground/50"}`
+                      }`}
+                    >
+                      {c.flag} {c.name}
+                      {c.userPinned && !isActive && (
+                        <Pin className="w-2.5 h-2.5 shrink-0 text-primary/60 fill-primary/40" />
+                      )}
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center ${isActive ? "bg-white/20" : hasData ? "bg-muted" : "bg-muted/40 text-muted-foreground/40"}`}>
+                        {c.count}
+                      </span>
+                    </button>
+                    {/* Pin / unpin button — hidden until hover, not shown for system-pinned */}
+                    {!isSystemPinned && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); togglePin(c.code); }}
+                        title={c.userPinned ? "Unpin country" : "Pin country"}
+                        className={`absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded-md transition-all opacity-0 group-hover/tab:opacity-100 ${
+                          c.userPinned
+                            ? "text-primary hover:text-destructive"
+                            : "text-muted-foreground hover:text-primary"
+                        }`}
+                      >
+                        {c.userPinned ? <PinOff className="w-3 h-3" /> : <Pin className="w-3 h-3" />}
+                      </button>
+                    )}
+                  </div>
                 );
               })}
               {visibleCountryTabs.length === 0 && countrySearch && (
