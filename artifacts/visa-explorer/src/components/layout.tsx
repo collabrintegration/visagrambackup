@@ -30,6 +30,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { href: "/community", label: "Community", icon: Users },
     { href: "/explore", label: "Explore\u00a0Visa", icon: MapIcon, matchPaths: ["/explore", "/passport"] },
     { href: "/tracker", label: "Tracker", icon: ClipboardList },
+    ...(isAuthenticated ? [{ href: "/profile", label: "My Profile", icon: User }] : []),
   ];
 
   return (
