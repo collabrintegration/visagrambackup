@@ -142,7 +142,7 @@ export default function GlobalSearch() {
                       <button
                         key={u.id}
                         className="w-full flex items-center gap-3 px-3 py-2 hover:bg-muted/60 transition-colors text-left"
-                        onClick={() => handleSelect("/friends?search=" + encodeURIComponent(name))}
+                        onClick={() => handleSelect(`/user/${u.id}`)}
                       >
                         <Avatar url={u.profileImageUrl} name={name} />
                         <div className="flex-1 min-w-0">

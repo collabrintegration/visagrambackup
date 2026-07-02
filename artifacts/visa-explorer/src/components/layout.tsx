@@ -153,14 +153,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       {/* Quick links */}
                       <div className="py-1">
                         <Link
-                          href="/friends"
-                          onClick={() => setProfileOpen(false)}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
-                        >
-                          <User className="w-4 h-4 text-muted-foreground" />
-                          My Profile & Photos
-                        </Link>
-                        <Link
                           href="/profile"
                           onClick={() => setProfileOpen(false)}
                           className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
