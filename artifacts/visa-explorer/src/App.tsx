@@ -15,6 +15,7 @@ import Community from "@/pages/community";
 import ProfilePage from "@/pages/profile";
 import SupportCasePage from "@/pages/support-case";
 import QuestionDetailPage from "@/pages/question-detail";
+import SignIn from "@/pages/sign-in";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +41,7 @@ function Router() {
         <Route path="/profile" component={ProfilePage} />
         <Route path="/support/cases/:id" component={SupportCasePage} />
         <Route path="/questions/:id" component={QuestionDetailPage} />
+        <Route path="/sign-in" component={SignIn} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

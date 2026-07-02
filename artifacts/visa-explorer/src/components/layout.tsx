@@ -6,7 +6,7 @@ import { useAuth } from "@workspace/replit-auth-web";
 import { Button } from "@/components/ui/button";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const { data: health } = useHealthCheck({
     query: { queryKey: getHealthCheckQueryKey(), refetchInterval: 60000 },
   });
@@ -81,7 +81,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </Button>
               </>
             ) : (
-              <Button size="sm" onClick={login}>
+              <Button size="sm" onClick={() => navigate("/sign-in")}>
                 <LogIn className="w-4 h-4 mr-1.5" />
                 Sign in
               </Button>
