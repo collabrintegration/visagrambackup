@@ -13,7 +13,9 @@ import {
   useDeleteTestimonial,
   useGetCurrentAuthUser,
   useUpdateMyProfile,
+  useGetPublicUserProfile,
   getGetCurrentAuthUserQueryKey,
+  getGetPublicUserProfileQueryKey,
   useListGroups,
   useListGroupJoinRequests,
   useApproveGroupJoinRequest,
@@ -36,6 +38,7 @@ import {
   UserPlus, UserCheck, UserMinus, Search, Users, Inbox,
   Clock, MapPin, LogIn, X, Check, Loader2, Star, Trash2,
   Globe, ChevronLeft, ChevronRight, MessageSquare, Crown, Lock, ArrowLeft, Camera, Mail, Eye, EyeOff,
+  CheckCircle2, Heart, CalendarDays, Venus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -113,8 +116,29 @@ function ProfilePanel({ friendCount }: { friendCount: number }) {
   }, [updateProfile]);
 
   const user = authData?.user;
+
+  // Fetch travel stats using the public profile endpoint (has visitedCount + wantToVisitCount)
+  const { data: publicProfile } = useGetPublicUserProfile(user?.id ?? "", {
+    query: {
+      queryKey: getGetPublicUserProfileQueryKey(user?.id ?? ""),
+      enabled: !!user?.id,
+    },
+  });
+
   if (!user) return null;
   const name = [user.firstName, user.lastName].filter(Boolean).join(" ") || "Traveler";
+  const typedUser = user as {
+    username?: string | null;
+    isEmailPublic?: boolean;
+    age?: number | null;
+    sex?: string | null;
+    location?: string | null;
+    dateOfBirth?: string | null;
+  };
+
+  const visitedCount = publicProfile?.visitedCount ?? 0;
+  const wantToVisitCount = publicProfile?.wantToVisitCount ?? 0;
+  const hasTravel = visitedCount > 0 || wantToVisitCount > 0;
 
   return (
     <aside className="w-72 shrink-0 space-y-4">
@@ -125,7 +149,6 @@ function ProfilePanel({ friendCount }: { friendCount: number }) {
         <div className="px-5 pb-5 -mt-10">
           {/* Avatar + friends count row */}
           <div className="flex items-end justify-between">
-            {/* Editable avatar */}
             <div className="relative group w-20 h-20 shrink-0">
               <Avatar url={user.profileImageUrl} name={name} size="xl" />
               {!isUploadingPic && (
@@ -155,8 +178,8 @@ function ProfilePanel({ friendCount }: { friendCount: number }) {
           {/* Name + username */}
           <div className="mt-3">
             <h2 className="text-xl font-bold leading-tight">{name}</h2>
-            {(user as { username?: string | null }).username && (
-              <p className="text-xs text-muted-foreground mt-0.5">@{(user as { username?: string | null }).username}</p>
+            {typedUser.username && (
+              <p className="text-xs text-muted-foreground mt-0.5">@{typedUser.username}</p>
             )}
           </div>
 
@@ -165,14 +188,14 @@ function ProfilePanel({ friendCount }: { friendCount: number }) {
             <div className="mt-2 flex items-center gap-2">
               <Mail className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
               <span className="text-xs text-muted-foreground truncate flex-1">
-                {(user as { isEmailPublic?: boolean }).isEmailPublic !== false ? user.email : "••••@••••"}
+                {typedUser.isEmailPublic !== false ? user.email : "••••@••••"}
               </span>
               <button
-                title={(user as { isEmailPublic?: boolean }).isEmailPublic !== false ? "Email visible to others — click to hide" : "Email hidden from others — click to show"}
-                onClick={() => updateProfile.mutate({ data: { isEmailPublic: !((user as { isEmailPublic?: boolean }).isEmailPublic !== false) } })}
+                title={typedUser.isEmailPublic !== false ? "Email visible to others — click to hide" : "Email hidden from others — click to show"}
+                onClick={() => updateProfile.mutate({ data: { isEmailPublic: !(typedUser.isEmailPublic !== false) } })}
                 className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
               >
-                {(user as { isEmailPublic?: boolean }).isEmailPublic !== false
+                {typedUser.isEmailPublic !== false
                   ? <Eye className="w-3.5 h-3.5" />
                   : <EyeOff className="w-3.5 h-3.5 text-amber-400" />
                 }
@@ -180,25 +203,40 @@ function ProfilePanel({ friendCount }: { friendCount: number }) {
             </div>
           )}
 
-          {/* Status pills */}
-          <div className="flex flex-wrap items-center gap-2 mt-2">
-            {user.homeCountry && (
-              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
-                <MapPin className="w-3 h-3 shrink-0" />{user.homeCountry}
-              </span>
+          {/* Info rows: location, age, sex */}
+          <div className="mt-2 space-y-1">
+            {typedUser.location && (
+              <div className="flex items-center gap-2">
+                <MapPin className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                <span className="text-xs text-muted-foreground">{typedUser.location}</span>
+              </div>
             )}
-            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
-              <Globe className="w-3 h-3 shrink-0" />Visagram
-            </span>
+            {user.homeCountry && !typedUser.location && (
+              <div className="flex items-center gap-2">
+                <Globe className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                <span className="text-xs text-muted-foreground">{user.homeCountry}</span>
+              </div>
+            )}
+            {typedUser.age && (
+              <div className="flex items-center gap-2">
+                <CalendarDays className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                <span className="text-xs text-muted-foreground">Age {typedUser.age}</span>
+              </div>
+            )}
+            {typedUser.sex && (
+              <div className="flex items-center gap-2">
+                <Venus className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                <span className="text-xs text-muted-foreground">{typedUser.sex}</span>
+              </div>
+            )}
           </div>
 
           {/* Bio */}
-          {user.bio && (
+          {user.bio ? (
             <p className="mt-3 text-sm text-muted-foreground leading-relaxed border-t border-border/60 pt-3">
               {user.bio}
             </p>
-          )}
-          {!user.bio && (
+          ) : (
             <Link href="/profile"
               className="mt-3 pt-3 border-t border-border/60 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
             >
@@ -208,6 +246,31 @@ function ProfilePanel({ friendCount }: { friendCount: number }) {
           )}
         </div>
       </div>
+
+      {/* Travel stats */}
+      {hasTravel && (
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">My Travel Map</h3>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-center">
+              <div className="flex items-center justify-center gap-1 mb-0.5">
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                <span className="text-xs text-emerald-400 font-medium">Visited</span>
+              </div>
+              <p className="text-2xl font-bold text-emerald-400">{visitedCount}</p>
+              <p className="text-xs text-muted-foreground">countries</p>
+            </div>
+            <div className="rounded-xl bg-primary/10 border border-primary/20 p-3 text-center">
+              <div className="flex items-center justify-center gap-1 mb-0.5">
+                <Heart className="w-3 h-3 text-primary" />
+                <span className="text-xs text-primary font-medium">Wishlist</span>
+              </div>
+              <p className="text-2xl font-bold text-primary">{wantToVisitCount}</p>
+              <p className="text-xs text-muted-foreground">countries</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Quick links */}
       <div className="rounded-2xl border border-border bg-card p-4 space-y-1">
