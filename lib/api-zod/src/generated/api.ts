@@ -29,6 +29,9 @@ export const AdminSearchUsersResponse = zod.object({
   "profileImageUrl": zod.string().nullish(),
   "homeCountry": zod.string().nullish(),
   "username": zod.string().nullish(),
+  "age": zod.number().nullish(),
+  "sex": zod.string().nullish(),
+  "location": zod.string().nullish(),
   "isSuperAdmin": zod.boolean(),
   "createdAt": zod.string()
 })),

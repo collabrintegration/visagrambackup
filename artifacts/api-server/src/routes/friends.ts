@@ -60,6 +60,7 @@ router.get("/users/search", async (req: Request, res: Response) => {
         ilike(usersTable.lastName, `%${q}%`),
         ilike(usersTable.email, `%${q}%`),
         ilike(sql`concat(${usersTable.firstName}, ' ', ${usersTable.lastName})`, `%${q}%`),
+        ilike(usersTable.location, `%${q}%`),
       )!,
     );
   }

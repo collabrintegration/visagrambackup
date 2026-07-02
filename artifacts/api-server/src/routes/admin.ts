@@ -31,6 +31,7 @@ router.get("/api/admin/users/search", async (req, res) => {
         ilike(usersTable.lastName, `%${q}%`),
         ilike(usersTable.email, `%${q}%`),
         ilike(sql`concat(${usersTable.firstName}, ' ', ${usersTable.lastName})`, `%${q}%`),
+        ilike(usersTable.location, `%${q}%`),
       )
     : undefined;
 
@@ -44,6 +45,9 @@ router.get("/api/admin/users/search", async (req, res) => {
         lastName: usersTable.lastName,
         profileImageUrl: usersTable.profileImageUrl,
         homeCountry: usersTable.homeCountry,
+        age: usersTable.age,
+        sex: usersTable.sex,
+        location: usersTable.location,
         isSuperAdmin: usersTable.isSuperAdmin,
         createdAt: usersTable.createdAt,
       })

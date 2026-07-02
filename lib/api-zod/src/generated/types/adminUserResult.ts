@@ -14,6 +14,9 @@ export interface AdminUserResult {
   profileImageUrl?: string | null;
   homeCountry?: string | null;
   username?: string | null;
+  age?: number | null;
+  sex?: string | null;
+  location?: string | null;
   isSuperAdmin: boolean;
   createdAt: string;
 }

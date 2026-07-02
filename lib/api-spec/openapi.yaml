@@ -2361,6 +2361,15 @@ components:
         username:
           type: string
           nullable: true
+        age:
+          type: integer
+          nullable: true
+        sex:
+          type: string
+          nullable: true
+        location:
+          type: string
+          nullable: true
         isSuperAdmin:
           type: boolean
         createdAt:
