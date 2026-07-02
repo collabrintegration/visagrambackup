@@ -557,43 +557,60 @@ function AdminGroupPanel({ group }: { group: Group }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="bg-card border border-border rounded-xl p-4">
-      <div className="flex items-center gap-3">
-        <span className="text-2xl">{group.emoji}</span>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h4 className="font-semibold text-sm truncate">{group.name}</h4>
-            <Badge className="text-[10px] px-1.5 py-0 bg-amber-500/15 text-amber-400 border-amber-500/20">
-              <Crown className="w-2.5 h-2.5 mr-1" />Admin
-            </Badge>
-            {group.isPrivate && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                <Lock className="w-2.5 h-2.5 mr-1" />Private
-              </Badge>
-            )}
-          </div>
-          <p className="text-xs text-muted-foreground mt-0.5">{group.memberCount} member{group.memberCount !== 1 ? "s" : ""}</p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
+    <div className="bg-card border border-border rounded-2xl p-4 flex flex-col gap-3 hover:border-primary/40 transition-colors">
+      {/* Emoji + badges row */}
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-4xl leading-none">{group.emoji}</span>
+        <div className="flex items-center gap-1 flex-wrap justify-end">
+          <span className="flex items-center gap-1 text-[10px] font-medium bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded-full">
+            <Crown className="w-2.5 h-2.5" /> Admin
+          </span>
           {group.isPrivate && (
-            <button
-              onClick={() => setExpanded((v) => !v)}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Users className="w-3.5 h-3.5" />Join Requests
-              {!isLoading && requests.length > 0 && (
-                <span className="bg-primary text-primary-foreground text-[10px] rounded-full px-1.5 py-0.5 font-bold">{requests.length}</span>
-              )}
-              <ChevronRight className={`w-3.5 h-3.5 transition-transform ${expanded ? "rotate-90" : ""}`} />
-            </button>
+            <span className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+              <Lock className="w-2.5 h-2.5" /> Private
+            </span>
           )}
-          <Link href={`/groups/${group.id}`}>
-            <Button size="sm" className="h-7 text-xs"><MessageSquare className="w-3 h-3 mr-1" /> Open Chat</Button>
-          </Link>
         </div>
       </div>
+
+      {/* Name + description */}
+      <div className="flex-1">
+        <p className="font-semibold text-sm leading-tight line-clamp-2">{group.name}</p>
+        {group.description && (
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{group.description}</p>
+        )}
+      </div>
+
+      {/* Member count */}
+      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+        <Users className="w-3 h-3" />
+        <span>{group.memberCount} member{group.memberCount !== 1 ? "s" : ""}</span>
+      </div>
+
+      {/* Actions */}
+      <div className="flex flex-col gap-2">
+        <Link href={`/groups/${group.id}`}>
+          <Button size="sm" className="w-full text-xs">
+            <MessageSquare className="w-3.5 h-3.5 mr-1.5" /> Open Chat
+          </Button>
+        </Link>
+        {group.isPrivate && (
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-lg py-1.5 transition-colors"
+          >
+            <Users className="w-3.5 h-3.5" /> Join Requests
+            {!isLoading && requests.length > 0 && (
+              <span className="bg-primary text-primary-foreground text-[10px] rounded-full px-1.5 py-0.5 font-bold">{requests.length}</span>
+            )}
+            <ChevronRight className={`w-3.5 h-3.5 transition-transform ${expanded ? "rotate-90" : ""}`} />
+          </button>
+        )}
+      </div>
+
+      {/* Join requests panel */}
       {expanded && group.isPrivate && (
-        <div className="mt-4 border-t border-border pt-3 space-y-2">
+        <div className="border-t border-border pt-3 space-y-2">
           {isLoading ? (
             <div className="flex justify-center py-3"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div>
           ) : requests.length === 0 ? (
@@ -759,48 +776,72 @@ function FriendsGroupsTab() {
           />
         </div>
       )}
+
       <div className="space-y-8">
-      {adminGroups.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <Crown className="w-4 h-4 text-amber-400" />
-            <h3 className="font-semibold text-sm">Groups I Admin</h3>
-            <span className="text-xs text-muted-foreground">({adminGroups.length})</span>
+        {adminGroups.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Crown className="w-4 h-4 text-amber-400" />
+              <h3 className="font-semibold text-sm">Groups I Admin</h3>
+              <span className="text-xs text-muted-foreground">({adminGroups.length})</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {adminGroups.map((g) => <AdminGroupPanel key={g.id} group={g} />)}
+            </div>
           </div>
-          <div className="space-y-2">{adminGroups.map((g) => <AdminGroupPanel key={g.id} group={g} />)}</div>
-        </div>
-      )}
-      {myGroups.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <Users className="w-4 h-4 text-primary" />
-            <h3 className="font-semibold text-sm">Groups I'm In</h3>
-            <span className="text-xs text-muted-foreground">({myGroups.length})</span>
-          </div>
-          <div className="space-y-2">
-            {myGroups.map((g) => (
-              <div key={g.id} className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
-                <span className="text-2xl">{g.emoji}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-semibold text-sm truncate">{g.name}</h4>
+        )}
+
+        {myGroups.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="w-4 h-4 text-primary" />
+              <h3 className="font-semibold text-sm">Groups I'm In</h3>
+              <span className="text-xs text-muted-foreground">({myGroups.length})</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {myGroups.map((g) => (
+                <div key={g.id} className="bg-card border border-border rounded-2xl p-4 flex flex-col gap-3 hover:border-primary/40 transition-colors">
+                  {/* Emoji + privacy badge */}
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-4xl leading-none">{g.emoji}</span>
                     {g.isPrivate && (
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0"><Lock className="w-2.5 h-2.5 mr-1" />Private</Badge>
+                      <span className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full shrink-0 mt-1">
+                        <Lock className="w-2.5 h-2.5" /> Private
+                      </span>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">{g.memberCount} member{g.memberCount !== 1 ? "s" : ""}</p>
+
+                  {/* Name + description */}
+                  <div className="flex-1">
+                    <p className="font-semibold text-sm leading-tight line-clamp-2">{g.name}</p>
+                    {g.description && (
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{g.description}</p>
+                    )}
+                  </div>
+
+                  {/* Member count */}
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Users className="w-3 h-3" />
+                    <span>{g.memberCount} member{g.memberCount !== 1 ? "s" : ""}</span>
+                  </div>
+
+                  {/* Action */}
+                  <Link href={`/groups/${g.id}`}>
+                    <Button size="sm" className="w-full text-xs">
+                      <MessageSquare className="w-3.5 h-3.5 mr-1.5" /> Open Chat
+                    </Button>
+                  </Link>
                 </div>
-                <Link href={`/groups/${g.id}`}>
-                  <Button size="sm" className="h-7 text-xs shrink-0"><MessageSquare className="w-3 h-3 mr-1" /> Open Chat</Button>
-                </Link>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
-      <Link href="/groups">
-        <Button variant="outline" size="sm"><Users className="w-4 h-4 mr-2" /> Browse All Groups</Button>
-      </Link>
+        )}
+
+        <Link href="/groups">
+          <Button variant="outline" size="sm" className="w-full">
+            <Users className="w-4 h-4 mr-2" /> Browse All Groups
+          </Button>
+        </Link>
       </div>
     </div>
   );
