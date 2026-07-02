@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import AdUnit from "@/components/ad-unit";
 import CountryCombobox from "@/components/country-combobox";
+import UserMiniCard from "@/components/user-mini-card";
 
 const GROUP_EMOJI_OPTIONS = ["🌍","✈️","🗺️","🏖️","🏔️","🌏","🌐","🚀","🎒","🧳","🌴","🏕️","🚂","⛵","🛸","🏛️","🌺","🍜","🎉","🤝"];
 
@@ -83,19 +84,25 @@ function FeedCard({ item, myId, onDelete }: { item: FeedItem; myId?: string; onD
     <div className="bg-card border border-border rounded-2xl p-5 hover:border-primary/30 transition-all group">
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-3">
-        <Link href={href} className="flex items-center gap-2.5 min-w-0 flex-1">
-          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-primary text-xs font-bold">
-            {(item.user?.firstName || "A")[0].toUpperCase()}
-          </div>
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <Link href={href} className="shrink-0">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
+              {(item.user?.firstName || "A")[0].toUpperCase()}
+            </div>
+          </Link>
           <div className="min-w-0">
-            <span className="font-semibold text-sm truncate block">
-              {item.user?.firstName || "Anonymous"}
-            </span>
-            <span className="text-xs text-muted-foreground">
+            <UserMiniCard
+              userId={item.user?.userId ?? ""}
+              firstName={item.user?.firstName}
+              lastName={item.user?.lastName}
+              profileImageUrl={item.user?.profileImageUrl}
+              className="font-semibold text-sm"
+            />
+            <span className="text-xs text-muted-foreground block">
               {timeAgo(item.createdAt)}
             </span>
           </div>
-        </Link>
+        </div>
         <div className="flex items-center gap-2 shrink-0">
           {canMessage && (
             <Link

@@ -21,6 +21,7 @@ import {
   Send, Reply, ChevronDown, ChevronUp, Globe, Trash2,
 } from "lucide-react";
 import { GifPicker, GifPreview } from "@/components/gif-picker";
+import UserMiniCard from "@/components/user-mini-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -92,7 +93,13 @@ function ReplyThread({ answerId, isAuthenticated, login }: { answerId: number; i
           <Avatar user={r.user} />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 mb-1">
-              <span className="text-sm font-medium">{userName(r.user)}</span>
+              <UserMiniCard
+                userId={r.user?.userId ?? ""}
+                firstName={r.user?.firstName}
+                lastName={r.user?.lastName}
+                profileImageUrl={r.user?.profileImageUrl}
+                className="text-sm font-medium"
+              />
               {r.user?.homeCountry && (
                 <span className="text-xs text-muted-foreground flex items-center gap-1">
                   <Globe className="w-3 h-3" /> {r.user.homeCountry}
@@ -173,7 +180,13 @@ function AnswerCard({ answer, isAuthenticated, login, questionOwnerId, authUserI
         <Avatar user={answer.user} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-2 flex-wrap">
-            <span className="font-medium text-sm">{userName(answer.user)}</span>
+            <UserMiniCard
+              userId={answer.user?.userId ?? ""}
+              firstName={answer.user?.firstName}
+              lastName={answer.user?.lastName}
+              profileImageUrl={answer.user?.profileImageUrl}
+              className="font-medium text-sm"
+            />
             {answer.user?.homeCountry && (
               <span className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
                 <Globe className="w-3 h-3" /> {answer.user.homeCountry}
@@ -318,7 +331,13 @@ export default function QuestionDetailPage() {
             <div className="flex items-center gap-2.5">
               <Avatar user={question.user} />
               <div>
-                <span className="text-sm font-medium">{userName(question.user)}</span>
+                <UserMiniCard
+                  userId={question.user?.userId ?? ""}
+                  firstName={question.user?.firstName}
+                  lastName={question.user?.lastName}
+                  profileImageUrl={question.user?.profileImageUrl}
+                  className="text-sm font-medium"
+                />
                 {question.user?.homeCountry && (
                   <span className="text-xs text-muted-foreground ml-2">
                     <Globe className="w-3 h-3 inline mr-0.5" />{question.user.homeCountry}

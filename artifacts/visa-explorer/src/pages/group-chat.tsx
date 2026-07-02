@@ -34,6 +34,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { GifPicker, GifPreview } from "@/components/gif-picker";
+import UserMiniCard from "@/components/user-mini-card";
 
 function timeStr(dateStr: string): string {
   const d = new Date(dateStr);
@@ -742,7 +743,13 @@ function MessageBubble({
       <div className={`flex flex-col max-w-[70%] ${isOwn ? "items-end" : "items-start"}`}>
         {showAvatar && (
           <div className={`flex items-baseline gap-2 mb-1 ${isOwn ? "flex-row-reverse" : ""}`}>
-            <span className="text-xs font-medium">{displayName(msg)}</span>
+            <UserMiniCard
+              userId={msg.userId}
+              firstName={msg.firstName}
+              lastName={msg.lastName}
+              profileImageUrl={msg.profileImageUrl}
+              className="text-xs font-medium"
+            />
             <span className="text-[10px] text-muted-foreground">{timeStr(msg.createdAt)}</span>
           </div>
         )}
