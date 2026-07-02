@@ -17,6 +17,7 @@ interface Country {
   name: string;
   continent?: string;
   flag?: string;
+  flagEmoji?: string;
 }
 
 interface CountryCardProps {
@@ -36,7 +37,7 @@ export function CountryCard({ country, onPress }: CountryCardProps) {
       ]}
       onPress={onPress}
     >
-      <Text style={styles.flag}>{country.flag || flagEmoji(country.code)}</Text>
+      <Text style={styles.flag}>{country.flagEmoji || country.flag || flagEmoji(country.code)}</Text>
       <View style={styles.info}>
         <Text style={[styles.name, { color: colors.foreground }]} numberOfLines={1}>
           {country.name}

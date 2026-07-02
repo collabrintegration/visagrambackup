@@ -89,7 +89,7 @@ export default function CountryDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.heroSection}>
-          <Text style={styles.heroFlag}>{flagEmoji(country.code)}</Text>
+          <Text style={styles.heroFlag}>{(country as Record<string, unknown>)["flagEmoji"] as string || flagEmoji(country.code)}</Text>
           <Text style={[styles.heroName, { color: colors.foreground }]}>{country.name}</Text>
           <Text style={[styles.heroContinent, { color: colors.mutedForeground }]}>
             {(country as Record<string, unknown>)["continent"] as string ?? ""}
@@ -148,7 +148,7 @@ export default function CountryDetailScreen() {
                     key={i}
                     style={[styles.visaRow, { backgroundColor: colors.card, borderColor: colors.border }]}
                   >
-                    <Text style={styles.passportFlag}>{flagEmoji(passportCode || "XX")}</Text>
+                    <Text style={styles.passportFlag}>{flagEmoji(passportCode)}</Text>
                     <View style={styles.visaInfo}>
                       <Text style={[styles.passportName, { color: colors.foreground }]} numberOfLines={1}>
                         {passportCountry}
