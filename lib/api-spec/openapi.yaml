@@ -48,6 +48,21 @@ paths:
         "403":
           description: Forbidden
 
+  /api/track:
+    post:
+      operationId: trackPageView
+      tags: [admin]
+      summary: Record a page view (anonymous, fire-and-forget)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrackPageViewBody"
+      responses:
+        "204":
+          description: Recorded
+
   /anthropic/conversations:
     get:
       operationId: listAnthropicConversations
@@ -1999,7 +2014,7 @@ components:
 
     SiteStats:
       type: object
-      required: [totalUsers, totalGroups, publicGroups, privateGroups, totalVisaEntries, totalTravelEntries, totalReviews, totalQuestions]
+      required: [totalUsers, totalGroups, publicGroups, privateGroups, totalVisaEntries, totalTravelEntries, totalReviews, totalQuestions, totalPageViews, todayPageViews]
       properties:
         totalUsers:
           type: integer
@@ -2017,6 +2032,17 @@ components:
           type: integer
         totalQuestions:
           type: integer
+        totalPageViews:
+          type: integer
+        todayPageViews:
+          type: integer
+
+    TrackPageViewBody:
+      type: object
+      required: [path]
+      properties:
+        path:
+          type: string
 
     AuthUser:
       type: object

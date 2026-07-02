@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request } from "express";
-import { db, usersTable, groupsTable, visaApplicationsTable, travelEntriesTable, reviewsTable, questionsTable } from "@workspace/db";
-import { count, eq, sql } from "drizzle-orm";
+import { db, usersTable, groupsTable, visaApplicationsTable, travelEntriesTable, reviewsTable, questionsTable, pageViewsTable } from "@workspace/db";
+import { count, eq, sql, gte } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -14,13 +14,22 @@ async function isSuperAdmin(req: Request): Promise<boolean> {
   return row[0]?.isSuperAdmin === true;
 }
 
+router.post("/api/track", async (req, res) => {
+  const path = typeof req.body?.path === "string" ? req.body.path.slice(0, 500) : "/";
+  await db.insert(pageViewsTable).values({ path });
+  res.status(204).end();
+});
+
 router.get("/api/admin/site-stats", async (req, res) => {
   if (!(await isSuperAdmin(req))) {
     res.status(403).json({ error: "Forbidden" });
     return;
   }
 
-  const [[users], [groupStats], [visaEntries], [travelEntries], [reviews], [questions]] = await Promise.all([
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const [[users], [groupStats], [visaEntries], [travelEntries], [reviews], [questions], [totalViews], [todayViews]] = await Promise.all([
     db.select({ total: count() }).from(usersTable),
     db.select({
       total: count(),
@@ -31,6 +40,8 @@ router.get("/api/admin/site-stats", async (req, res) => {
     db.select({ total: count() }).from(travelEntriesTable),
     db.select({ total: count() }).from(reviewsTable),
     db.select({ total: count() }).from(questionsTable),
+    db.select({ total: count() }).from(pageViewsTable),
+    db.select({ total: count() }).from(pageViewsTable).where(gte(pageViewsTable.visitedAt, todayStart)),
   ]);
 
   res.json({
@@ -42,6 +53,8 @@ router.get("/api/admin/site-stats", async (req, res) => {
     totalTravelEntries: travelEntries?.total ?? 0,
     totalReviews: reviews?.total ?? 0,
     totalQuestions: questions?.total ?? 0,
+    totalPageViews: totalViews?.total ?? 0,
+    todayPageViews: todayViews?.total ?? 0,
   });
 });
 

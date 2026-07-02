@@ -35,6 +35,7 @@ import {
   User, MessageSquare, BookOpen, ChevronDown, ShieldAlert,
   PlusCircle, X, Clock, RefreshCw, XCircle, Bell, PenLine, Save,
   Users, Crown, Lock, UserCheck, UserX, ChevronRight, BarChart2, Inbox,
+  TrendingUp, Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -984,6 +985,27 @@ export default function Profile() {
               </div>
             ) : (
               <div className="space-y-6">
+                {/* Traffic */}
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Traffic</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[
+                      { label: "Total Page Views (all time)", value: siteStats.totalPageViews, icon: TrendingUp, color: "text-pink-400", bg: "bg-pink-500/10" },
+                      { label: "Page Views Today", value: siteStats.todayPageViews, icon: Activity, color: "text-green-400", bg: "bg-green-500/10" },
+                    ].map(({ label, value, icon: Icon, color, bg }) => (
+                      <div key={label} className="bg-card border border-border rounded-2xl p-5 flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
+                          <Icon className={`w-5 h-5 ${color}`} />
+                        </div>
+                        <div>
+                          <div className="text-2xl font-bold">{value.toLocaleString()}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">{label}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Users */}
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Users</p>

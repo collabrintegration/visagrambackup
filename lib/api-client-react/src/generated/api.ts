@@ -82,6 +82,7 @@ import type {
   SubmitVisaReportBody,
   SupportCase,
   SupportCaseComment,
+  TrackPageViewBody,
   TravelEntry,
   UpdateGroupInput,
   UpdateProfileBody,
@@ -200,6 +201,76 @@ export function useGetAdminSiteStats<TData = Awaited<ReturnType<typeof getAdminS
 
 
 
+
+export const getTrackPageViewUrl = () => {
+
+
+
+
+  return `/api/api/track`
+}
+
+/**
+ * @summary Record a page view (anonymous, fire-and-forget)
+ */
+export const trackPageView = async (trackPageViewBody: TrackPageViewBody, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getTrackPageViewUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(trackPageViewBody)
+  }
+);}
+
+
+
+
+export const getTrackPageViewMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof trackPageView>>, TError,{data: BodyType<TrackPageViewBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof trackPageView>>, TError,{data: BodyType<TrackPageViewBody>}, TContext> => {
+
+const mutationKey = ['trackPageView'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof trackPageView>>, {data: BodyType<TrackPageViewBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  trackPageView(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TrackPageViewMutationResult = NonNullable<Awaited<ReturnType<typeof trackPageView>>>
+    export type TrackPageViewMutationBody = BodyType<TrackPageViewBody>
+    export type TrackPageViewMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Record a page view (anonymous, fire-and-forget)
+ */
+export const useTrackPageView = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof trackPageView>>, TError,{data: BodyType<TrackPageViewBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof trackPageView>>,
+        TError,
+        {data: BodyType<TrackPageViewBody>},
+        TContext
+      > => {
+      return useMutation(getTrackPageViewMutationOptions(options));
+    }
 
 export const getListAnthropicConversationsUrl = () => {
 

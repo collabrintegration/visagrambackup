@@ -15,4 +15,6 @@ export interface SiteStats {
   totalTravelEntries: number;
   totalReviews: number;
   totalQuestions: number;
+  totalPageViews: number;
+  todayPageViews: number;
 }

@@ -1,8 +1,9 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
+import { useEffect } from "react";
 
 import Layout from "@/components/layout";
 import AIChatWidget from "@/components/ai-chat-widget";
@@ -32,9 +33,22 @@ const queryClient = new QueryClient({
   },
 });
 
+function PageTracker() {
+  const [location] = useLocation();
+  useEffect(() => {
+    fetch("/api/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: location }),
+    }).catch(() => {});
+  }, [location]);
+  return null;
+}
+
 function Router() {
   return (
     <Layout>
+      <PageTracker />
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/explore" component={Explore} />

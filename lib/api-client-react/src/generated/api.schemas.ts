@@ -22,6 +22,12 @@ export interface SiteStats {
   totalTravelEntries: number;
   totalReviews: number;
   totalQuestions: number;
+  totalPageViews: number;
+  todayPageViews: number;
+}
+
+export interface TrackPageViewBody {
+  path: string;
 }
 
 export interface AuthUser {

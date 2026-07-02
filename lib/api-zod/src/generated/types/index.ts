@@ -88,6 +88,7 @@ export * from './submitVisaReportBodyResult';
 export * from './supportCase';
 export * from './supportCaseComment';
 export * from './supportCaseStatus';
+export * from './trackPageViewBody';
 export * from './travelEntry';
 export * from './updateGroupInput';
 export * from './updateProfileBody';

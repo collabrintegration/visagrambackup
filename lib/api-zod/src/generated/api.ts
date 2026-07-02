@@ -19,8 +19,20 @@ export const GetAdminSiteStatsResponse = zod.object({
   "totalVisaEntries": zod.number(),
   "totalTravelEntries": zod.number(),
   "totalReviews": zod.number(),
-  "totalQuestions": zod.number()
+  "totalQuestions": zod.number(),
+  "totalPageViews": zod.number(),
+  "todayPageViews": zod.number()
 })
+
+
+/**
+ * @summary Record a page view (anonymous, fire-and-forget)
+ */
+export const TrackPageViewBody = zod.object({
+  "path": zod.string()
+})
+
+export const TrackPageViewResponse = zod.void()
 
 
 /**
