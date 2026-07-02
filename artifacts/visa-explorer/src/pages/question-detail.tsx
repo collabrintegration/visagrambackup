@@ -151,16 +151,16 @@ function ReplyThread({ answerId, isAuthenticated, login }: { answerId: number; i
   );
 }
 
-function AnswerCard({ answer, isAuthenticated, login, questionOwnerId, onAccept, onDelete }: {
+function AnswerCard({ answer, isAuthenticated, login, questionOwnerId, authUserId, onAccept, onDelete }: {
   answer: Answer;
   isAuthenticated: boolean;
   login: () => void;
   questionOwnerId?: string;
+  authUserId?: string;
   onAccept?: (answerId: number) => void;
   onDelete?: (answerId: number) => void;
 }) {
   const [showReplies, setShowReplies] = useState(false);
-  const { user: authUser } = useAuth();
 
   return (
     <div className={`bg-card border rounded-2xl p-5 transition-all ${answer.isAccepted ? "border-emerald-500/40 ring-1 ring-emerald-500/20" : "border-border"}`}>
@@ -194,7 +194,7 @@ function AnswerCard({ answer, isAuthenticated, login, questionOwnerId, onAccept,
                 ? `${answer.repliesCount} ${answer.repliesCount === 1 ? "reply" : "replies"}`
                 : "Replies"}
             </button>
-            {onAccept && authUser?.id === questionOwnerId && !answer.isAccepted && (
+            {onAccept && authUserId === questionOwnerId && !answer.isAccepted && (
               <button
                 onClick={() => onAccept(answer.id)}
                 className="text-xs text-muted-foreground hover:text-emerald-400 transition-colors"
@@ -202,7 +202,7 @@ function AnswerCard({ answer, isAuthenticated, login, questionOwnerId, onAccept,
                 ✓ Accept as best answer
               </button>
             )}
-            {onDelete && authUser?.id === answer.user?.userId && (
+            {onDelete && authUserId && authUserId === answer.user?.userId && (
               <button
                 onClick={() => { if (confirm("Delete this answer?")) onDelete(answer.id); }}
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-400 transition-colors ml-auto"
@@ -362,6 +362,7 @@ export default function QuestionDetailPage() {
                 isAuthenticated={isAuthenticated}
                 login={login}
                 questionOwnerId={question.user?.userId ?? undefined}
+                authUserId={(user as { id?: string } | null)?.id}
                 onDelete={(id) => deleteAnswer({ id })}
               />
             ))}
