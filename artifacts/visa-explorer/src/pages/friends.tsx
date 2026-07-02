@@ -381,8 +381,9 @@ function FriendRow({ id, firstName, lastName, profileImageUrl, homeCountry, frie
   onRemove: () => void; onMessage: () => void;
 }) {
   const name = [firstName, lastName].filter(Boolean).join(" ") || "Traveler";
+  const [, navigate] = useLocation();
   return (
-    <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/40 transition-colors group">
+    <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/40 transition-colors group cursor-pointer" onClick={() => navigate(`/user/${id}`)}>
       <Avatar url={profileImageUrl} name={name} size="md" />
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-sm truncate">{name}</p>
@@ -392,10 +393,10 @@ function FriendRow({ id, firstName, lastName, profileImageUrl, homeCountry, frie
         </div>
       </div>
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button onClick={onMessage} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" title="Message">
+        <button onClick={e => { e.stopPropagation(); onMessage(); }} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" title="Message">
           <MessageSquare className="w-3.5 h-3.5" />
         </button>
-        <button onClick={onRemove} className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Remove friend">
+        <button onClick={e => { e.stopPropagation(); onRemove(); }} className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Remove friend">
           <UserMinus className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -974,14 +975,14 @@ export default function FriendsPage() {
                   requests.map(r => {
                     const name = [r.firstName, r.lastName].filter(Boolean).join(" ") || "Traveler";
                     return (
-                      <div key={r.id} className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card">
+                      <div key={r.id} className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition-colors" onClick={() => navigate(`/user/${r.id}`)}>
                         <Avatar url={r.profileImageUrl} name={name} />
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-sm">{name}</p>
                           {r.homeCountry && <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><MapPin className="w-2.5 h-2.5" />{r.homeCountry}</p>}
                           <p className="text-xs text-muted-foreground mt-0.5">{r.createdAt ? timeAgo(r.createdAt) : ""}</p>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2" onClick={e => e.stopPropagation()}>
                           <Button size="sm" className="text-xs" onClick={() => acceptRequest.mutate({ requesterId: r.id }, { onSuccess: invalidate })} disabled={acceptRequest.isPending}>
                             <Check className="w-3.5 h-3.5 mr-1" />Accept
                           </Button>
@@ -1090,7 +1091,7 @@ export default function FriendsPage() {
                         <div
                           key={u.id}
                           className="rounded-xl border border-border bg-card p-4 cursor-pointer hover:border-primary/40 hover:bg-card/80 transition-colors"
-                          onClick={() => setProfileModalUserId(u.id)}
+                          onClick={() => navigate(`/user/${u.id}`)}
                         >
                           <div className="flex items-center gap-3">
                             <Avatar url={u.profileImageUrl} name={name} />

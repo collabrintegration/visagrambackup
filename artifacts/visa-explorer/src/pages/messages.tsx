@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, useLocation } from "wouter";
+import { useParams, useLocation, Link } from "wouter";
 import {
   useGetDmInbox,
   useGetDmRequests,
@@ -177,10 +177,14 @@ function ThreadPanel({
         <button onClick={onBack} className="md:hidden text-muted-foreground hover:text-foreground p-1">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <Avatar img={conv.otherUserProfileImageUrl} firstName={conv.otherUserFirstName} lastName={conv.otherUserLastName} size="sm" />
+        <Link href={`/user/${otherId}`}>
+          <Avatar img={conv.otherUserProfileImageUrl} firstName={conv.otherUserFirstName} lastName={conv.otherUserLastName} size="sm" />
+        </Link>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate">{displayName(conv.otherUserFirstName, conv.otherUserLastName)}</p>
-          {isRequest && <p className="text-xs text-amber-400">Message request</p>}
+          <Link href={`/user/${otherId}`} className="hover:text-primary transition-colors">
+            <p className="text-sm font-semibold truncate">{displayName(conv.otherUserFirstName, conv.otherUserLastName)}</p>
+          </Link>
+          {isRequest && <p className="text-xs text-amber-400">Message request · <Link href={`/user/${otherId}`} className="underline underline-offset-2 hover:text-amber-300">View profile</Link></p>}
           {iBlockedThem && <p className="text-xs text-muted-foreground flex items-center gap-1"><Lock className="w-3 h-3" /> Blocked</p>}
         </div>
         <div className="relative">
