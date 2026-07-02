@@ -23,6 +23,7 @@ import type {
   AcceptFriendRequest200,
   AddSupportCommentBody,
   AdminSearchUsersParams,
+  AdminUserDetail,
   AdminUsersPage,
   Answer,
   AnswerReply,
@@ -209,6 +210,83 @@ export function useAdminSearchUsers<TData = Awaited<ReturnType<typeof adminSearc
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getAdminSearchUsersQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAdminUserDetailUrl = (userId: string,) => {
+
+
+
+
+  return `/api/api/admin/users/${userId}`
+}
+
+/**
+ * @summary Get full profile and activity stats for a user (super admin only)
+ */
+export const getAdminUserDetail = async (userId: string, options?: RequestInit): Promise<AdminUserDetail> => {
+
+  return customFetch<AdminUserDetail>(getGetAdminUserDetailUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminUserDetailQueryKey = (userId: string,) => {
+    return [
+    `/api/api/admin/users/${userId}`
+    ] as const;
+    }
+
+
+export const getGetAdminUserDetailQueryOptions = <TData = Awaited<ReturnType<typeof getAdminUserDetail>>, TError = ErrorType<void>>(userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminUserDetail>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminUserDetailQueryKey(userId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminUserDetail>>> = ({ signal }) => getAdminUserDetail(userId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: userId !== null && userId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminUserDetail>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminUserDetailQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminUserDetail>>>
+export type GetAdminUserDetailQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get full profile and activity stats for a user (super admin only)
+ */
+
+export function useGetAdminUserDetail<TData = Awaited<ReturnType<typeof getAdminUserDetail>>, TError = ErrorType<void>>(
+ userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminUserDetail>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminUserDetailQueryOptions(userId,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

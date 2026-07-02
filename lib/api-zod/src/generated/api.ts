@@ -37,6 +37,39 @@ export const AdminSearchUsersResponse = zod.object({
 
 
 /**
+ * @summary Get full profile and activity stats for a user (super admin only)
+ */
+export const GetAdminUserDetailParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const GetAdminUserDetailResponse = zod.object({
+  "id": zod.string(),
+  "email": zod.string().nullish(),
+  "username": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "homeCountry": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "isPrivate": zod.boolean().optional(),
+  "isEmailPublic": zod.boolean().optional(),
+  "isSuperAdmin": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional(),
+  "stats": zod.object({
+  "reviews": zod.number(),
+  "questions": zod.number(),
+  "answers": zod.number(),
+  "travelEntries": zod.number(),
+  "visaApplications": zod.number(),
+  "groupMemberships": zod.number(),
+  "friends": zod.number()
+})
+})
+
+
+/**
  * @summary Get site-wide statistics (super admin only)
  */
 export const GetAdminSiteStatsResponse = zod.object({

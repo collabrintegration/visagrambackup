@@ -67,6 +67,31 @@ paths:
         "403":
           description: Forbidden
 
+  /api/admin/users/{userId}:
+    get:
+      operationId: getAdminUserDetail
+      tags: [admin]
+      summary: Get full profile and activity stats for a user (super admin only)
+      security:
+        - session: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User detail with activity stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserDetail"
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+
   /api/admin/site-stats:
     get:
       operationId: getAdminSiteStats
@@ -2331,6 +2356,62 @@ components:
             $ref: "#/components/schemas/AdminUserResult"
         total:
           type: integer
+
+    AdminUserDetail:
+      type: object
+      required: [id, createdAt, isSuperAdmin, stats]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          nullable: true
+        username:
+          type: string
+          nullable: true
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        profileImageUrl:
+          type: string
+          nullable: true
+        homeCountry:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        isPrivate:
+          type: boolean
+        isEmailPublic:
+          type: boolean
+        isSuperAdmin:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        stats:
+          type: object
+          required: [reviews, questions, answers, travelEntries, visaApplications, groupMemberships, friends]
+          properties:
+            reviews:
+              type: integer
+            questions:
+              type: integer
+            answers:
+              type: integer
+            travelEntries:
+              type: integer
+            visaApplications:
+              type: integer
+            groupMemberships:
+              type: integer
+            friends:
+              type: integer
 
     UserSearchResult:
       type: object

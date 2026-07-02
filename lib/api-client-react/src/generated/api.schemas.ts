@@ -30,6 +30,33 @@ export interface AdminUsersPage {
   total: number;
 }
 
+export type AdminUserDetailStats = {
+  reviews: number;
+  questions: number;
+  answers: number;
+  travelEntries: number;
+  visaApplications: number;
+  groupMemberships: number;
+  friends: number;
+};
+
+export interface AdminUserDetail {
+  id: string;
+  email?: string | null;
+  username?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  profileImageUrl?: string | null;
+  homeCountry?: string | null;
+  bio?: string | null;
+  isPrivate?: boolean;
+  isEmailPublic?: boolean;
+  isSuperAdmin: boolean;
+  createdAt: string;
+  updatedAt?: string;
+  stats: AdminUserDetailStats;
+}
+
 export interface UserSearchResult {
   id: string;
   username?: string | null;

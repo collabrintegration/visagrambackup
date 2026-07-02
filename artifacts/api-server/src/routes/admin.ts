@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request } from "express";
-import { db, usersTable, groupsTable, visaApplicationsTable, travelEntriesTable, reviewsTable, questionsTable, pageViewsTable } from "@workspace/db";
-import { count, eq, sql, gte, or, ilike, desc } from "drizzle-orm";
+import { db, usersTable, groupsTable, groupMembersTable, visaApplicationsTable, travelEntriesTable, reviewsTable, questionsTable, answersTable, pageViewsTable, friendshipsTable } from "@workspace/db";
+import { count, eq, sql, gte, or, ilike, desc, and } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -56,6 +56,66 @@ router.get("/api/admin/users/search", async (req, res) => {
   ]);
 
   res.json({ users: rows, total: totalRow?.total ?? 0 });
+});
+
+router.get("/api/admin/users/:userId", async (req, res) => {
+  if (!(await isSuperAdmin(req))) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+
+  const { userId } = req.params;
+
+  const [userRow] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.id, userId))
+    .limit(1);
+
+  if (!userRow) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  const [[reviewCount], [questionCount], [answerCount], [travelCount], [visaCount], [groupCount], [friendCount]] = await Promise.all([
+    db.select({ total: count() }).from(reviewsTable).where(eq(reviewsTable.userId, userId)),
+    db.select({ total: count() }).from(questionsTable).where(eq(questionsTable.userId, userId)),
+    db.select({ total: count() }).from(answersTable).where(eq(answersTable.userId, userId)),
+    db.select({ total: count() }).from(travelEntriesTable).where(eq(travelEntriesTable.userId, userId)),
+    db.select({ total: count() }).from(visaApplicationsTable).where(eq(visaApplicationsTable.userId, userId)),
+    db.select({ total: count() }).from(groupMembersTable).where(eq(groupMembersTable.userId, userId)),
+    db.select({ total: count() }).from(friendshipsTable).where(
+      and(
+        eq(friendshipsTable.status, "accepted"),
+        or(eq(friendshipsTable.requesterId, userId), eq(friendshipsTable.addresseeId, userId)),
+      ),
+    ),
+  ]);
+
+  res.json({
+    id: userRow.id,
+    email: userRow.email,
+    username: userRow.username,
+    firstName: userRow.firstName,
+    lastName: userRow.lastName,
+    profileImageUrl: userRow.profileImageUrl,
+    homeCountry: userRow.homeCountry,
+    bio: userRow.bio,
+    isPrivate: userRow.isPrivate,
+    isEmailPublic: userRow.isEmailPublic,
+    isSuperAdmin: userRow.isSuperAdmin,
+    createdAt: userRow.createdAt,
+    updatedAt: userRow.updatedAt,
+    stats: {
+      reviews: reviewCount?.total ?? 0,
+      questions: questionCount?.total ?? 0,
+      answers: answerCount?.total ?? 0,
+      travelEntries: travelCount?.total ?? 0,
+      visaApplications: visaCount?.total ?? 0,
+      groupMemberships: groupCount?.total ?? 0,
+      friends: friendCount?.total ?? 0,
+    },
+  });
 });
 
 router.post("/track", async (req, res) => {

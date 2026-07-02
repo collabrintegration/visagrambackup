@@ -12,6 +12,7 @@ import {
   useGetFollowedQuestions,
   useGetAdminSiteStats,
   useAdminSearchUsers,
+  useGetAdminUserDetail,
   getGetTravelMapQueryKey,
   getGetMyActivityQueryKey,
   getGetCurrentAuthUserQueryKey,
@@ -19,8 +20,9 @@ import {
   getGetFollowedQuestionsQueryKey,
   getGetAdminSiteStatsQueryKey,
   getAdminSearchUsersQueryKey,
+  getGetAdminUserDetailQueryKey,
 } from "@workspace/api-client-react";
-import type { ActivityQuestion, AdminUserResult } from "@workspace/api-client-react";
+import type { ActivityQuestion, AdminUserResult, AdminUserDetail } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -200,6 +202,12 @@ export default function Profile() {
   const userSearchResults = adminUsersData?.users ?? [];
   const adminTotalUsers = adminUsersData?.total ?? 0;
   const adminTotalPages = Math.ceil(adminTotalUsers / ADMIN_PAGE_SIZE);
+
+  const [selectedAdminUserId, setSelectedAdminUserId] = useState<string | null>(null);
+  const { data: adminUserDetail, isLoading: adminUserDetailLoading } = useGetAdminUserDetail(
+    selectedAdminUserId ?? "",
+    { query: { queryKey: getGetAdminUserDetailQueryKey(selectedAdminUserId ?? ""), enabled: !!selectedAdminUserId && isSuperAdmin } },
+  );
 
   const [showNewCase, setShowNewCase] = useState(false);
   const [caseSubject, setCaseSubject] = useState("");
@@ -1035,7 +1043,7 @@ export default function Profile() {
                     const fullName = [u.firstName, u.lastName].filter(Boolean).join(" ") || "—";
                     const initials = ((u.firstName?.[0] ?? "") + (u.lastName?.[0] ?? "")).toUpperCase() || "?";
                     return (
-                      <div key={u.id} className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4">
+                      <div key={u.id} onClick={() => setSelectedAdminUserId(u.id)} className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4 cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors">
                         {u.profileImageUrl ? (
                           <img src={u.profileImageUrl} alt={fullName} className="w-10 h-10 rounded-full object-cover shrink-0" />
                         ) : (
@@ -1116,6 +1124,119 @@ export default function Profile() {
           </div>
         )}
       </div>
+
+      {/* ── Admin User Detail Modal ─────────────────────────────────── */}
+      {selectedAdminUserId && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setSelectedAdminUserId(null); }}
+        >
+          <div className="bg-card border border-border rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border sticky top-0 bg-card z-10">
+              <h2 className="font-semibold text-lg">User Details</h2>
+              <button onClick={() => setSelectedAdminUserId(null)} className="text-muted-foreground hover:text-foreground">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {adminUserDetailLoading ? (
+              <div className="flex justify-center py-16">
+                <Loader2 className="w-7 h-7 animate-spin text-primary" />
+              </div>
+            ) : adminUserDetail ? (() => {
+              const d = adminUserDetail as AdminUserDetail;
+              const fullName = [d.firstName, d.lastName].filter(Boolean).join(" ") || "—";
+              const initials = ((d.firstName?.[0] ?? "") + (d.lastName?.[0] ?? "")).toUpperCase() || "?";
+              const statItems = [
+                { label: "Reviews", value: d.stats.reviews, icon: CheckCircle2, color: "text-emerald-400" },
+                { label: "Questions", value: d.stats.questions, icon: MessageSquare, color: "text-orange-400" },
+                { label: "Answers", value: d.stats.answers, icon: BookOpen, color: "text-blue-400" },
+                { label: "Travel Entries", value: d.stats.travelEntries, icon: Map, color: "text-cyan-400" },
+                { label: "Visa Apps", value: d.stats.visaApplications, icon: Globe, color: "text-primary" },
+                { label: "Groups", value: d.stats.groupMemberships, icon: Users, color: "text-violet-400" },
+                { label: "Friends", value: d.stats.friends, icon: Heart, color: "text-pink-400" },
+              ];
+              return (
+                <div className="p-6 space-y-6">
+                  {/* Header */}
+                  <div className="flex items-center gap-4">
+                    {d.profileImageUrl ? (
+                      <img src={d.profileImageUrl} alt={fullName} className="w-16 h-16 rounded-full object-cover shrink-0 ring-2 ring-border" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center shrink-0 text-xl font-bold text-primary">
+                        {initials}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-bold text-lg">{fullName}</h3>
+                        {d.isSuperAdmin && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                            <Shield className="w-3 h-3" />Super Admin
+                          </span>
+                        )}
+                      </div>
+                      {d.username && <p className="text-sm text-muted-foreground">@{d.username}</p>}
+                      {d.homeCountry && (
+                        <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                          <Globe className="w-3 h-3" />{d.homeCountry}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Identity */}
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Mail className="w-4 h-4 shrink-0" />
+                      <span className="truncate">{d.email ?? "—"}</span>
+                      {!d.isEmailPublic && <span className="text-xs text-amber-400">(private)</span>}
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Calendar className="w-4 h-4 shrink-0" />
+                      <span>Joined {new Date(d.createdAt as string).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded font-mono">{d.id}</code>
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      {d.isPrivate && (
+                        <span className="inline-flex items-center gap-1 text-xs text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                          <Lock className="w-3 h-3" />Private profile
+                        </span>
+                      )}
+                    </div>
+                    {d.bio && (
+                      <p className="text-sm text-foreground bg-muted/30 rounded-xl px-3 py-2 italic">"{d.bio}"</p>
+                    )}
+                  </div>
+
+                  {/* Activity Stats */}
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Activity</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {statItems.map(({ label, value, icon: Icon, color }) => (
+                        <div key={label} className="bg-muted/30 border border-border rounded-xl p-3 flex items-center gap-3">
+                          <Icon className={`w-4 h-4 shrink-0 ${color}`} />
+                          <div>
+                            <div className="font-bold text-sm">{value.toLocaleString()}</div>
+                            <div className="text-xs text-muted-foreground">{label}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })() : (
+              <div className="text-center py-16 text-muted-foreground">
+                <User className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                <p className="text-sm">Could not load user details.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── Ask a Question Modal ────────────────────────────────────── */}
       {showAskModal && (

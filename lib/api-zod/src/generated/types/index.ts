@@ -11,6 +11,8 @@ export * from './activityQuestion';
 export * from './addSupportCommentBody';
 export * from './addSupportCommentBodyStatus';
 export * from './adminSearchUsersParams';
+export * from './adminUserDetail';
+export * from './adminUserDetailStats';
 export * from './adminUserResult';
 export * from './adminUsersPage';
 export * from './answer';
