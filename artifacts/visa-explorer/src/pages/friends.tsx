@@ -291,12 +291,6 @@ function ProfilePanel({ friendCount }: { friendCount: number }) {
                 <span className="text-xs text-muted-foreground">{typedUser.location}</span>
               </div>
             )}
-            {user.homeCountry && !typedUser.location && (
-              <div className="flex items-center gap-2">
-                <Globe className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                <span className="text-xs text-muted-foreground">{user.homeCountry}</span>
-              </div>
-            )}
             {typedUser.age && (
               <div className="flex items-center gap-2">
                 <CalendarDays className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
