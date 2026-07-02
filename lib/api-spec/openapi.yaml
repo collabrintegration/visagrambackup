@@ -4249,10 +4249,11 @@ components:
 
     CreatePhotoBody:
       type: object
-      required: [countryCode, objectPath]
+      required: [objectPath]
       properties:
         countryCode:
           type: string
+          nullable: true
         objectPath:
           type: string
         caption:

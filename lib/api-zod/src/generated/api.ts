@@ -2271,7 +2271,7 @@ export const ListPhotosResponse = zod.object({
  * @summary Save a travel photo after upload
  */
 export const CreatePhotoBody = zod.object({
-  "countryCode": zod.string(),
+  "countryCode": zod.string().nullish(),
   "objectPath": zod.string(),
   "caption": zod.string().nullish(),
   "orientation": zod.string().nullish()

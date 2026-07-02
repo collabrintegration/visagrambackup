@@ -35,7 +35,6 @@ import {
 } from "@workspace/api-client-react";
 import type { TravelPhoto } from "@workspace/api-client-react";
 import { ObjectUploader } from "@workspace/object-storage-web";
-import CountryCombobox from "@/components/country-combobox";
 import UserProfileModal from "@/components/user-profile-modal";
 import type { Group, GroupJoinRequest } from "@workspace/api-client-react";
 import DmProfileTab from "@/components/dm-profile-tab";
@@ -819,7 +818,6 @@ export default function FriendsPage() {
   const [profileModalUserId, setProfileModalUserId] = useState<string | null>(null);
   const [photoLightbox, setPhotoLightbox] = useState<TravelPhoto | null>(null);
   const [showPhotoUploadModal, setShowPhotoUploadModal] = useState(false);
-  const [photoUploadCountry, setPhotoUploadCountry] = useState<string | null>(null);
   const [pendingPhotoPath, setPendingPhotoPath] = useState<string | null>(null);
   const [pendingPhotoCaption, setPendingPhotoCaption] = useState("");
   const [showPhotoCaptionStep, setShowPhotoCaptionStep] = useState(false);
@@ -880,7 +878,6 @@ export default function FriendsPage() {
         setShowPhotoCaptionStep(false);
         setPendingPhotoPath(null);
         setPendingPhotoCaption("");
-        setPhotoUploadCountry(null);
       },
     },
   });
@@ -1159,7 +1156,7 @@ export default function FriendsPage() {
                       <span className="text-xs font-normal text-muted-foreground">({myPhotos.length})</span>
                     )}
                   </h3>
-                  <Button size="sm" variant="outline" onClick={() => { setShowPhotoUploadModal(true); setShowPhotoCaptionStep(false); setPendingPhotoPath(null); setPendingPhotoCaption(""); setPhotoUploadCountry(null); }}>
+                  <Button size="sm" variant="outline" onClick={() => { setShowPhotoUploadModal(true); setShowPhotoCaptionStep(false); setPendingPhotoPath(null); setPendingPhotoCaption(""); }}>
                     <Camera className="w-3.5 h-3.5 mr-1.5" /> Upload Photo
                   </Button>
                 </div>
@@ -1169,7 +1166,7 @@ export default function FriendsPage() {
                 ) : myPhotos.length === 0 ? (
                   <div
                     className="flex flex-col items-center justify-center py-10 border border-dashed border-border rounded-xl cursor-pointer hover:border-primary/40 transition-colors"
-                    onClick={() => { setShowPhotoUploadModal(true); setShowPhotoCaptionStep(false); setPendingPhotoPath(null); setPendingPhotoCaption(""); setPhotoUploadCountry(null); }}
+                    onClick={() => { setShowPhotoUploadModal(true); setShowPhotoCaptionStep(false); setPendingPhotoPath(null); setPendingPhotoCaption(""); }}
                   >
                     <Camera className="w-8 h-8 text-muted-foreground/30 mb-2" />
                     <p className="text-sm text-muted-foreground">No photos yet — click to upload your first</p>
@@ -1266,42 +1263,29 @@ export default function FriendsPage() {
             <div className="p-6 space-y-4">
               {!showPhotoCaptionStep ? (
                 <>
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1.5 block font-medium">Which country?</label>
-                    <CountryCombobox
-                      value={photoUploadCountry}
-                      onChange={setPhotoUploadCountry}
-                      placeholder="Select the country you photographed"
-                    />
-                  </div>
-                  {photoUploadCountry && (
-                    <div>
-                      <label className="text-xs text-muted-foreground mb-1.5 block font-medium">Photo</label>
-                      <ObjectUploader
-                        maxNumberOfFiles={1}
-                        maxFileSize={10 * 1024 * 1024}
-                        onGetUploadParameters={async (file) => {
-                          const res = await fetch("/api/storage/uploads/request-url", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
-                          });
-                          const data = await res.json() as { uploadURL: string; objectPath: string };
-                          setPendingPhotoPath(data.objectPath);
-                          return { method: "PUT" as const, url: data.uploadURL, headers: { "Content-Type": file.type as string } };
-                        }}
-                        onComplete={(result) => {
-                          if ((result.successful ?? []).length > 0) setShowPhotoCaptionStep(true);
-                        }}
-                      >
-                        <div className="w-full border-2 border-dashed border-border rounded-xl py-10 flex flex-col items-center gap-2 text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors cursor-pointer">
-                          <Camera className="w-8 h-8" />
-                          <span className="text-sm font-medium">Click to upload photo</span>
-                          <span className="text-xs">JPG, PNG, WebP up to 10 MB</span>
-                        </div>
-                      </ObjectUploader>
+                  <ObjectUploader
+                    maxNumberOfFiles={1}
+                    maxFileSize={10 * 1024 * 1024}
+                    onGetUploadParameters={async (file) => {
+                      const res = await fetch("/api/storage/uploads/request-url", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
+                      });
+                      const data = await res.json() as { uploadURL: string; objectPath: string };
+                      setPendingPhotoPath(data.objectPath);
+                      return { method: "PUT" as const, url: data.uploadURL, headers: { "Content-Type": file.type as string } };
+                    }}
+                    onComplete={(result) => {
+                      if ((result.successful ?? []).length > 0) setShowPhotoCaptionStep(true);
+                    }}
+                  >
+                    <div className="w-full border-2 border-dashed border-border rounded-xl py-10 flex flex-col items-center gap-2 text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors cursor-pointer">
+                      <Camera className="w-8 h-8" />
+                      <span className="text-sm font-medium">Click to upload photo</span>
+                      <span className="text-xs">JPG, PNG, WebP up to 10 MB</span>
                     </div>
-                  )}
+                  </ObjectUploader>
                 </>
               ) : (
                 <>
@@ -1319,12 +1303,11 @@ export default function FriendsPage() {
                   <div className="flex gap-3 pt-1">
                     <Button
                       className="flex-1"
-                      disabled={createPhoto.isPending || !photoUploadCountry || !pendingPhotoPath}
+                      disabled={createPhoto.isPending || !pendingPhotoPath}
                       onClick={() => {
-                        if (!photoUploadCountry || !pendingPhotoPath) return;
+                        if (!pendingPhotoPath) return;
                         createPhoto.mutate({
                           data: {
-                            countryCode: photoUploadCountry,
                             objectPath: pendingPhotoPath,
                             caption: pendingPhotoCaption.trim() || undefined,
                           },

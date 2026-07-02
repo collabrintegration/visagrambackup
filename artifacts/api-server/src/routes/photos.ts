@@ -37,21 +37,21 @@ router.post("/photos", async (req, res) => {
   }
 
   const { countryCode, objectPath, caption, orientation } = req.body as {
-    countryCode: string;
+    countryCode?: string;
     objectPath: string;
     caption?: string;
     orientation?: string;
   };
 
-  if (!countryCode || !objectPath) {
-    return res.status(400).json({ error: "countryCode and objectPath are required" });
+  if (!objectPath) {
+    return res.status(400).json({ error: "objectPath is required" });
   }
 
   const [photo] = await db
     .insert(travelPhotosTable)
     .values({
       userId: req.user.id,
-      countryCode: countryCode.toUpperCase(),
+      countryCode: countryCode ? countryCode.toUpperCase() : null,
       objectPath,
       caption: caption ?? null,
       orientation: orientation ?? "landscape",

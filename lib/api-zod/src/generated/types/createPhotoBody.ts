@@ -7,7 +7,7 @@
  */
 
 export interface CreatePhotoBody {
-  countryCode: string;
+  countryCode?: string | null;
   objectPath: string;
   caption?: string | null;
   orientation?: string | null;

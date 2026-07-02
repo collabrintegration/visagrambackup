@@ -3,7 +3,7 @@ import { boolean, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/
 export const travelPhotosTable = pgTable("travel_photos", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull(),
-  countryCode: varchar("country_code", { length: 3 }).notNull(),
+  countryCode: varchar("country_code", { length: 3 }),
   objectPath: text("object_path").notNull(),
   caption: varchar("caption", { length: 300 }),
   orientation: varchar("orientation", { length: 10 }).notNull().default("landscape"),
