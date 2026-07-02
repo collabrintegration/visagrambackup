@@ -56,7 +56,7 @@ export default function SignIn() {
             <img
               src="/visagram-logo.png"
               alt="Visagram"
-              className="h-14 w-auto object-contain"
+              className="h-24 w-auto object-contain"
             />
           </div>
 
@@ -84,7 +84,7 @@ export default function SignIn() {
             disabled={isLoading}
           >
             <LogIn className="w-4 h-4" />
-            Continue with Replit
+            Continue to Login
           </Button>
           <p className="text-xs text-muted-foreground text-center">
             By continuing you agree to Visagram's terms of use.
