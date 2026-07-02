@@ -13,6 +13,17 @@ export interface OkResponse {
   ok: boolean;
 }
 
+export interface AdminUserResult {
+  id: string;
+  email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  profileImageUrl?: string | null;
+  homeCountry?: string | null;
+  isSuperAdmin: boolean;
+  createdAt: string;
+}
+
 export interface SiteStats {
   totalUsers: number;
   totalGroups: number;
@@ -893,6 +904,14 @@ export interface VisaTrackerAnalytics {
   byCountry: VisaTrackerAnalyticsByCountryItem[];
   byVisaType: VisaTrackerAnalyticsByVisaTypeItem[];
 }
+
+export type AdminSearchUsersParams = {
+/**
+ * Search query (name or email)
+ */
+q?: string;
+limit?: number;
+};
 
 export type ListCountriesParams = {
 /**

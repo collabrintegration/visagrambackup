@@ -15,6 +15,7 @@ import {
   useApproveGroupJoinRequest,
   useRejectGroupJoinRequest,
   useGetAdminSiteStats,
+  useAdminSearchUsers,
   useGetDmUnreadCount,
   getGetTravelMapQueryKey,
   getGetMyActivityQueryKey,
@@ -24,10 +25,11 @@ import {
   getListGroupsQueryKey,
   getListGroupJoinRequestsQueryKey,
   getGetAdminSiteStatsQueryKey,
+  getAdminSearchUsersQueryKey,
   getGetDmUnreadCountQueryKey,
 } from "@workspace/api-client-react";
 import DmProfileTab from "@/components/dm-profile-tab";
-import type { ActivityQuestion, Group, GroupJoinRequest } from "@workspace/api-client-react";
+import type { ActivityQuestion, Group, GroupJoinRequest, AdminUserResult } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -35,7 +37,7 @@ import {
   User, MessageSquare, BookOpen, ChevronDown, ShieldAlert,
   PlusCircle, X, Clock, RefreshCw, XCircle, Bell, PenLine, Save,
   Users, Crown, Lock, UserCheck, UserX, ChevronRight, BarChart2, Inbox,
-  TrendingUp, Activity,
+  TrendingUp, Activity, Search, Shield, Mail, Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -385,6 +387,14 @@ export default function Profile() {
   const { data: siteStats, isLoading: statsLoading } = useGetAdminSiteStats({
     query: { queryKey: getGetAdminSiteStatsQueryKey(), enabled: isAuthenticated && isSuperAdmin && activeTab === "admin" },
   });
+
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [userSearchInput, setUserSearchInput] = useState("");
+  const userSearchParams = { q: userSearchQuery, limit: 30 };
+  const { data: userSearchResults, isLoading: userSearchLoading } = useAdminSearchUsers(
+    userSearchParams,
+    { query: { queryKey: getAdminSearchUsersQueryKey(userSearchParams), enabled: isAuthenticated && isSuperAdmin && activeTab === "admin" } },
+  );
 
   const { data: dmUnread } = useGetDmUnreadCount({
     query: { queryKey: getGetDmUnreadCountQueryKey(), enabled: isAuthenticated, refetchInterval: 15000 },
@@ -1072,6 +1082,110 @@ export default function Profile() {
                 </div>
               </div>
             )}
+
+            {/* ── User Search ────────────────────────────────────── */}
+            <div className="mt-8">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
+                  <Search className="w-5 h-5 text-blue-400" />
+                </div>
+                <div>
+                  <h2 className="font-bold text-lg">User Search</h2>
+                  <p className="text-xs text-muted-foreground">Find any user by name or email address.</p>
+                </div>
+              </div>
+
+              <form
+                className="flex gap-2 mb-4"
+                onSubmit={(e) => { e.preventDefault(); setUserSearchQuery(userSearchInput.trim()); }}
+              >
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Search by name or email…"
+                    className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    value={userSearchInput}
+                    onChange={(e) => setUserSearchInput(e.target.value)}
+                  />
+                </div>
+                <Button type="submit" size="sm" className="px-5">Search</Button>
+                {userSearchQuery && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { setUserSearchQuery(""); setUserSearchInput(""); }}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+              </form>
+
+              {userSearchLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                </div>
+              ) : userSearchResults && userSearchResults.length > 0 ? (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    {userSearchResults.length} result{userSearchResults.length !== 1 ? "s" : ""}
+                    {userSearchQuery ? ` for "${userSearchQuery}"` : " (showing all recent)"}
+                  </p>
+                  {userSearchResults.map((u: AdminUserResult) => {
+                    const fullName = [u.firstName, u.lastName].filter(Boolean).join(" ") || "—";
+                    const initials = ((u.firstName?.[0] ?? "") + (u.lastName?.[0] ?? "")).toUpperCase() || "?";
+                    return (
+                      <div key={u.id} className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4">
+                        {u.profileImageUrl ? (
+                          <img src={u.profileImageUrl} alt={fullName} className="w-10 h-10 rounded-full object-cover shrink-0" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0 text-sm font-bold text-primary">
+                            {initials}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-sm truncate">{fullName}</span>
+                            {u.isSuperAdmin && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                <Shield className="w-3 h-3" />Super Admin
+                              </span>
+                            )}
+                            {u.homeCountry && (
+                              <span className="text-xs text-muted-foreground">{u.homeCountry}</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                            {u.email && (
+                              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                <Mail className="w-3 h-3" />{u.email}
+                              </span>
+                            )}
+                            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                              <Calendar className="w-3 h-3" />Joined {new Date(u.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                        <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-lg font-mono shrink-0 hidden sm:block">
+                          {u.id.slice(0, 8)}…
+                        </code>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : userSearchQuery ? (
+                <div className="text-center py-10 text-muted-foreground">
+                  <User className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">No users found for "{userSearchQuery}"</p>
+                </div>
+              ) : (
+                <div className="text-center py-10 text-muted-foreground">
+                  <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">Type a name or email and hit Search</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

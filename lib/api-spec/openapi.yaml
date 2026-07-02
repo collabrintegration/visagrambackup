@@ -31,6 +31,38 @@ tags:
   - name: dm
     description: Private direct messages between users
 paths:
+  /api/admin/users/search:
+    get:
+      operationId: adminSearchUsers
+      tags: [admin]
+      summary: Search users by name or email (super admin only)
+      security:
+        - session: []
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Search query (name or email)
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of matching users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminUserResult"
+        "403":
+          description: Forbidden
+
   /api/admin/site-stats:
     get:
       operationId: getAdminSiteStats
@@ -2011,6 +2043,32 @@ components:
         ok:
           type: boolean
       required: [ok]
+
+    AdminUserResult:
+      type: object
+      required: [id, createdAt, isSuperAdmin]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          nullable: true
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        profileImageUrl:
+          type: string
+          nullable: true
+        homeCountry:
+          type: string
+          nullable: true
+        isSuperAdmin:
+          type: boolean
+        createdAt:
+          type: string
 
     SiteStats:
       type: object

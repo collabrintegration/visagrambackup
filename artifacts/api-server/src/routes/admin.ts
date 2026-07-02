@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request } from "express";
 import { db, usersTable, groupsTable, visaApplicationsTable, travelEntriesTable, reviewsTable, questionsTable, pageViewsTable } from "@workspace/db";
-import { count, eq, sql, gte } from "drizzle-orm";
+import { count, eq, sql, gte, or, ilike } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -13,6 +13,43 @@ async function isSuperAdmin(req: Request): Promise<boolean> {
     .limit(1);
   return row[0]?.isSuperAdmin === true;
 }
+
+router.get("/api/admin/users/search", async (req, res) => {
+  if (!(await isSuperAdmin(req))) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+
+  const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+  const limit = Math.min(Number(req.query.limit) || 20, 100);
+
+  const rows = await db
+    .select({
+      id: usersTable.id,
+      email: usersTable.email,
+      firstName: usersTable.firstName,
+      lastName: usersTable.lastName,
+      profileImageUrl: usersTable.profileImageUrl,
+      homeCountry: usersTable.homeCountry,
+      isSuperAdmin: usersTable.isSuperAdmin,
+      createdAt: usersTable.createdAt,
+    })
+    .from(usersTable)
+    .where(
+      q.length > 0
+        ? or(
+            ilike(usersTable.firstName, `%${q}%`),
+            ilike(usersTable.lastName, `%${q}%`),
+            ilike(usersTable.email, `%${q}%`),
+            ilike(sql`concat(${usersTable.firstName}, ' ', ${usersTable.lastName})`, `%${q}%`),
+          )
+        : undefined
+    )
+    .orderBy(usersTable.createdAt)
+    .limit(limit);
+
+  res.json(rows);
+});
 
 router.post("/track", async (req, res) => {
   const path = typeof req.body?.path === "string" ? req.body.path.slice(0, 500) : "/";

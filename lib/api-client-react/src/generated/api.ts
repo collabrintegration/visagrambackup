@@ -21,6 +21,8 @@ import type {
 
 import type {
   AddSupportCommentBody,
+  AdminSearchUsersParams,
+  AdminUserResult,
   Answer,
   AnswerReply,
   AnthropicConversation,
@@ -124,6 +126,90 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getAdminSearchUsersUrl = (params?: AdminSearchUsersParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/api/admin/users/search?${stringifiedParams}` : `/api/api/admin/users/search`
+}
+
+/**
+ * @summary Search users by name or email (super admin only)
+ */
+export const adminSearchUsers = async (params?: AdminSearchUsersParams, options?: RequestInit): Promise<AdminUserResult[]> => {
+
+  return customFetch<AdminUserResult[]>(getAdminSearchUsersUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getAdminSearchUsersQueryKey = (params?: AdminSearchUsersParams,) => {
+    return [
+    `/api/api/admin/users/search`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getAdminSearchUsersQueryOptions = <TData = Awaited<ReturnType<typeof adminSearchUsers>>, TError = ErrorType<void>>(params?: AdminSearchUsersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminSearchUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAdminSearchUsersQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof adminSearchUsers>>> = ({ signal }) => adminSearchUsers(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof adminSearchUsers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type AdminSearchUsersQueryResult = NonNullable<Awaited<ReturnType<typeof adminSearchUsers>>>
+export type AdminSearchUsersQueryError = ErrorType<void>
+
+
+/**
+ * @summary Search users by name or email (super admin only)
+ */
+
+export function useAdminSearchUsers<TData = Awaited<ReturnType<typeof adminSearchUsers>>, TError = ErrorType<void>>(
+ params?: AdminSearchUsersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminSearchUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getAdminSearchUsersQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetAdminSiteStatsUrl = () => {
 

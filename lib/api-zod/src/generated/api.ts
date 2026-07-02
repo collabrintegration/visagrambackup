@@ -9,6 +9,29 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary Search users by name or email (super admin only)
+ */
+export const adminSearchUsersQueryLimitDefault = 20;
+
+export const AdminSearchUsersQueryParams = zod.object({
+  "q": zod.coerce.string().optional().describe('Search query (name or email)'),
+  "limit": zod.coerce.number().default(adminSearchUsersQueryLimitDefault)
+})
+
+export const AdminSearchUsersResponseItem = zod.object({
+  "id": zod.string(),
+  "email": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "homeCountry": zod.string().nullish(),
+  "isSuperAdmin": zod.boolean(),
+  "createdAt": zod.string()
+})
+export const AdminSearchUsersResponse = zod.array(AdminSearchUsersResponseItem)
+
+
+/**
  * @summary Get site-wide statistics (super admin only)
  */
 export const GetAdminSiteStatsResponse = zod.object({
