@@ -123,6 +123,16 @@ router.post("/groups", async (req: Request, res: Response) => {
 
   if (!name?.trim()) { res.status(400).json({ error: "name is required" }); return; }
 
+  const [{ adminCount }] = await db
+    .select({ adminCount: count() })
+    .from(groupsTable)
+    .where(eq(groupsTable.adminId, userId));
+
+  if (adminCount >= 5) {
+    res.status(403).json({ error: "You can only be admin of up to 5 groups." });
+    return;
+  }
+
   const [group] = await db
     .insert(groupsTable)
     .values({ name: name.trim(), description: description?.trim() ?? null, emoji, isPrivate, adminId: userId })

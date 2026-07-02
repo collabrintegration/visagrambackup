@@ -79,6 +79,8 @@ export default function Groups() {
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: getListGroupsQueryKey() });
 
+  const [createError, setCreateError] = useState<string | null>(null);
+
   const { mutate: createGroup, isPending: isCreating } = useCreateGroup({
     mutation: {
       onSuccess: () => {
@@ -88,6 +90,11 @@ export default function Groups() {
         setDescription("");
         setEmoji("🌍");
         setIsPrivate(false);
+        setCreateError(null);
+      },
+      onError: (err: unknown) => {
+        const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+        setCreateError(msg ?? "Failed to create group.");
       },
     },
   });
@@ -303,11 +310,17 @@ export default function Groups() {
                 <span className="text-xs text-muted-foreground">(members must request to join)</span>
               </label>
 
+              {createError && (
+                <p className="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+                  {createError}
+                </p>
+              )}
+
               <div className="flex gap-3 pt-1">
                 <Button
                   className="flex-1"
                   disabled={isCreating || !name.trim() || exactDuplicate}
-                  onClick={() => createGroup({ data: { name, description: description || undefined, emoji, isPrivate } })}
+                  onClick={() => { setCreateError(null); createGroup({ data: { name, description: description || undefined, emoji, isPrivate } }); }}
                 >
                   {isCreating ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Plus className="w-4 h-4 mr-1.5" />}
                   Create Group
