@@ -154,7 +154,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <footer className="border-t border-border bg-card">
         <div className="container mx-auto px-4 py-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-3">
-            <img src="/visagram-logo.png" alt="Visagram" className="h-7 w-auto opacity-80" />
+            <img src="/visagram-logo.png" alt="Visagram" className="h-12 w-auto opacity-80" />
             <p className="text-xs text-muted-foreground">Navigate the world with precision.</p>
           </div>
           <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
