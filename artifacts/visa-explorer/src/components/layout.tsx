@@ -43,9 +43,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 className="w-full h-full object-cover object-center opacity-90 group-hover:opacity-100 transition-opacity"
               />
             </div>
-            <span className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground/70 group-hover:text-primary/60 transition-colors -mt-0.5 pl-0.5">
-              The largest travel community
-            </span>
+            <div
+              title="The largest travel community"
+              style={{
+                width: 150,
+                height: 17,
+                backgroundImage: "url('/tagline.png')",
+                backgroundSize: "160px 160px",
+                backgroundPosition: "0 -72px",
+                backgroundRepeat: "no-repeat",
+                mixBlendMode: "screen",
+              }}
+              className="opacity-80 group-hover:opacity-100 transition-opacity shrink-0"
+            />
           </Link>
 
           {/* Desktop nav */}
