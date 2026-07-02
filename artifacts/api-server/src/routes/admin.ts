@@ -14,13 +14,13 @@ async function isSuperAdmin(req: Request): Promise<boolean> {
   return row[0]?.isSuperAdmin === true;
 }
 
-router.post("/api/track", async (req, res) => {
+router.post("/track", async (req, res) => {
   const path = typeof req.body?.path === "string" ? req.body.path.slice(0, 500) : "/";
   await db.insert(pageViewsTable).values({ path });
   res.status(204).end();
 });
 
-router.get("/api/admin/site-stats", async (req, res) => {
+router.get("/admin/site-stats", async (req, res) => {
   if (!(await isSuperAdmin(req))) {
     res.status(403).json({ error: "Forbidden" });
     return;
