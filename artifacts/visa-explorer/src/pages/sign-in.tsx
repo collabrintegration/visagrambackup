@@ -46,8 +46,8 @@ export default function SignIn() {
             style={{ filter: "drop-shadow(0 0 12px hsl(347 50% 42% / 0.45))" }}
           >
             <img
-              src="/visafy-logo.png"
-              alt="Visafy"
+              src="/visagram-logo.png"
+              alt="Visagram"
               className="h-14 w-auto object-contain"
             />
           </div>
@@ -79,7 +79,7 @@ export default function SignIn() {
             Continue with Replit
           </Button>
           <p className="text-xs text-muted-foreground text-center">
-            By continuing you agree to Visafy's terms of use.
+            By continuing you agree to Visagram's terms of use.
           </p>
         </div>
 

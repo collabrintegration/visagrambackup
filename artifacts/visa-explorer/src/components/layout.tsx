@@ -26,8 +26,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
           <Link href="/" className="flex items-center shrink-0 group overflow-hidden" style={{ width: 150, height: 46 }}>
             <img
-              src="/visafy-logo.png"
-              alt="Visafy"
+              src="/visagram-logo.png"
+              alt="Visagram"
               className="w-full h-full object-cover object-center opacity-90 group-hover:opacity-100 transition-opacity"
             />
           </Link>
@@ -131,7 +131,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <footer className="border-t border-border bg-card">
         <div className="container mx-auto px-4 py-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-3">
-            <img src="/visafy-logo.png" alt="Visafy" className="h-7 w-auto opacity-80" />
+            <img src="/visagram-logo.png" alt="Visagram" className="h-7 w-auto opacity-80" />
             <p className="text-xs text-muted-foreground">Navigate the world with precision.</p>
           </div>
           <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
@@ -143,7 +143,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <div className="text-xs text-muted-foreground/60">collabrintegration@gmail.com</div>
           </div>
           <div className="flex flex-col items-center md:items-end gap-1 text-sm text-muted-foreground">
-            <div>&copy; {new Date().getFullYear()} Visafy. Data is for informational purposes only.</div>
+            <div>&copy; {new Date().getFullYear()} Visagram. Data is for informational purposes only.</div>
             {health && (
               <div className="flex items-center gap-1.5 text-xs">
                 <div className={`w-1.5 h-1.5 rounded-full ${health.status === "ok" ? "bg-emerald-500" : "bg-red-500"}`} />

@@ -1,4 +1,4 @@
-# Visafy
+# Visagram
 
 A visa explorer website where travelers discover visa requirements, read community reviews, ask questions, and track their travel map — all in one place.
 

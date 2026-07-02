@@ -264,7 +264,7 @@ export default function AIChatWidget() {
               <Bot className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <p className="text-sm font-semibold leading-none">Visafy AI</p>
+              <p className="text-sm font-semibold leading-none">Visagram AI</p>
               <p className="text-xs text-muted-foreground mt-0.5">Travel advisor</p>
             </div>
           </div>

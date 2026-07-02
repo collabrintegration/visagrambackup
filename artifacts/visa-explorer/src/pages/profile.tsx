@@ -595,7 +595,7 @@ export default function Profile() {
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="font-semibold">Your Support Cases</h3>
-                  <p className="text-sm text-muted-foreground mt-0.5">Track your queries with the Visafy team</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">Track your queries with the Visagram team</p>
                 </div>
                 <Button size="sm" onClick={() => setShowNewCase(true)}>
                   <PlusCircle className="w-4 h-4 mr-1.5" /> New Case

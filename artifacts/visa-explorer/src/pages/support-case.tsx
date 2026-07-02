@@ -124,7 +124,7 @@ export default function SupportCasePage() {
             >
               <div className="flex items-center gap-2 mb-2">
                 <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${c.isAdmin ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
-                  {c.isAdmin ? "Visafy Support" : "You"}
+                  {c.isAdmin ? "Visagram Support" : "You"}
                 </span>
                 <span className="text-xs text-muted-foreground">{timeAgo(c.createdAt)}</span>
               </div>

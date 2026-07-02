@@ -21,7 +21,7 @@ async function send(opts: { to: string; subject: string; html: string }) {
     return;
   }
   try {
-    await transport.sendMail({ from: `"Visafy Support" <${GMAIL_USER}>`, ...opts });
+    await transport.sendMail({ from: `"Visagram Support" <${GMAIL_USER}>`, ...opts });
   } catch (err) {
     logger.error({ err }, "Failed to send email");
   }
@@ -37,7 +37,7 @@ export async function sendNewCaseAlert(opts: {
   const caseUrl = `${APP_URL}/support/cases/${opts.caseId}`;
   await send({
     to: ADMIN_EMAIL,
-    subject: `[Visafy Support] New case #${opts.caseId}: ${opts.subject}`,
+    subject: `[Visagram Support] New case #${opts.caseId}: ${opts.subject}`,
     html: `
       <h2>New Support Case #${opts.caseId}</h2>
       <p><strong>From:</strong> ${opts.userName} (${opts.userEmail})</p>
@@ -45,8 +45,8 @@ export async function sendNewCaseAlert(opts: {
       <hr/>
       <p>${opts.body.replace(/\n/g, "<br/>")}</p>
       <hr/>
-      <p><a href="${caseUrl}" style="background:#7c1a3a;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;">Reply in Visafy →</a></p>
-      <p style="color:#888;font-size:12px;">Log in as admin at Visafy and reply from the case page.</p>
+      <p><a href="${caseUrl}" style="background:#7c1a3a;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;">Reply in Visagram →</a></p>
+      <p style="color:#888;font-size:12px;">Log in as admin at Visagram and reply from the case page.</p>
     `,
   });
 }
@@ -63,7 +63,7 @@ export async function sendCaseUpdate(opts: {
   const statusLine = opts.newStatus ? `<p><strong>Status updated to:</strong> ${opts.newStatus}</p>` : "";
   await send({
     to: opts.toEmail,
-    subject: `[Visafy Support] Reply on case #${opts.caseId}: ${opts.subject}`,
+    subject: `[Visagram Support] Reply on case #${opts.caseId}: ${opts.subject}`,
     html: `
       <h2>New reply on your support case #${opts.caseId}</h2>
       <p><strong>Subject:</strong> ${opts.subject}</p>
