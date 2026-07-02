@@ -26,6 +26,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { GifPicker, GifPreview } from "@/components/gif-picker";
+import MentionDropdown from "@/components/mention-dropdown";
+import MentionText from "@/components/mention-text";
+import { useMentionAutocomplete } from "@/hooks/use-mention-autocomplete";
 
 function timeAgo(dt: string | null | undefined): string {
   if (!dt) return "";

@@ -36,6 +36,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { GifPicker, GifPreview } from "@/components/gif-picker";
 import UserMiniCard from "@/components/user-mini-card";
+import MentionDropdown from "@/components/mention-dropdown";
+import MentionText from "@/components/mention-text";
+import { useMentionAutocomplete } from "@/hooks/use-mention-autocomplete";
 
 function timeStr(dateStr: string): string {
   const d = new Date(dateStr);
@@ -78,6 +81,7 @@ export default function GroupChat() {
   const [sgMemberSearch, setSgMemberSearch] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const mention = useMentionAutocomplete(message, setMessage, inputRef);
 
   const groupKey = getGetGroupQueryKey(groupId);
   const messagesKey = getListGroupMessagesQueryKey(groupId);
@@ -388,14 +392,27 @@ export default function GroupChat() {
                   >
                     <ImageIcon className="w-4 h-4" />
                   </button>
-                  <input
-                    ref={inputRef}
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                    placeholder="Type a message…"
-                    className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
-                  />
+                  <div className="relative flex-1">
+                    {mention.active && (
+                      <MentionDropdown
+                        suggestions={mention.suggestions}
+                        highlighted={mention.highlighted}
+                        onHover={mention.setHighlighted}
+                        onSelect={mention.select}
+                      />
+                    )}
+                    <input
+                      ref={inputRef}
+                      value={message}
+                      onChange={(e) => mention.onChangeText(e.target.value, e.target.selectionStart ?? e.target.value.length)}
+                      onKeyDown={(e) => {
+                        if (mention.onKeyDown(e)) return;
+                        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+                      }}
+                      placeholder="Type a message… (@ to mention)"
+                      className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                    />
+                  </div>
                   <Button
                     size="sm"
                     onClick={handleSend}
@@ -809,7 +826,7 @@ function MessageBubble({
                 : "bg-card border border-border rounded-tl-sm"
             }`}
           >
-            {msg.content && <span>{msg.content}</span>}
+            {msg.content && <MentionText text={msg.content} />}
             {msg.gifUrl && <GifPreview url={msg.gifUrl} />}
           </div>
           {hover && (
