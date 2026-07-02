@@ -234,28 +234,6 @@ export default function UserPublicProfilePage() {
             </div>
           )}
 
-          {/* Stats */}
-          <div className="rounded-2xl border border-border bg-card p-4">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Stats</h3>
-            <div className="grid grid-cols-2 gap-3 text-center">
-              <div>
-                <p className="text-2xl font-bold">{p.visitedCount ?? 0}</p>
-                <p className="text-xs text-muted-foreground">Visited</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{p.wantToVisitCount ?? 0}</p>
-                <p className="text-xs text-muted-foreground">Wishlist</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{photos.length}</p>
-                <p className="text-xs text-muted-foreground">Photos</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{testimonials.length}</p>
-                <p className="text-xs text-muted-foreground">Testimonials</p>
-              </div>
-            </div>
-          </div>
         </aside>
 
         {/* ── RIGHT PANEL — stacked sections ── */}
