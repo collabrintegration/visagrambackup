@@ -30,7 +30,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, Send, Loader2, Users, Crown, Trash2, UserMinus, Settings,
   X, Lock, Globe, LogIn, UserPlus, Shield, ImageIcon, GitFork, Plus,
-  Ban, Check, ChevronRight, ExternalLink, Flag,
+  Ban, Check, ChevronRight, ExternalLink, Flag, Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -75,6 +75,7 @@ export default function GroupChat() {
   const [sgDesc, setSgDesc] = useState("");
   const [sgEmoji, setSgEmoji] = useState("👥");
   const [sgMemberIds, setSgMemberIds] = useState<string[]>([]);
+  const [sgMemberSearch, setSgMemberSearch] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -173,7 +174,7 @@ export default function GroupChat() {
       onSuccess: (newSg) => {
         void queryClient.invalidateQueries({ queryKey: subgroupsKey });
         setShowCreateSubgroup(false);
-        setSgName(""); setSgDesc(""); setSgEmoji("👥"); setSgMemberIds([]);
+        setSgName(""); setSgDesc(""); setSgEmoji("👥"); setSgMemberIds([]); setSgMemberSearch("");
         // Post invite link to parent chat
         sendMessage({ id: groupId, data: { content: `📢 A new sub-group was created: ${newSg.emoji} ${newSg.name} — join at /groups/${newSg.id}` } });
       },
@@ -604,11 +605,40 @@ export default function GroupChat() {
                 <label className="text-xs text-muted-foreground mb-1.5 block font-medium">
                   Add members from this group
                 </label>
-                <div className="space-y-1 max-h-40 overflow-y-auto border border-border rounded-lg p-2">
-                  {members.filter((m) => m.userId !== userId).length === 0 ? (
-                    <p className="text-xs text-muted-foreground text-center py-2">No other members yet</p>
-                  ) : (
-                    members.filter((m) => m.userId !== userId).map((m) => {
+                {/* Search */}
+                <div className="relative mb-2">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                  <input
+                    value={sgMemberSearch}
+                    onChange={(e) => setSgMemberSearch(e.target.value)}
+                    placeholder="Search members…"
+                    className="w-full bg-background border border-border rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 placeholder:text-muted-foreground"
+                  />
+                  {sgMemberSearch && (
+                    <button
+                      onClick={() => setSgMemberSearch("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+                {/* Member list */}
+                <div className="space-y-1 max-h-44 overflow-y-auto border border-border rounded-lg p-2">
+                  {(() => {
+                    const eligible = members.filter((m) => m.userId !== userId);
+                    const filtered = sgMemberSearch.trim()
+                      ? eligible.filter((m) =>
+                          displayName(m).toLowerCase().includes(sgMemberSearch.toLowerCase())
+                        )
+                      : eligible;
+                    if (eligible.length === 0) {
+                      return <p className="text-xs text-muted-foreground text-center py-2">No other members yet</p>;
+                    }
+                    if (filtered.length === 0) {
+                      return <p className="text-xs text-muted-foreground text-center py-2">No members match "{sgMemberSearch}"</p>;
+                    }
+                    return filtered.map((m) => {
                       const checked = sgMemberIds.includes(m.userId);
                       return (
                         <button
@@ -629,8 +659,8 @@ export default function GroupChat() {
                           {m.isPrimary && <Crown className="w-3 h-3 text-amber-400 shrink-0" />}
                         </button>
                       );
-                    })
-                  )}
+                    });
+                  })()}
                 </div>
                 {sgMemberIds.length > 0 && (
                   <p className="text-[11px] text-muted-foreground mt-1">{sgMemberIds.length} member{sgMemberIds.length > 1 ? "s" : ""} selected (you are added automatically)</p>
