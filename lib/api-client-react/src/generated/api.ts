@@ -47,9 +47,11 @@ import type {
   GetCommunityFeedParams,
   GetVisaReportsParams,
   Group,
+  GroupJoinRequest,
   GroupMember,
   GroupMessage,
   HealthStatus,
+  JoinGroup200,
   ListCountriesParams,
   ListDestinationsByPassportParams,
   ListGroupMessagesParams,
@@ -3432,11 +3434,11 @@ export const getJoinGroupUrl = (id: number,) => {
 }
 
 /**
- * @summary Join a group (auth required)
+ * @summary Join a group (auth required); private groups create a join request
  */
-export const joinGroup = async (id: number, options?: RequestInit): Promise<void> => {
+export const joinGroup = async (id: number, options?: RequestInit): Promise<JoinGroup200> => {
 
-  return customFetch<void>(getJoinGroupUrl(id),
+  return customFetch<JoinGroup200>(getJoinGroupUrl(id),
   {
     ...options,
     method: 'POST'
@@ -3480,7 +3482,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type JoinGroupMutationError = ErrorType<void>
 
     /**
- * @summary Join a group (auth required)
+ * @summary Join a group (auth required); private groups create a join request
  */
 export const useJoinGroup = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof joinGroup>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -3491,6 +3493,227 @@ export const useJoinGroup = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getJoinGroupMutationOptions(options));
+    }
+
+export const getListGroupJoinRequestsUrl = (id: number,) => {
+
+
+
+
+  return `/api/groups/${id}/join-requests`
+}
+
+/**
+ * @summary List pending join requests (admin only)
+ */
+export const listGroupJoinRequests = async (id: number, options?: RequestInit): Promise<GroupJoinRequest[]> => {
+
+  return customFetch<GroupJoinRequest[]>(getListGroupJoinRequestsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListGroupJoinRequestsQueryKey = (id: number,) => {
+    return [
+    `/api/groups/${id}/join-requests`
+    ] as const;
+    }
+
+
+export const getListGroupJoinRequestsQueryOptions = <TData = Awaited<ReturnType<typeof listGroupJoinRequests>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listGroupJoinRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListGroupJoinRequestsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listGroupJoinRequests>>> = ({ signal }) => listGroupJoinRequests(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listGroupJoinRequests>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListGroupJoinRequestsQueryResult = NonNullable<Awaited<ReturnType<typeof listGroupJoinRequests>>>
+export type ListGroupJoinRequestsQueryError = ErrorType<void>
+
+
+/**
+ * @summary List pending join requests (admin only)
+ */
+
+export function useListGroupJoinRequests<TData = Awaited<ReturnType<typeof listGroupJoinRequests>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listGroupJoinRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListGroupJoinRequestsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getApproveGroupJoinRequestUrl = (id: number,
+    userId: string,) => {
+
+
+
+
+  return `/api/groups/${id}/join-requests/${userId}/approve`
+}
+
+/**
+ * @summary Approve a join request (admin only)
+ */
+export const approveGroupJoinRequest = async (id: number,
+    userId: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getApproveGroupJoinRequestUrl(id,userId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getApproveGroupJoinRequestMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveGroupJoinRequest>>, TError,{id: number;userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof approveGroupJoinRequest>>, TError,{id: number;userId: string}, TContext> => {
+
+const mutationKey = ['approveGroupJoinRequest'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof approveGroupJoinRequest>>, {id: number;userId: string}> = (props) => {
+          const {id,userId} = props ?? {};
+
+          return  approveGroupJoinRequest(id,userId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApproveGroupJoinRequestMutationResult = NonNullable<Awaited<ReturnType<typeof approveGroupJoinRequest>>>
+
+    export type ApproveGroupJoinRequestMutationError = ErrorType<void>
+
+    /**
+ * @summary Approve a join request (admin only)
+ */
+export const useApproveGroupJoinRequest = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveGroupJoinRequest>>, TError,{id: number;userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof approveGroupJoinRequest>>,
+        TError,
+        {id: number;userId: string},
+        TContext
+      > => {
+      return useMutation(getApproveGroupJoinRequestMutationOptions(options));
+    }
+
+export const getRejectGroupJoinRequestUrl = (id: number,
+    userId: string,) => {
+
+
+
+
+  return `/api/groups/${id}/join-requests/${userId}/reject`
+}
+
+/**
+ * @summary Reject a join request (admin only)
+ */
+export const rejectGroupJoinRequest = async (id: number,
+    userId: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getRejectGroupJoinRequestUrl(id,userId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getRejectGroupJoinRequestMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectGroupJoinRequest>>, TError,{id: number;userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof rejectGroupJoinRequest>>, TError,{id: number;userId: string}, TContext> => {
+
+const mutationKey = ['rejectGroupJoinRequest'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof rejectGroupJoinRequest>>, {id: number;userId: string}> = (props) => {
+          const {id,userId} = props ?? {};
+
+          return  rejectGroupJoinRequest(id,userId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RejectGroupJoinRequestMutationResult = NonNullable<Awaited<ReturnType<typeof rejectGroupJoinRequest>>>
+
+    export type RejectGroupJoinRequestMutationError = ErrorType<void>
+
+    /**
+ * @summary Reject a join request (admin only)
+ */
+export const useRejectGroupJoinRequest = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectGroupJoinRequest>>, TError,{id: number;userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof rejectGroupJoinRequest>>,
+        TError,
+        {id: number;userId: string},
+        TContext
+      > => {
+      return useMutation(getRejectGroupJoinRequestMutationOptions(options));
     }
 
 export const getLeaveGroupUrl = (id: number,) => {

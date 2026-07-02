@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { db, groupsTable, groupMembersTable, groupMessagesTable, usersTable } from "@workspace/db";
+import { db, groupsTable, groupMembersTable, groupMessagesTable, groupJoinRequestsTable, usersTable } from "@workspace/db";
 import { eq, and, desc, lt, count } from "drizzle-orm";
 
 const router: IRouter = Router();
@@ -31,12 +31,26 @@ async function isAdminOf(groupId: number, userId: string): Promise<boolean> {
   return rows.length > 0;
 }
 
+async function hasPendingRequest(groupId: number, userId: string): Promise<boolean> {
+  const rows = await db
+    .select({ id: groupJoinRequestsTable.id })
+    .from(groupJoinRequestsTable)
+    .where(and(
+      eq(groupJoinRequestsTable.groupId, groupId),
+      eq(groupJoinRequestsTable.userId, userId),
+      eq(groupJoinRequestsTable.status, "pending"),
+    ))
+    .limit(1);
+  return rows.length > 0;
+}
+
 async function buildGroupResponse(
   group: typeof groupsTable.$inferSelect & { memberCount: number },
   userId: string | null,
 ) {
   const isMember = userId ? await isMemberOf(group.id, userId) : false;
   const isAdmin = userId ? group.adminId === userId : false;
+  const hasPending = userId && !isMember ? await hasPendingRequest(group.id, userId) : false;
 
   const lastMsgRows = await db
     .select({
@@ -65,6 +79,7 @@ async function buildGroupResponse(
     memberCount: group.memberCount,
     isMember,
     isAdmin,
+    hasPendingRequest: hasPending,
     lastMessage: lastMsgRows[0] ?? null,
     createdAt: group.createdAt,
   };
@@ -194,7 +209,7 @@ router.delete("/groups/:id", async (req: Request, res: Response) => {
   res.status(204).end();
 });
 
-// ── Join group ─────────────────────────────────────────────────────────────
+// ── Join group (creates request for private groups) ────────────────────────
 router.post("/groups/:id/join", async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) { res.status(401).json({ error: "Unauthorized" }); return; }
   const userId = req.user.id;
@@ -203,17 +218,24 @@ router.post("/groups/:id/join", async (req: Request, res: Response) => {
   const group = await db.select().from(groupsTable).where(eq(groupsTable.id, groupId)).limit(1);
   if (!group[0]) { res.status(404).json({ error: "Group not found" }); return; }
 
-  const existing = await db
-    .select({ id: groupMembersTable.id })
-    .from(groupMembersTable)
-    .where(and(eq(groupMembersTable.groupId, groupId), eq(groupMembersTable.userId, userId)))
-    .limit(1);
-
-  if (!existing[0]) {
-    await db.insert(groupMembersTable).values({ groupId, userId, role: "member" });
+  if (await isMemberOf(groupId, userId)) {
+    res.json({ ok: true, status: "already_member" });
+    return;
   }
 
-  res.json({ ok: true });
+  if (group[0].isPrivate) {
+    const alreadyRequested = await hasPendingRequest(groupId, userId);
+    if (!alreadyRequested) {
+      await db.insert(groupJoinRequestsTable)
+        .values({ groupId, userId, status: "pending" })
+        .onConflictDoNothing();
+    }
+    res.json({ ok: true, status: "requested" });
+    return;
+  }
+
+  await db.insert(groupMembersTable).values({ groupId, userId, role: "member" });
+  res.json({ ok: true, status: "joined" });
 });
 
 // ── Leave group ────────────────────────────────────────────────────────────
@@ -274,6 +296,96 @@ router.delete("/groups/:id/members/:userId", async (req: Request, res: Response)
     .where(and(eq(groupMembersTable.groupId, groupId), eq(groupMembersTable.userId, targetId)));
 
   res.status(204).end();
+});
+
+// ── List join requests (admin only) ────────────────────────────────────────
+router.get("/groups/:id/join-requests", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const userId = req.user.id;
+  const groupId = Number(req.params.id);
+
+  if (!(await isAdminOf(groupId, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
+
+  const requests = await db
+    .select({
+      id: groupJoinRequestsTable.id,
+      groupId: groupJoinRequestsTable.groupId,
+      userId: groupJoinRequestsTable.userId,
+      status: groupJoinRequestsTable.status,
+      createdAt: groupJoinRequestsTable.createdAt,
+      firstName: usersTable.firstName,
+      lastName: usersTable.lastName,
+      profileImageUrl: usersTable.profileImageUrl,
+    })
+    .from(groupJoinRequestsTable)
+    .leftJoin(usersTable, eq(groupJoinRequestsTable.userId, usersTable.id))
+    .where(and(
+      eq(groupJoinRequestsTable.groupId, groupId),
+      eq(groupJoinRequestsTable.status, "pending"),
+    ))
+    .orderBy(groupJoinRequestsTable.createdAt);
+
+  res.json(requests);
+});
+
+// ── Approve join request ───────────────────────────────────────────────────
+router.post("/groups/:id/join-requests/:userId/approve", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const adminUserId = req.user.id;
+  const groupId = Number(req.params.id);
+  const targetUserId = String(req.params.userId);
+
+  if (!(await isAdminOf(groupId, adminUserId))) { res.status(403).json({ error: "Forbidden" }); return; }
+
+  const request = await db
+    .select()
+    .from(groupJoinRequestsTable)
+    .where(and(
+      eq(groupJoinRequestsTable.groupId, groupId),
+      eq(groupJoinRequestsTable.userId, targetUserId),
+      eq(groupJoinRequestsTable.status, "pending"),
+    ))
+    .limit(1);
+
+  if (!request[0]) { res.status(404).json({ error: "Join request not found" }); return; }
+
+  await db.update(groupJoinRequestsTable)
+    .set({ status: "approved" })
+    .where(eq(groupJoinRequestsTable.id, request[0].id));
+
+  await db.insert(groupMembersTable)
+    .values({ groupId, userId: targetUserId, role: "member" })
+    .onConflictDoNothing();
+
+  res.json({ ok: true });
+});
+
+// ── Reject join request ────────────────────────────────────────────────────
+router.post("/groups/:id/join-requests/:userId/reject", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const adminUserId = req.user.id;
+  const groupId = Number(req.params.id);
+  const targetUserId = String(req.params.userId);
+
+  if (!(await isAdminOf(groupId, adminUserId))) { res.status(403).json({ error: "Forbidden" }); return; }
+
+  const request = await db
+    .select()
+    .from(groupJoinRequestsTable)
+    .where(and(
+      eq(groupJoinRequestsTable.groupId, groupId),
+      eq(groupJoinRequestsTable.userId, targetUserId),
+      eq(groupJoinRequestsTable.status, "pending"),
+    ))
+    .limit(1);
+
+  if (!request[0]) { res.status(404).json({ error: "Join request not found" }); return; }
+
+  await db.update(groupJoinRequestsTable)
+    .set({ status: "rejected" })
+    .where(eq(groupJoinRequestsTable.id, request[0].id));
+
+  res.json({ ok: true });
 });
 
 // ── List messages ──────────────────────────────────────────────────────────

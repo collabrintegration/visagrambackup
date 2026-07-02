@@ -1039,7 +1039,7 @@ paths:
     post:
       operationId: joinGroup
       tags: [groups]
-      summary: Join a group (auth required)
+      summary: Join a group (auth required); private groups create a join request
       parameters:
         - name: id
           in: path
@@ -1048,9 +1048,97 @@ paths:
             type: integer
       responses:
         "200":
-          description: Joined
+          description: Joined or join request created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  status:
+                    type: string
+                    enum: [joined, requested, already_member]
+                required: [ok, status]
         "401":
           description: Unauthorized
+        "404":
+          description: Not found
+
+  /groups/{id}/join-requests:
+    get:
+      operationId: listGroupJoinRequests
+      tags: [groups]
+      summary: List pending join requests (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of pending join requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GroupJoinRequest"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /groups/{id}/join-requests/{userId}/approve:
+    post:
+      operationId: approveGroupJoinRequest
+      tags: [groups]
+      summary: Approve a join request (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Approved
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+
+  /groups/{id}/join-requests/{userId}/reject:
+    post:
+      operationId: rejectGroupJoinRequest
+      tags: [groups]
+      summary: Reject a join request (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Rejected
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
         "404":
           description: Not found
 
@@ -2162,6 +2250,8 @@ components:
           type: boolean
         isAdmin:
           type: boolean
+        hasPendingRequest:
+          type: boolean
         lastMessage:
           nullable: true
           $ref: "#/components/schemas/GroupMessage"
@@ -2188,6 +2278,32 @@ components:
           type: string
           enum: [admin, member]
         joinedAt:
+          type: string
+          format: date-time
+
+    GroupJoinRequest:
+      type: object
+      required: [id, groupId, userId, status, createdAt]
+      properties:
+        id:
+          type: integer
+        groupId:
+          type: integer
+        userId:
+          type: string
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        profileImageUrl:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        createdAt:
           type: string
           format: date-time
 

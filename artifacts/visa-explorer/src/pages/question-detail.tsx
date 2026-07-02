@@ -16,8 +16,9 @@ import { useAuth } from "@workspace/replit-auth-web";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, Loader2, MessageSquare, CheckCircle2, Bell, BellOff,
-  Send, ImageIcon, X, Reply, ChevronDown, ChevronUp, Globe,
+  Send, Reply, ChevronDown, ChevronUp, Globe,
 } from "lucide-react";
+import { GifPicker, GifPreview } from "@/components/gif-picker";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -51,53 +52,6 @@ function Avatar({ user }: { user: { firstName?: string | null; profileImageUrl?:
   );
 }
 
-function GifPreview({ url }: { url: string }) {
-  const src = url
-    .replace("https://giphy.com/gifs/", "https://media.giphy.com/media/")
-    .replace(/^(https:\/\/media\.giphy\.com\/media\/[^/]+)(\/giphy\.gifv?)?$/, "$1/giphy.gif")
-    .replace("https://tenor.com/view/", "");
-
-  const isValidGif = url.includes("giphy.com") || url.includes("tenor.com") || url.match(/\.(gif)(\?.*)?$/i);
-  if (!isValidGif) return null;
-
-  return (
-    <div className="mt-3 rounded-xl overflow-hidden max-w-sm">
-      <img src={src.includes("giphy.com") || src.includes("tenor.com") || src.match(/\.gif/i) ? url : src} alt="GIF" className="w-full max-h-64 object-contain bg-black/20" />
-    </div>
-  );
-}
-
-function GifInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ImageIcon className="w-3.5 h-3.5" />
-        {open ? "Hide GIF" : "Add GIF"}
-      </button>
-      {open && (
-        <div className="mt-2 flex gap-2">
-          <input
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder="Paste a Giphy or direct .gif URL…"
-            className="flex-1 bg-background border border-border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
-          />
-          {value && (
-            <button type="button" onClick={() => onChange("")} className="text-muted-foreground hover:text-foreground">
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      )}
-      {value && <GifPreview url={value} />}
-    </div>
-  );
-}
 
 function ReplyThread({ answerId, isAuthenticated, login }: { answerId: number; isAuthenticated: boolean; login: () => void }) {
   const [showForm, setShowForm] = useState(false);
@@ -152,7 +106,7 @@ function ReplyThread({ answerId, isAuthenticated, login }: { answerId: number; i
             placeholder="Write a reply…"
             className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm resize-none h-20 focus:outline-none focus:ring-1 focus:ring-primary/50"
           />
-          <GifInput value={gifUrl} onChange={setGifUrl} />
+          <GifPicker value={gifUrl} onChange={setGifUrl} />
           <div className="flex gap-2">
             <Button
               size="sm"
@@ -392,7 +346,7 @@ export default function QuestionDetailPage() {
                   className="flex-1 bg-background border border-border rounded-xl px-4 py-3 text-sm resize-none h-28 focus:outline-none focus:ring-1 focus:ring-primary/50"
                 />
               </div>
-              <GifInput value={answerGif} onChange={setAnswerGif} />
+              <GifPicker value={answerGif} onChange={setAnswerGif} />
               <div className="flex justify-end">
                 <Button
                   disabled={isPosting || !answerBody.trim()}

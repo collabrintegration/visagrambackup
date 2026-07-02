@@ -34,7 +34,18 @@ export const insertGroupSchema = createInsertSchema(groupsTable).omit({ id: true
 export type InsertGroup = z.infer<typeof insertGroupSchema>;
 export type Group = typeof groupsTable.$inferSelect;
 
+export const groupJoinRequestsTable = pgTable("group_join_requests", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id").notNull().references(() => groupsTable.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull(),
+  status: text("status").notNull().default("pending"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  unique("group_join_requests_unique").on(t.groupId, t.userId),
+]);
+
 export const insertGroupMessageSchema = createInsertSchema(groupMessagesTable).omit({ id: true, userId: true, createdAt: true });
 export type InsertGroupMessage = z.infer<typeof insertGroupMessageSchema>;
 export type GroupMessage = typeof groupMessagesTable.$inferSelect;
 export type GroupMember = typeof groupMembersTable.$inferSelect;
+export type GroupJoinRequest = typeof groupJoinRequestsTable.$inferSelect;

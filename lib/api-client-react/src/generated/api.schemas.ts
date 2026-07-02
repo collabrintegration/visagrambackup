@@ -590,6 +590,7 @@ export interface Group {
   memberCount: number;
   isMember: boolean;
   isAdmin: boolean;
+  hasPendingRequest?: boolean;
   lastMessage?: GroupMessage | null;
   createdAt: string;
 }
@@ -609,6 +610,26 @@ export interface GroupMember {
   profileImageUrl?: string | null;
   role: GroupMemberRole;
   joinedAt: string;
+}
+
+export type GroupJoinRequestStatus = typeof GroupJoinRequestStatus[keyof typeof GroupJoinRequestStatus];
+
+
+export const GroupJoinRequestStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface GroupJoinRequest {
+  id: number;
+  groupId: number;
+  userId: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  profileImageUrl?: string | null;
+  status: GroupJoinRequestStatus;
+  createdAt: string;
 }
 
 export interface CreateGroupInput {
@@ -716,6 +737,20 @@ limit?: number;
 
 export type GetVisaReportsParams = {
 passportCode?: string;
+};
+
+export type JoinGroup200Status = typeof JoinGroup200Status[keyof typeof JoinGroup200Status];
+
+
+export const JoinGroup200Status = {
+  joined: 'joined',
+  requested: 'requested',
+  already_member: 'already_member',
+} as const;
+
+export type JoinGroup200 = {
+  ok: boolean;
+  status: JoinGroup200Status;
 };
 
 export type ListGroupMessagesParams = {

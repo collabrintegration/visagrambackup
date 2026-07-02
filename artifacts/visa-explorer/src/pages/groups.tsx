@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "wouter";
 import {
   useListGroups,
@@ -12,7 +12,7 @@ import { useAuth } from "@workspace/replit-auth-web";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Users, Plus, X, Loader2, LogIn, Lock, Globe, MessageSquare,
-  UserCheck, UserPlus, Crown, Search,
+  UserCheck, UserPlus, Crown, Search, Clock, AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +32,32 @@ function userName(g: Group["lastMessage"]): string {
   if (!g) return "";
   const name = [g.firstName, g.lastName].filter(Boolean).join(" ");
   return name || "Traveler";
+}
+
+function stringSimilarity(a: string, b: string): number {
+  const norm = (s: string) => s.toLowerCase().trim();
+  const aa = norm(a);
+  const bb = norm(b);
+  if (aa === bb) return 1;
+  if (aa.length < 2 || bb.length < 2) return 0;
+
+  function bigrams(s: string): Map<string, number> {
+    const map = new Map<string, number>();
+    for (let i = 0; i < s.length - 1; i++) {
+      const bi = s.slice(i, i + 2);
+      map.set(bi, (map.get(bi) ?? 0) + 1);
+    }
+    return map;
+  }
+
+  const biA = bigrams(aa);
+  const biB = bigrams(bb);
+  let intersection = 0;
+  for (const [bi, cntA] of biA) {
+    intersection += Math.min(cntA, biB.get(bi) ?? 0);
+  }
+  const denom = aa.length + bb.length - 2;
+  return denom > 0 ? (2 * intersection) / denom : 0;
 }
 
 const EMOJI_OPTIONS = ["🌍","✈️","🗺️","🏖️","🏔️","🌏","🌐","🚀","🎒","🧳","🌴","🏕️","🚂","⛵","🛸","🏛️","🌺","🍜","🎉","🤝"];
@@ -74,6 +100,28 @@ export default function Groups() {
     const q = search.toLowerCase();
     return g.name.toLowerCase().includes(q) || (g.description ?? "").toLowerCase().includes(q);
   });
+
+  const similarGroups = useMemo(() => {
+    if (!name.trim() || name.trim().length < 3) return [];
+    return groups
+      .map((g) => ({ group: g, score: stringSimilarity(name, g.name) }))
+      .filter(({ score }) => score >= 0.5)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+      .map(({ group }) => group);
+  }, [name, groups]);
+
+  const exactDuplicate = similarGroups.some(
+    (g) => g.name.toLowerCase().trim() === name.toLowerCase().trim()
+  );
+
+  function resetCreate() {
+    setShowCreate(false);
+    setName("");
+    setDescription("");
+    setEmoji("🌍");
+    setIsPrivate(false);
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -148,12 +196,12 @@ export default function Groups() {
       {showCreate && (
         <div
           className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowCreate(false); }}
+          onClick={(e) => { if (e.target === e.currentTarget) resetCreate(); }}
         >
-          <div className="bg-card border border-border rounded-2xl w-full max-w-lg shadow-2xl">
+          <div className="bg-card border border-border rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b border-border">
               <h2 className="font-semibold text-lg">Create a Group</h2>
-              <button onClick={() => setShowCreate(false)} className="text-muted-foreground hover:text-foreground">
+              <button onClick={resetCreate} className="text-muted-foreground hover:text-foreground">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -185,6 +233,52 @@ export default function Groups() {
                   className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
                   maxLength={80}
                 />
+
+                {/* Similar groups warning */}
+                {similarGroups.length > 0 && (
+                  <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
+                    <div className="flex items-center gap-2 text-amber-400 text-xs font-semibold">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      Similar groups already exist — consider joining one instead:
+                    </div>
+                    {similarGroups.map((g) => (
+                      <div key={g.id} className="flex items-center justify-between gap-2 bg-card rounded-lg px-3 py-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-lg">{g.emoji}</span>
+                          <div className="min-w-0">
+                            <p className="text-xs font-medium truncate">{g.name}</p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {g.memberCount} member{g.memberCount !== 1 ? "s" : ""}
+                              {g.isPrivate ? " · Private" : " · Public"}
+                            </p>
+                          </div>
+                        </div>
+                        {g.isMember ? (
+                          <Link href={`/groups/${g.id}`}>
+                            <Button size="sm" className="h-7 text-xs shrink-0" onClick={resetCreate}>
+                              <MessageSquare className="w-3 h-3 mr-1" /> Open
+                            </Button>
+                          </Link>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs shrink-0"
+                            onClick={() => { joinGroup({ id: g.id }); resetCreate(); }}
+                          >
+                            <UserPlus className="w-3 h-3 mr-1" />
+                            {g.isPrivate ? "Request" : "Join"}
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    {exactDuplicate && (
+                      <p className="text-xs text-destructive font-medium pt-1">
+                        A group with this exact name already exists. Please choose a different name.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -206,19 +300,19 @@ export default function Groups() {
                   <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${isPrivate ? "translate-x-5" : ""}`} />
                 </div>
                 <span className="text-sm font-medium">Private group</span>
-                <span className="text-xs text-muted-foreground">(visible but invite-only)</span>
+                <span className="text-xs text-muted-foreground">(members must request to join)</span>
               </label>
 
               <div className="flex gap-3 pt-1">
                 <Button
                   className="flex-1"
-                  disabled={isCreating || !name.trim()}
+                  disabled={isCreating || !name.trim() || exactDuplicate}
                   onClick={() => createGroup({ data: { name, description: description || undefined, emoji, isPrivate } })}
                 >
                   {isCreating ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Plus className="w-4 h-4 mr-1.5" />}
                   Create Group
                 </Button>
-                <Button variant="ghost" onClick={() => setShowCreate(false)}>Cancel</Button>
+                <Button variant="ghost" onClick={resetCreate}>Cancel</Button>
               </div>
             </div>
           </div>
@@ -241,6 +335,8 @@ function GroupCard({
   onLeave: () => void;
   onLogin: () => void;
 }) {
+  const hasPending = (group as Group & { hasPendingRequest?: boolean }).hasPendingRequest;
+
   return (
     <div className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-3 hover:border-primary/30 transition-all">
       {/* Header */}
@@ -306,6 +402,15 @@ function GroupCard({
               </Button>
             )}
           </>
+        ) : hasPending ? (
+          <Button
+            className="flex-1 h-8 text-xs"
+            size="sm"
+            variant="outline"
+            disabled
+          >
+            <Clock className="w-3.5 h-3.5 mr-1.5" /> Request Sent
+          </Button>
         ) : (
           <Button
             className="flex-1 h-8 text-xs"
@@ -314,7 +419,9 @@ function GroupCard({
             onClick={isAuthenticated ? onJoin : onLogin}
           >
             {isAuthenticated ? (
-              <><UserPlus className="w-3.5 h-3.5 mr-1.5" /> Join</>
+              group.isPrivate
+                ? <><UserCheck className="w-3.5 h-3.5 mr-1.5" /> Request to Join</>
+                : <><UserPlus className="w-3.5 h-3.5 mr-1.5" /> Join</>
             ) : (
               <><LogIn className="w-3.5 h-3.5 mr-1.5" /> Sign in to join</>
             )}

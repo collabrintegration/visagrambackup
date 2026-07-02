@@ -1008,6 +1008,7 @@ export const ListGroupsResponseItem = zod.object({
   "memberCount": zod.number(),
   "isMember": zod.boolean(),
   "isAdmin": zod.boolean(),
+  "hasPendingRequest": zod.boolean().optional(),
   "lastMessage": zod.object({
   "id": zod.number(),
   "groupId": zod.number(),
@@ -1043,6 +1044,7 @@ export const CreateGroupResponse = zod.object({
   "memberCount": zod.number(),
   "isMember": zod.boolean(),
   "isAdmin": zod.boolean(),
+  "hasPendingRequest": zod.boolean().optional(),
   "lastMessage": zod.object({
   "id": zod.number(),
   "groupId": zod.number(),
@@ -1074,6 +1076,7 @@ export const GetGroupResponse = zod.object({
   "memberCount": zod.number(),
   "isMember": zod.boolean(),
   "isAdmin": zod.boolean(),
+  "hasPendingRequest": zod.boolean().optional(),
   "lastMessage": zod.object({
   "id": zod.number(),
   "groupId": zod.number(),
@@ -1112,6 +1115,7 @@ export const UpdateGroupResponse = zod.object({
   "memberCount": zod.number(),
   "isMember": zod.boolean(),
   "isAdmin": zod.boolean(),
+  "hasPendingRequest": zod.boolean().optional(),
   "lastMessage": zod.object({
   "id": zod.number(),
   "groupId": zod.number(),
@@ -1137,13 +1141,58 @@ export const DeleteGroupResponse = zod.void()
 
 
 /**
- * @summary Join a group (auth required)
+ * @summary Join a group (auth required); private groups create a join request
  */
 export const JoinGroupParams = zod.object({
   "id": zod.coerce.number()
 })
 
-export const JoinGroupResponse = zod.unknown()
+export const JoinGroupResponse = zod.object({
+  "ok": zod.boolean(),
+  "status": zod.enum(['joined', 'requested', 'already_member'])
+})
+
+
+/**
+ * @summary List pending join requests (admin only)
+ */
+export const ListGroupJoinRequestsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListGroupJoinRequestsResponseItem = zod.object({
+  "id": zod.number(),
+  "groupId": zod.number(),
+  "userId": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "createdAt": zod.coerce.date()
+})
+export const ListGroupJoinRequestsResponse = zod.array(ListGroupJoinRequestsResponseItem)
+
+
+/**
+ * @summary Approve a join request (admin only)
+ */
+export const ApproveGroupJoinRequestParams = zod.object({
+  "id": zod.coerce.number(),
+  "userId": zod.coerce.string()
+})
+
+export const ApproveGroupJoinRequestResponse = zod.unknown()
+
+
+/**
+ * @summary Reject a join request (admin only)
+ */
+export const RejectGroupJoinRequestParams = zod.object({
+  "id": zod.coerce.number(),
+  "userId": zod.coerce.string()
+})
+
+export const RejectGroupJoinRequestResponse = zod.unknown()
 
 
 /**

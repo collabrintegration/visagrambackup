@@ -10,19 +10,26 @@ import {
   useCreateSupportCase,
   useCreateQuestion,
   useGetFollowedQuestions,
+  useListGroups,
+  useListGroupJoinRequests,
+  useApproveGroupJoinRequest,
+  useRejectGroupJoinRequest,
   getGetTravelMapQueryKey,
   getGetMyActivityQueryKey,
   getGetCurrentAuthUserQueryKey,
   getGetMyCasesQueryKey,
   getGetFollowedQuestionsQueryKey,
+  getListGroupsQueryKey,
+  getListGroupJoinRequestsQueryKey,
 } from "@workspace/api-client-react";
-import type { ActivityQuestion } from "@workspace/api-client-react";
+import type { ActivityQuestion, Group, GroupJoinRequest } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Map, CheckCircle2, Heart, LogIn, Loader2, Trash2, Globe,
   User, MessageSquare, BookOpen, ChevronDown, ShieldAlert,
   PlusCircle, X, Clock, RefreshCw, XCircle, Bell, PenLine, Save,
+  Users, Crown, Lock, UserCheck, UserX, ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -44,7 +51,7 @@ const STATUS_CONFIG = {
 } as const;
 
 type TravelStatus = keyof typeof STATUS_CONFIG;
-type ProfileTab = "travel" | "activity" | "cases";
+type ProfileTab = "travel" | "activity" | "cases" | "groups";
 type ActivitySubTab = "asked" | "answered" | "following";
 
 const CASE_STATUS: Record<string, { label: string; cls: string; icon: typeof Clock }> = {
@@ -135,6 +142,204 @@ function FollowedQuestionCard({ q }: { q: { id: number; title: string; countryCo
         </div>
       </div>
     </Link>
+  );
+}
+
+function AdminGroupPanel({ group }: { group: Group }) {
+  const qc = useQueryClient();
+  const { data: requests = [], isLoading } = useListGroupJoinRequests(group.id, {
+    query: { queryKey: getListGroupJoinRequestsQueryKey(group.id) },
+  });
+
+  const invalidate = () => {
+    void qc.invalidateQueries({ queryKey: getListGroupJoinRequestsQueryKey(group.id) });
+    void qc.invalidateQueries({ queryKey: getListGroupsQueryKey() });
+  };
+
+  const { mutate: approve, isPending: approving } = useApproveGroupJoinRequest({ mutation: { onSuccess: invalidate } });
+  const { mutate: reject, isPending: rejecting } = useRejectGroupJoinRequest({ mutation: { onSuccess: invalidate } });
+
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-4">
+      <div className="flex items-center gap-3">
+        <span className="text-2xl">{group.emoji}</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h4 className="font-semibold text-sm truncate">{group.name}</h4>
+            <Badge className="text-[10px] px-1.5 py-0 bg-amber-500/15 text-amber-400 border-amber-500/20">
+              <Crown className="w-2.5 h-2.5 mr-1" />Admin
+            </Badge>
+            {group.isPrivate && (
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                <Lock className="w-2.5 h-2.5 mr-1" />Private
+              </Badge>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {group.memberCount} member{group.memberCount !== 1 ? "s" : ""}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {group.isPrivate && (
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Users className="w-3.5 h-3.5" />
+              Join Requests
+              {!isLoading && requests.length > 0 && (
+                <span className="bg-primary text-primary-foreground text-[10px] rounded-full px-1.5 py-0.5 font-bold">
+                  {requests.length}
+                </span>
+              )}
+              <ChevronRight className={`w-3.5 h-3.5 transition-transform ${expanded ? "rotate-90" : ""}`} />
+            </button>
+          )}
+          <Link href={`/groups/${group.id}`}>
+            <Button size="sm" className="h-7 text-xs">
+              <MessageSquare className="w-3 h-3 mr-1" /> Open Chat
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {expanded && group.isPrivate && (
+        <div className="mt-4 border-t border-border pt-3 space-y-2">
+          {isLoading ? (
+            <div className="flex justify-center py-3"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div>
+          ) : requests.length === 0 ? (
+            <p className="text-xs text-muted-foreground text-center py-3">No pending join requests</p>
+          ) : (
+            requests.map((r) => (
+              <div key={r.id} className="flex items-center gap-3 bg-muted/30 rounded-lg px-3 py-2.5">
+                <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-xs font-semibold text-primary">
+                  {r.firstName?.[0]?.toUpperCase() ?? "T"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium truncate">
+                    {[r.firstName, r.lastName].filter(Boolean).join(" ") || "Traveler"}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">{timeAgo(r.createdAt)}</p>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Button
+                    size="sm"
+                    className="h-6 text-[11px] px-2 bg-emerald-600 hover:bg-emerald-700"
+                    disabled={approving || rejecting}
+                    onClick={() => approve({ id: group.id, userId: r.userId })}
+                  >
+                    <UserCheck className="w-3 h-3 mr-1" /> Approve
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-6 text-[11px] px-2 text-destructive border-destructive/40 hover:bg-destructive/10"
+                    disabled={approving || rejecting}
+                    onClick={() => reject({ id: group.id, userId: r.userId })}
+                  >
+                    <UserX className="w-3 h-3 mr-1" /> Reject
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProfileGroupsTab({ userId }: { userId: string }) {
+  const { data: groups = [], isLoading } = useListGroups({
+    query: { queryKey: getListGroupsQueryKey(), enabled: !!userId },
+  });
+
+  const myGroups = groups.filter((g) => g.isMember && !g.isAdmin);
+  const adminGroups = groups.filter((g) => g.isAdmin);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (myGroups.length === 0 && adminGroups.length === 0) {
+    return (
+      <div className="text-center py-20 max-w-sm mx-auto">
+        <Users className="w-12 h-12 mx-auto text-muted mb-4" />
+        <h3 className="text-lg font-semibold mb-2">No groups yet</h3>
+        <p className="text-muted-foreground mb-6">
+          Join or create travel groups to connect with fellow travelers.
+        </p>
+        <Link href="/groups">
+          <Button><Users className="w-4 h-4 mr-2" /> Browse Groups</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl space-y-8">
+      {adminGroups.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <Crown className="w-4 h-4 text-amber-400" />
+            <h3 className="font-semibold">Groups I Admin</h3>
+            <span className="text-xs text-muted-foreground">({adminGroups.length})</span>
+          </div>
+          <div className="space-y-3">
+            {adminGroups.map((g) => <AdminGroupPanel key={g.id} group={g} />)}
+          </div>
+        </div>
+      )}
+
+      {myGroups.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <Users className="w-4 h-4 text-primary" />
+            <h3 className="font-semibold">Groups I'm In</h3>
+            <span className="text-xs text-muted-foreground">({myGroups.length})</span>
+          </div>
+          <div className="space-y-3">
+            {myGroups.map((g) => (
+              <div key={g.id} className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
+                <span className="text-2xl">{g.emoji}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-semibold text-sm truncate">{g.name}</h4>
+                    {g.isPrivate && (
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                        <Lock className="w-2.5 h-2.5 mr-1" />Private
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {g.memberCount} member{g.memberCount !== 1 ? "s" : ""}
+                  </p>
+                </div>
+                <Link href={`/groups/${g.id}`}>
+                  <Button size="sm" className="h-7 text-xs shrink-0">
+                    <MessageSquare className="w-3 h-3 mr-1" /> Open Chat
+                  </Button>
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="pt-2">
+        <Link href="/groups">
+          <Button variant="outline" size="sm">
+            <Users className="w-4 h-4 mr-2" /> Browse All Groups
+          </Button>
+        </Link>
+      </div>
+    </div>
   );
 }
 
@@ -351,6 +556,7 @@ export default function Profile() {
               { id: "travel" as const, label: "Travel Map", icon: Map },
               { id: "activity" as const, label: "My Q&A", icon: BookOpen },
               { id: "cases" as const, label: "Support Cases", icon: ShieldAlert },
+              { id: "groups" as const, label: "My Groups", icon: Users },
             ].map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
@@ -551,7 +757,11 @@ export default function Profile() {
           </>
         )}
 
-        {/* ── Support Cases Tab ────────────────────────────────────────── */}
+        {/* ── Groups Tab ──────────────────────────────────────────────── */}
+        {activeTab === "groups" && (
+          <ProfileGroupsTab userId={user?.id ?? ""} />
+        )}
+
         {activeTab === "cases" && (
           <div className="max-w-2xl">
             {showNewCase ? (
