@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { Compass, Map as MapIcon, Users, User, LogIn, LogOut, Loader2, ClipboardList, UserPlus, ChevronDown, Settings, MapPin } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
-import { useHealthCheck, getHealthCheckQueryKey, useGetDmUnreadCount, getGetDmUnreadCountQueryKey } from "@workspace/api-client-react";
+import { useHealthCheck, getHealthCheckQueryKey, useGetDmUnreadCount, getGetDmUnreadCountQueryKey, useListFriendRequests, getListFriendRequestsQueryKey } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { Button } from "@/components/ui/button";
 import GlobalSearch from "@/components/global-search";
@@ -34,7 +34,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     },
   });
 
-  const totalBadge = (unreadData?.unreadMessages ?? 0) + (unreadData?.pendingRequests ?? 0);
+  const { data: friendRequests = [] } = useListFriendRequests({
+    query: {
+      queryKey: getListFriendRequestsQueryKey(),
+      enabled: isAuthenticated,
+      refetchInterval: 30000,
+    },
+  });
+
+  const totalBadge = (unreadData?.unreadMessages ?? 0) + (unreadData?.pendingRequests ?? 0) + friendRequests.length;
 
   const links = [
     { href: "/", label: "Home", icon: Compass },
