@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Compass, BookOpen, Map as MapIcon, Users, User, LogIn, LogOut, Loader2, Globe, ClipboardList } from "lucide-react";
+import { Compass, BookOpen, Map as MapIcon, Users, User, LogIn, LogOut, Loader2, Globe, ClipboardList, UserPlus } from "lucide-react";
 import React from "react";
 import { useHealthCheck, getHealthCheckQueryKey, useGetDmUnreadCount, getGetDmUnreadCountQueryKey } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
@@ -25,6 +25,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const links = [
     { href: "/", label: "Home", icon: Compass },
     { href: "/community", label: "Community", icon: Users },
+    { href: "/friends", label: "Friends", icon: UserPlus },
     { href: "/groups", label: "Groups", icon: Globe },
     { href: "/explore", label: "Explore", icon: MapIcon },
     { href: "/passport", label: "Passport Power", icon: BookOpen },
