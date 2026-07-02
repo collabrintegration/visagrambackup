@@ -13,13 +13,17 @@ import { useColors } from "@/hooks/useColors";
 function NativeTabLayout() {
   return (
     <NativeTabs>
+      <NativeTabs.Trigger name="groups">
+        <Icon sf={{ default: "person.3", selected: "person.3.fill" }} />
+        <Label>Groups</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="community">
+        <Icon sf={{ default: "bubble.left.and.bubble.right", selected: "bubble.left.and.bubble.right.fill" }} />
+        <Label>Community</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="index">
         <Icon sf={{ default: "globe", selected: "globe.fill" }} />
         <Label>Explore</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="community">
-        <Icon sf={{ default: "person.2", selected: "person.2.fill" }} />
-        <Label>Community</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="passport">
         <Icon sf={{ default: "creditcard", selected: "creditcard.fill" }} />
@@ -74,14 +78,14 @@ function ClassicTabLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="groups"
         options={{
-          title: "Explore",
+          title: "Groups",
           tabBarIcon: ({ color }) =>
             isIOS ? (
-              <SymbolView name="globe" tintColor={color} size={24} />
+              <SymbolView name="person.3" tintColor={color} size={24} />
             ) : (
-              <Feather name="globe" size={22} color={color} />
+              <Feather name="users" size={22} color={color} />
             ),
         }}
       />
@@ -91,9 +95,21 @@ function ClassicTabLayout() {
           title: "Community",
           tabBarIcon: ({ color }) =>
             isIOS ? (
-              <SymbolView name="person.2" tintColor={color} size={24} />
+              <SymbolView name="bubble.left.and.bubble.right" tintColor={color} size={24} />
             ) : (
-              <Feather name="users" size={22} color={color} />
+              <Feather name="message-circle" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: "Explore",
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="globe" tintColor={color} size={24} />
+            ) : (
+              <Feather name="globe" size={22} color={color} />
             ),
         }}
       />
