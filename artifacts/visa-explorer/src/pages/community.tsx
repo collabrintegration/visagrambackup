@@ -287,8 +287,8 @@ export default function Community() {
   const filteredSidebarGroups = useMemo(() => {
     const q = groupSearch.toLowerCase().trim();
     const sorted = [...allGroups].sort((a, b) => b.memberCount - a.memberCount);
-    if (!q) return sorted.slice(0, 8);
-    return sorted.filter((g) => g.name.toLowerCase().includes(q) || (g.description ?? "").toLowerCase().includes(q)).slice(0, 8);
+    if (!q) return sorted;
+    return sorted.filter((g) => g.name.toLowerCase().includes(q) || (g.description ?? "").toLowerCase().includes(q));
   }, [allGroups, groupSearch]);
 
   const isLoading = authLoading || feedLoading;
@@ -380,277 +380,249 @@ export default function Community() {
         </div>
       </div>
 
-      {/* Search + Filters bar */}
-      <div className="sticky top-16 z-30 bg-background/90 backdrop-blur-md border-b border-border/60">
-        <div className="container mx-auto px-4 py-3 max-w-3xl">
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Search input */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+      {/* Groups + Questions two-column layout */}
+      <div className="container mx-auto px-4 py-8 max-w-7xl" onClick={() => setCountryOpen(false)}>
+        <div className="flex gap-6 items-start">
+
+          {/* ── LEFT: Groups column ─────────────────────────────── */}
+          <div className="w-80 shrink-0">
+            {/* Column header */}
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Users className="w-4 h-4 text-primary" /> Travel Groups
+              </h3>
+              <Link href="/groups">
+                <span className="text-xs text-primary hover:underline">See all</span>
+              </Link>
+            </div>
+
+            {/* Group search */}
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
               <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search questions, reviews, countries…"
+                value={groupSearch}
+                onChange={(e) => setGroupSearch(e.target.value)}
+                placeholder="Search groups…"
                 className="w-full bg-card border border-border rounded-xl pl-9 pr-9 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 placeholder:text-muted-foreground"
               />
-              {search && (
-                <button
-                  onClick={() => setSearch("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-4 h-4" />
+              {groupSearch && (
+                <button onClick={() => setGroupSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
 
-            {/* Country dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setCountryOpen((v) => !v)}
-                className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm transition-all whitespace-nowrap ${
-                  countryFilter
-                    ? "bg-primary/10 border-primary/40 text-primary"
-                    : "bg-card border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
-                }`}
-              >
-                <Globe className="w-4 h-4 shrink-0" />
-                <span className="max-w-[120px] truncate">
-                  {selectedCountryLabel ?? "All Countries"}
-                </span>
-                {countryFilter ? (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setCountryFilter(""); setCountryOpen(false); }}
-                    className="ml-1 hover:text-foreground"
+            {/* Groups as square grid */}
+            {filteredSidebarGroups.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                {groupSearch ? "No groups found" : "No groups yet"}
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                {filteredSidebarGroups.map((g) => (
+                  <div
+                    key={g.id}
+                    className="bg-card border border-border rounded-2xl p-3 hover:border-primary/40 transition-colors flex flex-col items-center text-center aspect-square justify-between"
                   >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                ) : (
-                  <ChevronDown className="w-3.5 h-3.5 ml-1" />
-                )}
-              </button>
-
-              {countryOpen && (
-                <div className="absolute right-0 top-full mt-1 w-56 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden">
-                  <div className="max-h-64 overflow-y-auto py-1">
-                    <button
-                      onClick={() => { setCountryFilter(""); setCountryOpen(false); }}
-                      className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-muted/50 ${!countryFilter ? "text-primary font-medium" : "text-foreground"}`}
-                    >
-                      All Countries
-                    </button>
-                    {countries.map(([code, label]) => (
-                      <button
-                        key={code}
-                        onClick={() => { setCountryFilter(code); setCountryOpen(false); }}
-                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-muted/50 ${countryFilter === code ? "text-primary font-medium bg-primary/5" : "text-foreground"}`}
-                      >
-                        {label}
-                      </button>
-                    ))}
+                    <div className="flex-1 flex flex-col items-center justify-center gap-1 min-h-0">
+                      <span className="text-3xl leading-none">{g.emoji}</span>
+                      <div className="flex items-center gap-1 mt-1">
+                        <p className="text-xs font-semibold line-clamp-2 leading-tight">{g.name}</p>
+                        {g.isPrivate && <Lock className="w-2.5 h-2.5 text-muted-foreground shrink-0" />}
+                      </div>
+                      <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                        <Users className="w-2.5 h-2.5" />{g.memberCount}
+                      </span>
+                    </div>
+                    <div className="w-full mt-2">
+                      {g.isMember ? (
+                        <Link href={`/groups/${g.id}`}>
+                          <Button size="sm" className="w-full h-7 text-xs">
+                            <MessageSquare className="w-3 h-3 mr-1" />Chat
+                          </Button>
+                        </Link>
+                      ) : isAuthenticated ? (
+                        <Button size="sm" variant="outline" className="w-full h-7 text-xs" onClick={() => joinGroup({ id: g.id })}>
+                          <UserPlus className="w-3 h-3 mr-1" />
+                          {g.isPrivate ? "Request" : "Join"}
+                        </Button>
+                      ) : (
+                        <Button size="sm" variant="outline" className="w-full h-7 text-xs" onClick={login}>
+                          <LogIn className="w-3 h-3 mr-1" />Join
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          </div>
+                ))}
+              </div>
+            )}
 
-          {/* Type filter pills */}
-          <div className="flex gap-2 mt-3">
-            {([
-              { id: "all" as FeedType, label: "All" },
-              { id: "question" as FeedType, label: "Questions only", icon: MessageSquare },
-              { id: "review" as FeedType, label: "Reviews only", icon: Star },
-            ]).map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setTypeFilter(id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  typeFilter === id
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-card border border-border text-muted-foreground hover:border-primary/30"
-                }`}
+            {isAuthenticated && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full text-xs text-muted-foreground mt-3"
+                onClick={() => setShowGroupModal(true)}
               >
-                {Icon && <Icon className="w-3 h-3" />}
-                {label}
-              </button>
-            ))}
-
-            {/* Active filters count + clear */}
-            {(activeFiltersCount > 0 || search) && (
-              <button
-                onClick={() => { setTypeFilter("all"); setCountryFilter(""); setSearch(""); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground border border-dashed border-border hover:border-primary/40 transition-all ml-auto"
-              >
-                <X className="w-3 h-3" />
-                Clear all
-              </button>
+                <Plus className="w-3 h-3 mr-1.5" /> Create a group
+              </Button>
             )}
           </div>
-        </div>
-      </div>
 
-      {/* Feed + Groups sidebar */}
-      <div className="container mx-auto px-4 py-8 max-w-6xl" onClick={() => setCountryOpen(false)}>
-        <div className="flex gap-8">
-          {/* ── Main feed ────────────────────────────────────────── */}
+          {/* ── RIGHT: Questions column ─────────────────────────── */}
           <div className="flex-1 min-w-0">
+            {/* Q&A column header + search row */}
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-primary" /> Questions & Answers
+              </h3>
+              {isAuthenticated && (
+                <Button size="sm" onClick={() => setShowAskModal(true)}>
+                  <PenLine className="w-3.5 h-3.5 mr-1.5" /> Ask a Question
+                </Button>
+              )}
+            </div>
+
+            {/* Q&A search + country filter */}
+            <div className="flex gap-2 mb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search questions…"
+                  className="w-full bg-card border border-border rounded-xl pl-9 pr-9 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 placeholder:text-muted-foreground"
+                />
+                {search && (
+                  <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              {/* Country filter */}
+              <div className="relative">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setCountryOpen((v) => !v); }}
+                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm transition-all whitespace-nowrap ${
+                    countryFilter
+                      ? "bg-primary/10 border-primary/40 text-primary"
+                      : "bg-card border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                  }`}
+                >
+                  <Globe className="w-4 h-4 shrink-0" />
+                  <span className="max-w-[110px] truncate hidden sm:inline">{selectedCountryLabel ?? "Country"}</span>
+                  {countryFilter ? (
+                    <button onClick={(e) => { e.stopPropagation(); setCountryFilter(""); setCountryOpen(false); }}>
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  ) : (
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  )}
+                </button>
+                {countryOpen && (
+                  <div className="absolute right-0 top-full mt-1 w-56 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden">
+                    <div className="max-h-64 overflow-y-auto py-1">
+                      <button onClick={() => { setCountryFilter(""); setCountryOpen(false); }}
+                        className={`w-full text-left px-4 py-2.5 text-sm hover:bg-muted/50 ${!countryFilter ? "text-primary font-medium" : "text-foreground"}`}>
+                        All Countries
+                      </button>
+                      {countries.map(([code, label]) => (
+                        <button key={code} onClick={() => { setCountryFilter(code); setCountryOpen(false); }}
+                          className={`w-full text-left px-4 py-2.5 text-sm hover:bg-muted/50 ${countryFilter === code ? "text-primary font-medium bg-primary/5" : "text-foreground"}`}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Questions list */}
             {isLoading ? (
               <div className="flex justify-center py-20">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
               </div>
-            ) : filtered.length === 0 ? (
-              <div className="text-center py-24">
-                {feed.length === 0 ? (
-                  <>
-                    <TrendingUp className="w-12 h-12 mx-auto text-muted mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No posts yet</h3>
-                    <p className="text-muted-foreground mb-6">
-                      Be the first to share a review or ask a question about a country.
+            ) : (() => {
+              const questions = filtered.filter((item) => item.type === "question");
+              if (questions.length === 0) {
+                return (
+                  <div className="text-center py-20">
+                    <MessageSquare className="w-12 h-12 mx-auto text-muted mb-4 opacity-40" />
+                    <h3 className="text-lg font-semibold mb-2">
+                      {search || countryFilter ? "No questions found" : "No questions yet"}
+                    </h3>
+                    <p className="text-muted-foreground mb-4 text-sm">
+                      {search || countryFilter
+                        ? "Try adjusting your search or country filter."
+                        : "Be the first to ask a question about a country."}
                     </p>
-                    {!isAuthenticated && (
-                      <Button onClick={login}>
-                        <LogIn className="w-4 h-4 mr-2" /> Sign in to get started
-                      </Button>
+                    {!isAuthenticated ? (
+                      <Button onClick={login}><LogIn className="w-4 h-4 mr-2" />Sign in to ask</Button>
+                    ) : (
+                      <Button onClick={() => setShowAskModal(true)}><PenLine className="w-4 h-4 mr-2" />Ask a Question</Button>
                     )}
-                  </>
-                ) : (
-                  <>
-                    <Filter className="w-12 h-12 mx-auto text-muted mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No results found</h3>
-                    <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-                      Try adjusting your search or filters to find what you're looking for.
-                    </p>
-                    <Button variant="outline" onClick={() => { setSearch(""); setTypeFilter("all"); setCountryFilter(""); }}>
-                      <X className="w-4 h-4 mr-2" /> Clear filters
-                    </Button>
-                  </>
-                )}
-              </div>
-            ) : (
-              <>
-                {(search || typeFilter !== "all" || countryFilter) && (
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {filtered.length} result{filtered.length !== 1 ? "s" : ""}
-                    {countryFilter && selectedCountryLabel ? ` in ${selectedCountryLabel}` : ""}
-                    {search ? ` for "${search}"` : ""}
-                  </p>
-                )}
-                <div className="space-y-4">
-                  {filtered.map((item, idx) => (
-                    <div key={`${item.type}-${item.id}`}>
-                      <FeedCard
-                        item={item}
-                        myId={myId}
-                        onDelete={
-                          item.user?.userId === myId
-                            ? item.type === "question"
-                              ? () => deleteQuestion({ id: item.id })
-                              : () => deleteReview({ code: item.countryCode })
-                            : undefined
-                        }
-                      />
-                      {(idx + 1) % 6 === 0 && idx < filtered.length - 1 && (
-                        <div className="py-2">
-                          <AdUnit slot="3456789012" format="fluid" className="pt-5" />
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* ── Groups sidebar ────────────────────────────────────── */}
-          <div className="hidden lg:block w-72 shrink-0">
-            <div className="sticky top-32 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-sm flex items-center gap-2">
-                  <Users className="w-4 h-4 text-primary" /> Travel Groups
-                </h3>
-                <Link href="/groups">
-                  <span className="text-xs text-primary hover:underline">See all</span>
-                </Link>
-              </div>
-
-              {/* Group search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                <input
-                  value={groupSearch}
-                  onChange={(e) => setGroupSearch(e.target.value)}
-                  placeholder="Search groups…"
-                  className="w-full bg-card border border-border rounded-xl pl-8 pr-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 placeholder:text-muted-foreground"
-                />
-                {groupSearch && (
-                  <button onClick={() => setGroupSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                    <X className="w-3 h-3" />
-                  </button>
-                )}
-              </div>
-
-              {/* Group list */}
-              <div className="space-y-2">
-                {filteredSidebarGroups.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-4">
-                    {groupSearch ? "No groups found" : "No groups yet"}
-                  </p>
-                ) : (
-                  filteredSidebarGroups.map((g) => (
-                    <div key={g.id} className="bg-card border border-border rounded-xl p-3 hover:border-primary/30 transition-colors">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-xl shrink-0">{g.emoji}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <p className="text-xs font-semibold truncate">{g.name}</p>
-                            {g.isPrivate && (
-                              <Lock className="w-2.5 h-2.5 text-muted-foreground shrink-0" />
+                  </div>
+                );
+              }
+              return (
+                <div className="space-y-2">
+                  {questions.map((item) => {
+                    const title = typeof item.data.title === "string" ? item.data.title : "";
+                    const body = typeof item.data.body === "string" ? item.data.body : "";
+                    const answers = typeof item.data.answersCount === "number" ? item.data.answersCount : 0;
+                    const authorId = item.user?.userId;
+                    const isOwn = !!myId && authorId === myId;
+                    return (
+                      <Link key={item.id} href={`/questions/${item.id}`}>
+                        <div className="group bg-card border border-border rounded-xl px-4 py-3 hover:border-primary/40 transition-colors cursor-pointer">
+                          <div className="flex items-start gap-3">
+                            {/* Avatar */}
+                            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold shrink-0 mt-0.5">
+                              {(item.user?.firstName || "A")[0].toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              {/* Title */}
+                              <p className="font-semibold text-sm group-hover:text-primary transition-colors line-clamp-1">
+                                {title}
+                              </p>
+                              {/* 2-line description */}
+                              {body && (
+                                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-relaxed">
+                                  {body}
+                                </p>
+                              )}
+                              {/* Meta row */}
+                              <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Globe className="w-2.5 h-2.5" />
+                                  {item.countryName ?? item.countryCode}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <MessageSquare className="w-2.5 h-2.5" />
+                                  {answers} {answers === 1 ? "answer" : "answers"}
+                                </span>
+                                <span>{timeAgo(item.createdAt)}</span>
+                              </div>
+                            </div>
+                            {/* Delete button */}
+                            {isOwn && (
+                              <button
+                                onClick={(e) => { e.preventDefault(); if (confirm("Delete this question?")) deleteQuestion({ id: item.id }); }}
+                                className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors shrink-0 opacity-0 group-hover:opacity-100"
+                                title="Delete question"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                             )}
                           </div>
-                          <div className="flex items-center gap-1 mt-0.5 text-[11px] text-muted-foreground">
-                            <Users className="w-2.5 h-2.5" />
-                            <span>{g.memberCount} member{g.memberCount !== 1 ? "s" : ""}</span>
-                          </div>
                         </div>
-                      </div>
-                      <div className="mt-2.5">
-                        {g.isMember ? (
-                          <Link href={`/groups/${g.id}`}>
-                            <Button size="sm" className="w-full h-7 text-xs">
-                              <MessageSquare className="w-3 h-3 mr-1.5" /> Open Chat
-                            </Button>
-                          </Link>
-                        ) : isAuthenticated ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="w-full h-7 text-xs"
-                            onClick={() => joinGroup({ id: g.id })}
-                          >
-                            <UserPlus className="w-3 h-3 mr-1.5" />
-                            {g.isPrivate ? "Request to Join" : "Join Group"}
-                          </Button>
-                        ) : (
-                          <Button size="sm" variant="outline" className="w-full h-7 text-xs" onClick={login}>
-                            <LogIn className="w-3 h-3 mr-1.5" /> Sign in to join
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {isAuthenticated && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full text-xs text-muted-foreground"
-                  onClick={() => setShowGroupModal(true)}
-                >
-                  <Plus className="w-3 h-3 mr-1.5" /> Create a group
-                </Button>
-              )}
-            </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
