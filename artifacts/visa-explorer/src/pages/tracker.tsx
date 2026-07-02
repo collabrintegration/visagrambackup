@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import CountryCombobox from "@/components/country-combobox";
+import SafetyWingBanner from "@/components/safetywing-banner";
 
 const VISA_CATEGORIES = [
   { value: "travel",      label: "Travel",      emoji: "✈️",  desc: "Tourist, visitor & transit visas" },
@@ -660,6 +661,11 @@ export default function TrackerPage() {
                 </Button>
               )
             )}
+          </div>
+
+          {/* SafetyWing affiliate */}
+          <div className="mt-6">
+            <SafetyWingBanner />
           </div>
 
           {/* Quick stats */}

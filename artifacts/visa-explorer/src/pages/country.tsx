@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { getCountryImageUrl, getCountryFallbackImageUrl, getCountryLandmarkInfo } from "@/lib/countryImages";
 import { getCountryDetails } from "@/lib/countryDetails";
 import AdUnit from "@/components/ad-unit";
+import SafetyWingBanner from "@/components/safetywing-banner";
 
 const ENTRY_STYLE: Record<string, { label: string; pill: string }> = {
   visa_free:       { label: "Visa-Free",       pill: "bg-emerald-500/10 text-emerald-400" },
@@ -471,6 +472,11 @@ export default function CountryDetail() {
         {/* ── Ad unit — between visa cards and community sections ── */}
         <div className="py-2">
           <AdUnit slot="2345678901" format="auto" className="pt-5" />
+        </div>
+
+        {/* ── SafetyWing affiliate ── */}
+        <div className="py-2">
+          <SafetyWingBanner />
         </div>
 
         {/* ── Travel Map Quick-Add ── */}
