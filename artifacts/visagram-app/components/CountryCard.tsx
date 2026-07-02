@@ -1,4 +1,3 @@
-import { Feather } from "@expo/vector-icons";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useColors } from "@/hooks/useColors";
@@ -18,6 +17,7 @@ interface Country {
   continent?: string;
   flag?: string;
   flagEmoji?: string;
+  visaFreeCount?: number;
 }
 
 interface CountryCardProps {
@@ -37,48 +37,54 @@ export function CountryCard({ country, onPress }: CountryCardProps) {
       ]}
       onPress={onPress}
     >
-      <Text style={styles.flag}>{country.flagEmoji || country.flag || flagEmoji(country.code)}</Text>
-      <View style={styles.info}>
-        <Text style={[styles.name, { color: colors.foreground }]} numberOfLines={1}>
-          {country.name}
-        </Text>
-        <Text style={[styles.continent, { color: colors.mutedForeground }]}>
-          {country.continent ?? ""}
+      <View style={[styles.flagBox, { backgroundColor: colors.secondary }]}>
+        <Text style={styles.flag}>
+          {country.flagEmoji || country.flag || flagEmoji(country.code)}
         </Text>
       </View>
-      <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+      <Text style={[styles.name, { color: colors.foreground }]} numberOfLines={2}>
+        {country.name}
+      </Text>
+      {country.continent ? (
+        <Text style={[styles.continent, { color: colors.mutedForeground }]} numberOfLines={1}>
+          {country.continent}
+        </Text>
+      ) : null}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 12,
+    flex: 1,
+    borderRadius: 16,
     borderWidth: 1,
     padding: 14,
-    marginHorizontal: 16,
-    marginVertical: 5,
-    gap: 12,
+    alignItems: "center",
+    gap: 8,
   },
   pressed: {
-    opacity: 0.75,
+    opacity: 0.7,
+    transform: [{ scale: 0.97 }],
+  },
+  flagBox: {
+    width: 60,
+    height: 60,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
   },
   flag: {
-    fontSize: 30,
-    width: 42,
-    textAlign: "center",
-  },
-  info: {
-    flex: 1,
+    fontSize: 36,
   },
   name: {
-    fontSize: 15,
-    fontWeight: "600",
+    fontSize: 13,
+    fontWeight: "700",
+    textAlign: "center",
+    lineHeight: 17,
   },
   continent: {
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: 11,
+    textAlign: "center",
   },
 });

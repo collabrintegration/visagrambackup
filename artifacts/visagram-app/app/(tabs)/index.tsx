@@ -98,6 +98,8 @@ export default function ExploreScreen() {
         <FlatList
           data={countries ?? []}
           keyExtractor={(item) => item.code}
+          numColumns={2}
+          columnWrapperStyle={styles.row}
           renderItem={({ item }) => (
             <CountryCard
               country={item}
@@ -179,6 +181,11 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingTop: 6,
+    paddingHorizontal: 12,
+  },
+  row: {
+    gap: 10,
+    marginBottom: 10,
   },
   center: {
     flex: 1,
