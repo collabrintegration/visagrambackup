@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   useListFriends,
   useListFriendRequests,
@@ -12,6 +12,8 @@ import {
   useCreateTestimonial,
   useDeleteTestimonial,
   useGetCurrentAuthUser,
+  useUpdateMyProfile,
+  getGetCurrentAuthUserQueryKey,
   useListGroups,
   useListGroupJoinRequests,
   useApproveGroupJoinRequest,
@@ -32,7 +34,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   UserPlus, UserCheck, UserMinus, Search, Users, Inbox,
   Clock, MapPin, LogIn, X, Check, Loader2, Star, Trash2,
-  Globe, ChevronRight, MessageSquare, Crown, Lock, ArrowLeft,
+  Globe, ChevronRight, MessageSquare, Crown, Lock, ArrowLeft, Camera,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,7 +75,42 @@ function Avatar({
 // ── Left Panel: My Profile ────────────────────────────────────────────────────
 
 function ProfilePanel({ friendCount }: { friendCount: number }) {
+  const queryClient = useQueryClient();
   const { data: authData } = useGetCurrentAuthUser();
+  const [isUploadingPic, setIsUploadingPic] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const updateProfile = useUpdateMyProfile({
+    mutation: {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: getGetCurrentAuthUserQueryKey() });
+        setIsUploadingPic(false);
+      },
+      onError: () => setIsUploadingPic(false),
+    },
+  });
+
+  const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingPic(true);
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const MAX = 400;
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const base64 = canvas.toDataURL("image/jpeg", 0.85);
+      updateProfile.mutate({ data: { profileImageUrl: base64 } });
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); setIsUploadingPic(false); };
+    img.src = url;
+    if (e.target) e.target.value = "";
+  }, [updateProfile]);
+
   const user = authData?.user;
   if (!user) return null;
   const name = [user.firstName, user.lastName].filter(Boolean).join(" ") || "Traveler";
@@ -87,7 +124,25 @@ function ProfilePanel({ friendCount }: { friendCount: number }) {
         <div className="px-5 pb-5 -mt-10">
           {/* Avatar + friends count row */}
           <div className="flex items-end justify-between">
-            <Avatar url={user.profileImageUrl} name={name} size="xl" />
+            {/* Editable avatar */}
+            <div className="relative group w-20 h-20 shrink-0">
+              <Avatar url={user.profileImageUrl} name={name} size="xl" />
+              {!isUploadingPic && (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute inset-0 rounded-full bg-black/55 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer"
+                  title="Change profile picture"
+                >
+                  <Camera className="w-5 h-5 text-white" />
+                </button>
+              )}
+              {isUploadingPic && (
+                <div className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center">
+                  <Loader2 className="w-5 h-5 text-white animate-spin" />
+                </div>
+              )}
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+            </div>
             <div className="text-right pb-1">
               <p className="text-4xl font-extrabold leading-none text-foreground">{friendCount}</p>
               <p className="text-xs text-muted-foreground mt-0.5 flex items-center justify-end gap-1">
