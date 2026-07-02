@@ -138,6 +138,8 @@ export interface AuthUser {
   /** @nullable */
   bio?: string | null;
   /** @nullable */
+  dateOfBirth?: string | null;
+  /** @nullable */
   age?: number | null;
   /** @nullable */
   sex?: string | null;
@@ -534,6 +536,8 @@ export interface UpdateProfileBody {
   firstName?: string | null;
   /** @nullable */
   lastName?: string | null;
+  /** @nullable */
+  dateOfBirth?: string | null;
   /** @nullable */
   age?: number | null;
   /** @nullable */

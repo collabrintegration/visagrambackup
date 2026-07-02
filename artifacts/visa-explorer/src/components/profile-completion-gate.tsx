@@ -5,18 +5,25 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, UserCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import LocationAutocomplete from "@/components/location-autocomplete";
 
 const SEX_OPTIONS = ["Male", "Female", "Non-binary", "Prefer not to say"];
 
+const MAX_DOB = (() => {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 13);
+  return d.toISOString().split("T")[0];
+})();
+
+const MIN_DOB = (() => {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 120);
+  return d.toISOString().split("T")[0];
+})();
+
 function isProfileComplete(user: Record<string, unknown> | null | undefined): boolean {
   if (!user) return true;
-  return !!(
-    user.firstName &&
-    user.lastName &&
-    user.age &&
-    user.sex &&
-    user.location
-  );
+  return !!(user.firstName && user.lastName && (user.dateOfBirth || user.age) && user.sex && user.location);
 }
 
 export default function ProfileCompletionGate() {
@@ -28,7 +35,7 @@ export default function ProfileCompletionGate() {
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [age, setAge] = useState("");
+  const [dob, setDob] = useState("");
   const [sex, setSex] = useState("");
   const [location, setLocation] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -37,7 +44,7 @@ export default function ProfileCompletionGate() {
     if (needsCompletion && typedUser) {
       setFirstName((typedUser.firstName as string) || "");
       setLastName((typedUser.lastName as string) || "");
-      setAge((typedUser.age as number)?.toString() || "");
+      setDob((typedUser.dateOfBirth as string) || "");
       setSex((typedUser.sex as string) || "");
       setLocation((typedUser.location as string) || "");
     }
@@ -57,10 +64,19 @@ export default function ProfileCompletionGate() {
     const e: Record<string, string> = {};
     if (!firstName.trim()) e.firstName = "Required";
     if (!lastName.trim()) e.lastName = "Required";
-    const ageNum = Number(age);
-    if (!age || isNaN(ageNum) || ageNum < 13 || ageNum > 120) e.age = "Must be between 13 and 120";
+    if (!dob) {
+      e.dob = "Required";
+    } else {
+      const dobDate = new Date(dob);
+      const today = new Date();
+      let age = today.getFullYear() - dobDate.getFullYear();
+      const m = today.getMonth() - dobDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) age--;
+      if (age < 13) e.dob = "You must be at least 13 years old";
+      if (age > 120) e.dob = "Please enter a valid date of birth";
+    }
     if (!sex) e.sex = "Required";
-    if (!location.trim()) e.location = "Required";
+    if (!location.trim()) e.location = "Select a city from the suggestions";
     return e;
   }
 
@@ -73,7 +89,7 @@ export default function ProfileCompletionGate() {
       data: {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
-        age: Number(age),
+        dateOfBirth: dob,
         sex,
         location: location.trim(),
       },
@@ -82,18 +98,19 @@ export default function ProfileCompletionGate() {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md rounded-2xl border border-border bg-card shadow-2xl p-6">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card shadow-2xl p-6 max-h-[95dvh] overflow-y-auto">
         <div className="flex flex-col items-center mb-6">
           <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
             <UserCircle2 className="w-7 h-7 text-primary" />
           </div>
           <h2 className="text-xl font-bold">Complete your profile</h2>
           <p className="text-sm text-muted-foreground mt-1 text-center">
-            Fill in these details to start using Visagram. This information helps connect you with the right travel community.
+            Fill in these details to start using Visagram.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Name row */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">First name *</label>
@@ -117,20 +134,26 @@ export default function ProfileCompletionGate() {
             </div>
           </div>
 
+          {/* Date of birth */}
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Age *</label>
-            <Input
-              type="number"
-              min={13}
-              max={120}
-              value={age}
-              onChange={e => setAge(e.target.value)}
-              placeholder="Your age"
-              className={errors.age ? "border-rose-500" : ""}
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">Date of birth *</label>
+            <input
+              type="date"
+              value={dob}
+              onChange={e => setDob(e.target.value)}
+              max={MAX_DOB}
+              min={MIN_DOB}
+              className={`w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 [color-scheme:dark] ${
+                errors.dob ? "border-rose-500" : "border-border"
+              }`}
             />
-            {errors.age && <p className="text-xs text-rose-400 mt-1">{errors.age}</p>}
+            {errors.dob
+              ? <p className="text-xs text-rose-400 mt-1">{errors.dob}</p>
+              : <p className="text-xs text-muted-foreground mt-1">Your age will be calculated automatically.</p>
+            }
           </div>
 
+          {/* Gender */}
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">Gender *</label>
             <div className="flex flex-wrap gap-2">
@@ -152,16 +175,19 @@ export default function ProfileCompletionGate() {
             {errors.sex && <p className="text-xs text-rose-400 mt-1">{errors.sex}</p>}
           </div>
 
+          {/* Location autocomplete */}
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">Location *</label>
-            <Input
+            <LocationAutocomplete
               value={location}
-              onChange={e => setLocation(e.target.value)}
-              placeholder="e.g. London, UK or New York, USA"
-              className={errors.location ? "border-rose-500" : ""}
+              onChange={setLocation}
+              placeholder="Type a city name…"
+              hasError={!!errors.location}
             />
-            {errors.location && <p className="text-xs text-rose-400 mt-1">{errors.location}</p>}
-            <p className="text-xs text-muted-foreground mt-1">Where you're based (city, country)</p>
+            {errors.location
+              ? <p className="text-xs text-rose-400 mt-1">{errors.location}</p>
+              : <p className="text-xs text-muted-foreground mt-1">Start typing and pick from the suggestions.</p>
+            }
           </div>
 
           <Button type="submit" className="w-full" disabled={isPending}>

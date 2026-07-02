@@ -18,6 +18,8 @@ export interface UpdateProfileBody {
   /** @nullable */
   lastName?: string | null;
   /** @nullable */
+  dateOfBirth?: string | null;
+  /** @nullable */
   age?: number | null;
   /** @nullable */
   sex?: string | null;

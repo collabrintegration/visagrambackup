@@ -2602,6 +2602,8 @@ components:
           type: ["string", "null"]
         bio:
           type: ["string", "null"]
+        dateOfBirth:
+          type: ["string", "null"]
         age:
           type: ["integer", "null"]
         sex:
@@ -3256,6 +3258,8 @@ components:
         firstName:
           type: ["string", "null"]
         lastName:
+          type: ["string", "null"]
+        dateOfBirth:
           type: ["string", "null"]
         age:
           type: ["integer", "null"]

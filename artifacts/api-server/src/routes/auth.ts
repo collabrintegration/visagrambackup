@@ -91,14 +91,27 @@ router.patch("/users/me", async (req: Request, res: Response) => {
     res.status(401).json({ error: "Login required" });
     return;
   }
-  const { homeCountry, bio, profileImageUrl, isPrivate, isEmailPublic, firstName, lastName, age, sex, location } = req.body;
+  const { homeCountry, bio, profileImageUrl, isPrivate, isEmailPublic, firstName, lastName, dateOfBirth, age, sex, location } = req.body;
   const patch: Partial<typeof usersTable.$inferInsert> = { updatedAt: new Date() };
   if ("homeCountry" in req.body) patch.homeCountry = homeCountry ?? null;
   if ("bio" in req.body) patch.bio = bio ?? null;
   if ("profileImageUrl" in req.body) patch.profileImageUrl = profileImageUrl ?? null;
   if ("firstName" in req.body) patch.firstName = firstName ?? null;
   if ("lastName" in req.body) patch.lastName = lastName ?? null;
-  if ("age" in req.body) patch.age = age != null ? Number(age) : null;
+  if ("dateOfBirth" in req.body) {
+    patch.dateOfBirth = dateOfBirth ?? null;
+    if (dateOfBirth) {
+      const dob = new Date(dateOfBirth as string);
+      const today = new Date();
+      let computedAge = today.getFullYear() - dob.getFullYear();
+      const m = today.getMonth() - dob.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) computedAge--;
+      patch.age = computedAge > 0 ? computedAge : null;
+    } else {
+      patch.age = null;
+    }
+  }
+  if ("age" in req.body && !("dateOfBirth" in req.body)) patch.age = age != null ? Number(age) : null;
   if ("sex" in req.body) patch.sex = sex ?? null;
   if ("location" in req.body) patch.location = location ?? null;
   if ("isPrivate" in req.body) patch.isPrivate = Boolean(isPrivate);

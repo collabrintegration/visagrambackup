@@ -36,6 +36,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import CountryCombobox from "@/components/country-combobox";
+import LocationAutocomplete from "@/components/location-autocomplete";
 
 const STATUS_CONFIG = {
   visited: {
@@ -160,8 +161,8 @@ export default function Profile() {
   const [editingBio, setEditingBio] = useState(false);
   const [bioText, setBioText] = useState<string>("");
   const [isPrivateLocal, setIsPrivateLocal] = useState<boolean | null>(null);
-  const [editingAge, setEditingAge] = useState(false);
-  const [ageText, setAgeText] = useState("");
+  const [editingDob, setEditingDob] = useState(false);
+  const [dobText, setDobText] = useState("");
   const [editingSex, setEditingSex] = useState(false);
   const [editingLocation, setEditingLocation] = useState(false);
   const [locationText, setLocationText] = useState("");
@@ -448,35 +449,35 @@ export default function Profile() {
                 )}
               </div>
 
-              {/* Age */}
+              {/* Date of birth */}
               <div className="mt-3">
-                {editingAge ? (
+                {editingDob ? (
                   <div className="flex items-center gap-2 max-w-xs">
                     <input
-                      type="number" min={13} max={120}
-                      value={ageText}
-                      onChange={e => setAgeText(e.target.value)}
-                      placeholder="Your age"
-                      className="w-24 rounded-lg border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                      type="date"
+                      value={dobText}
+                      onChange={e => setDobText(e.target.value)}
+                      max={(() => { const d = new Date(); d.setFullYear(d.getFullYear() - 13); return d.toISOString().split("T")[0]; })()}
+                      min={(() => { const d = new Date(); d.setFullYear(d.getFullYear() - 120); return d.toISOString().split("T")[0]; })()}
+                      className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 [color-scheme:dark]"
                       autoFocus
                     />
                     <Button size="sm" disabled={isSavingCountry} onClick={() => {
-                      const n = Number(ageText);
-                      if (!ageText || isNaN(n) || n < 13 || n > 120) return;
-                      updateProfile({ data: { age: n } });
-                      setEditingAge(false);
+                      if (!dobText) return;
+                      updateProfile({ data: { dateOfBirth: dobText } });
+                      setEditingDob(false);
                     }}>
                       {isSavingCountry ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                     </Button>
-                    <button onClick={() => setEditingAge(false)} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
+                    <button onClick={() => setEditingDob(false)} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
                   </div>
                 ) : (
-                  <button onClick={() => { setAgeText(String((user as { age?: number | null })?.age ?? "")); setEditingAge(true); }}
+                  <button onClick={() => { setDobText((user as { dateOfBirth?: string | null })?.dateOfBirth ?? ""); setEditingDob(true); }}
                     className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group">
                     <span className="text-base">🎂</span>
-                    {(user as { age?: number | null })?.age
-                      ? <span>Age: <span className="text-foreground font-medium">{(user as { age?: number | null }).age}</span></span>
-                      : <span className="group-hover:text-primary">+ Add your age</span>}
+                    {(user as { age?: number | null; dateOfBirth?: string | null })?.age
+                      ? <span>Age: <span className="text-foreground font-medium">{(user as { age?: number | null }).age}</span>{(user as { dateOfBirth?: string | null })?.dateOfBirth && <span className="text-muted-foreground text-xs ml-1">(born {new Date((user as { dateOfBirth: string }).dateOfBirth).toLocaleDateString("en", { day: "numeric", month: "short", year: "numeric" })})</span>}</span>
+                      : <span className="group-hover:text-primary">+ Add date of birth</span>}
                     <ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
                 )}
@@ -509,14 +510,14 @@ export default function Profile() {
               {/* Location */}
               <div className="mt-3">
                 {editingLocation ? (
-                  <div className="flex items-center gap-2 max-w-xs">
-                    <input
-                      value={locationText}
-                      onChange={e => setLocationText(e.target.value)}
-                      placeholder="e.g. London, UK"
-                      className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
-                      autoFocus
-                    />
+                  <div className="flex items-center gap-2 max-w-sm">
+                    <div className="flex-1">
+                      <LocationAutocomplete
+                        value={locationText}
+                        onChange={setLocationText}
+                        placeholder="Type a city name…"
+                      />
+                    </div>
                     <Button size="sm" disabled={isSavingCountry} onClick={() => {
                       updateProfile({ data: { location: locationText.trim() || null } });
                       setEditingLocation(false);
