@@ -736,8 +736,38 @@ function FriendsListSection({ friends, loading, onRemove, onMessage, onFindPeopl
   );
 }
 
+const GROUPS_PAGE_SIZE = 6;
+
+function GroupsPager({ page, total, onPrev, onNext }: { page: number; total: number; onPrev: () => void; onNext: () => void }) {
+  const totalPages = Math.ceil(total / GROUPS_PAGE_SIZE);
+  if (totalPages <= 1) return null;
+  return (
+    <div className="flex items-center justify-between px-1 mt-2">
+      <button
+        onClick={onPrev}
+        disabled={page === 0}
+        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+      >
+        <ChevronLeft className="w-3.5 h-3.5" />Prev
+      </button>
+      <span className="text-xs text-muted-foreground">
+        {page + 1} / {totalPages}
+      </span>
+      <button
+        onClick={onNext}
+        disabled={(page + 1) * GROUPS_PAGE_SIZE >= total}
+        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+      >
+        Next<ChevronRight className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+}
+
 function FriendsGroupsTab() {
   const [groupSearch, setGroupSearch] = useState("");
+  const [adminPage, setAdminPage] = useState(0);
+  const [memberPage, setMemberPage] = useState(0);
   const { data: groups = [], isLoading } = useListGroups({
     query: { queryKey: getListGroupsQueryKey(), enabled: true },
   });
@@ -763,6 +793,15 @@ function FriendsGroupsTab() {
 
   const totalGroups = groups.filter(g => g.isMember || g.isAdmin).length;
 
+  const pagedAdmin = adminGroups.slice(adminPage * GROUPS_PAGE_SIZE, (adminPage + 1) * GROUPS_PAGE_SIZE);
+  const pagedMember = myGroups.slice(memberPage * GROUPS_PAGE_SIZE, (memberPage + 1) * GROUPS_PAGE_SIZE);
+
+  const handleSearch = (val: string) => {
+    setGroupSearch(val);
+    setAdminPage(0);
+    setMemberPage(0);
+  };
+
   return (
     <div className="space-y-6">
       {totalGroups > 0 && (
@@ -770,7 +809,7 @@ function FriendsGroupsTab() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <input
             value={groupSearch}
-            onChange={e => setGroupSearch(e.target.value)}
+            onChange={e => handleSearch(e.target.value)}
             placeholder="Search groups…"
             className="w-full pl-9 pr-4 py-2 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
           />
@@ -786,8 +825,14 @@ function FriendsGroupsTab() {
               <span className="text-xs text-muted-foreground">({adminGroups.length})</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {adminGroups.map((g) => <AdminGroupPanel key={g.id} group={g} />)}
+              {pagedAdmin.map((g) => <AdminGroupPanel key={g.id} group={g} />)}
             </div>
+            <GroupsPager
+              page={adminPage}
+              total={adminGroups.length}
+              onPrev={() => setAdminPage(p => Math.max(0, p - 1))}
+              onNext={() => setAdminPage(p => p + 1)}
+            />
           </div>
         )}
 
@@ -799,7 +844,7 @@ function FriendsGroupsTab() {
               <span className="text-xs text-muted-foreground">({myGroups.length})</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {myGroups.map((g) => (
+              {pagedMember.map((g) => (
                 <div key={g.id} className="bg-card border border-border rounded-2xl p-4 flex flex-col gap-3 hover:border-primary/40 transition-colors">
                   {/* Emoji + privacy badge */}
                   <div className="flex items-start justify-between gap-2">
@@ -834,6 +879,12 @@ function FriendsGroupsTab() {
                 </div>
               ))}
             </div>
+            <GroupsPager
+              page={memberPage}
+              total={myGroups.length}
+              onPrev={() => setMemberPage(p => Math.max(0, p - 1))}
+              onNext={() => setMemberPage(p => p + 1)}
+            />
           </div>
         )}
 
