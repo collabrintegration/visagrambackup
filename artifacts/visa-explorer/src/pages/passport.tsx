@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useListCountries, getListCountriesQueryKey, useListDestinationsByPassport, getListDestinationsByPassportQueryKey, useGetPassportRankings, getGetPassportRankingsQueryKey } from "@workspace/api-client-react";
@@ -92,6 +93,13 @@ export default function PassportPower() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>Passport Power Rankings — Compare Passport Strength | Visagram</title>
+        <meta name="description" content="Compare the strength of passports from 190+ countries. See how many destinations each passport unlocks visa-free, on arrival, or with an eVisa." />
+        <meta property="og:title" content="Passport Power Rankings — Compare Passport Strength | Visagram" />
+        <meta property="og:description" content="Compare the strength of passports from 190+ countries and discover where your passport unlocks visa-free access." />
+        <meta property="og:url" content="https://visagram.app/passport" />
+      </Helmet>
       {/* ── Identity hero ── */}
       <div className="relative overflow-hidden h-64 md:h-72">
         {/* Background landmark photo of selected passport country */}

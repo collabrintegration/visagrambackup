@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { useState, useMemo, useEffect } from "react";
 import { Link } from "wouter";
 import {
@@ -622,6 +623,13 @@ export default function TrackerPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>Visa Application Tracker — Track Your Visa Status | Visagram</title>
+        <meta name="description" content="Track all your visa applications in one place. Monitor status, deadlines, and processing times for every country you're applying to — stay organized before your trip." />
+        <meta property="og:title" content="Visa Application Tracker — Track Your Visa Status | Visagram" />
+        <meta property="og:description" content="Monitor all your visa applications, deadlines, and processing times in one organized dashboard on Visagram." />
+        <meta property="og:url" content="https://visagram.app/tracker" />
+      </Helmet>
       {/* ── Header ── */}
       <div className="border-b border-border/60 bg-card/30">
         <div className="container mx-auto px-4 py-10">

@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
 import {
@@ -117,6 +118,13 @@ export default function Explore() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>Explore Destinations — Visa Requirements by Country | Visagram</title>
+        <meta name="description" content="Browse visa requirements for 190+ countries. Filter by your passport to instantly see where you can travel visa-free, on arrival, with an eVisa, or with a full visa." />
+        <meta property="og:title" content="Explore Destinations — Visa Requirements by Country | Visagram" />
+        <meta property="og:description" content="Browse visa requirements for 190+ countries. Filter by your passport to instantly see where you can travel visa-free, on arrival, or with a visa." />
+        <meta property="og:url" content="https://visagram.app/explore" />
+      </Helmet>
       {/* ── Header ── */}
       <div className="bg-card/40 border-b border-border py-10">
         <div className="container mx-auto px-4">

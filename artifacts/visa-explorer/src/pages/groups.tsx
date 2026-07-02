@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
 import {
@@ -132,6 +133,13 @@ export default function Groups() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>Travel Groups — Connect with Fellow Travelers | Visagram</title>
+        <meta name="description" content="Join travel groups on Visagram to connect with fellow travelers, share visa tips, discuss destinations, and build your global travel network." />
+        <meta property="og:title" content="Travel Groups — Connect with Fellow Travelers | Visagram" />
+        <meta property="og:description" content="Join travel groups to connect with fellow travelers, share visa tips, and discuss destinations on Visagram." />
+        <meta property="og:url" content="https://visagram.app/groups" />
+      </Helmet>
       {/* Hero */}
       <div className="border-b border-border/60 bg-card/30">
         <div className="container mx-auto px-4 py-12 md:py-16">

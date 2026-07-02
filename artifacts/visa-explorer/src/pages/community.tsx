@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
 import {
@@ -334,6 +335,13 @@ export default function Community() {
 
   return (
     <>
+    <Helmet>
+      <title>Community — Traveler Reviews & Visa Q&A | Visagram</title>
+      <meta name="description" content="Read real traveler reviews, ask visa questions, and get answers from a global community of travelers. Share your own experiences and help others plan their trips." />
+      <meta property="og:title" content="Community — Traveler Reviews & Visa Q&A | Visagram" />
+      <meta property="og:description" content="Read real traveler reviews, ask visa questions, and connect with a global community of travelers on Visagram." />
+      <meta property="og:url" content="https://visagram.app/community" />
+    </Helmet>
     <div className="min-h-screen bg-background">
       {/* Hero */}
       <div className="border-b border-border/60 bg-card/30">

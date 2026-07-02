@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { useGetStatsOverview, getGetStatsOverviewQueryKey, useListGroups, getListGroupsQueryKey } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import {
@@ -61,6 +62,25 @@ export default function Home() {
 
   return (
     <div className="w-full">
+      <Helmet>
+        <title>Visagram — Discover Visa Requirements & Travel the World</title>
+        <meta name="description" content="Plan your next trip with Visagram. Explore visa requirements for 190+ countries, read real traveler reviews, compare passport power, and track your visa applications." />
+        <meta property="og:title" content="Visagram — Discover Visa Requirements & Travel the World" />
+        <meta property="og:description" content="Plan your next trip with Visagram. Explore visa requirements for 190+ countries, read real traveler reviews, compare passport power, and track your visa applications." />
+        <meta property="og:url" content="https://visagram.app/" />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "Visagram",
+          "url": "https://visagram.app",
+          "description": "Discover visa requirements for 190+ countries, read community reviews, compare passport power, and track your visa applications.",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://visagram.app/explore?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        })}</script>
+      </Helmet>
 
       {/* ── Hero ── */}
       <section className="relative overflow-hidden bg-background" style={{ minHeight: "calc(100vh - 64px)" }}>
