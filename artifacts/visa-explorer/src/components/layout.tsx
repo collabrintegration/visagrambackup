@@ -17,6 +17,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { href: "/explore", label: "Explore", icon: MapIcon },
     { href: "/passport", label: "Passport Power", icon: BookOpen },
     { href: "/community", label: "Community", icon: Users },
+    { href: "/groups", label: "Groups", icon: Globe },
   ];
 
   return (

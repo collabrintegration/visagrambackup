@@ -6,6 +6,7 @@ import visasRouter from "./visas";
 import communityRouter from "./community";
 import supportRouter from "./support";
 import anthropicRouter from "./anthropic";
+import groupsRouter from "./groups";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(visasRouter);
 router.use(communityRouter);
 router.use(supportRouter);
 router.use(anthropicRouter);
+router.use(groupsRouter);
 
 export default router;

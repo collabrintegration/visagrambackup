@@ -995,3 +995,252 @@ export const AddSupportCommentResponse = zod.object({
 })
 
 
+/**
+ * @summary List all public groups
+ */
+export const ListGroupsResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "emoji": zod.string(),
+  "adminId": zod.string(),
+  "isPrivate": zod.boolean(),
+  "memberCount": zod.number(),
+  "isMember": zod.boolean(),
+  "isAdmin": zod.boolean(),
+  "lastMessage": zod.object({
+  "id": zod.number(),
+  "groupId": zod.number(),
+  "userId": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "content": zod.string(),
+  "createdAt": zod.coerce.date()
+}).nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const ListGroupsResponse = zod.array(ListGroupsResponseItem)
+
+
+/**
+ * @summary Create a new group (auth required)
+ */
+export const CreateGroupBody = zod.object({
+  "name": zod.string(),
+  "description": zod.string().optional(),
+  "emoji": zod.string().optional(),
+  "isPrivate": zod.boolean().optional()
+})
+
+export const CreateGroupResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "emoji": zod.string(),
+  "adminId": zod.string(),
+  "isPrivate": zod.boolean(),
+  "memberCount": zod.number(),
+  "isMember": zod.boolean(),
+  "isAdmin": zod.boolean(),
+  "lastMessage": zod.object({
+  "id": zod.number(),
+  "groupId": zod.number(),
+  "userId": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "content": zod.string(),
+  "createdAt": zod.coerce.date()
+}).nullish(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Get group details
+ */
+export const GetGroupParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetGroupResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "emoji": zod.string(),
+  "adminId": zod.string(),
+  "isPrivate": zod.boolean(),
+  "memberCount": zod.number(),
+  "isMember": zod.boolean(),
+  "isAdmin": zod.boolean(),
+  "lastMessage": zod.object({
+  "id": zod.number(),
+  "groupId": zod.number(),
+  "userId": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "content": zod.string(),
+  "createdAt": zod.coerce.date()
+}).nullish(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update group (admin only)
+ */
+export const UpdateGroupParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateGroupBody = zod.object({
+  "name": zod.string().optional(),
+  "description": zod.string().optional(),
+  "emoji": zod.string().optional(),
+  "isPrivate": zod.boolean().optional()
+})
+
+export const UpdateGroupResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "emoji": zod.string(),
+  "adminId": zod.string(),
+  "isPrivate": zod.boolean(),
+  "memberCount": zod.number(),
+  "isMember": zod.boolean(),
+  "isAdmin": zod.boolean(),
+  "lastMessage": zod.object({
+  "id": zod.number(),
+  "groupId": zod.number(),
+  "userId": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "content": zod.string(),
+  "createdAt": zod.coerce.date()
+}).nullish(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete group (admin only)
+ */
+export const DeleteGroupParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteGroupResponse = zod.void()
+
+
+/**
+ * @summary Join a group (auth required)
+ */
+export const JoinGroupParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const JoinGroupResponse = zod.unknown()
+
+
+/**
+ * @summary Leave a group (auth required)
+ */
+export const LeaveGroupParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const LeaveGroupResponse = zod.unknown()
+
+
+/**
+ * @summary List members of a group
+ */
+export const ListGroupMembersParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListGroupMembersResponseItem = zod.object({
+  "userId": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "role": zod.enum(['admin', 'member']),
+  "joinedAt": zod.coerce.date()
+})
+export const ListGroupMembersResponse = zod.array(ListGroupMembersResponseItem)
+
+
+/**
+ * @summary Remove a member (admin only)
+ */
+export const RemoveGroupMemberParams = zod.object({
+  "id": zod.coerce.number(),
+  "userId": zod.coerce.string()
+})
+
+export const RemoveGroupMemberResponse = zod.void()
+
+
+/**
+ * @summary Get chat messages for a group
+ */
+export const ListGroupMessagesParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListGroupMessagesQueryParams = zod.object({
+  "before": zod.coerce.number().optional().describe('Fetch messages before this message id (for pagination)'),
+  "limit": zod.coerce.number().optional()
+})
+
+export const ListGroupMessagesResponseItem = zod.object({
+  "id": zod.number(),
+  "groupId": zod.number(),
+  "userId": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "content": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+export const ListGroupMessagesResponse = zod.array(ListGroupMessagesResponseItem)
+
+
+/**
+ * @summary Post a message to a group
+ */
+export const CreateGroupMessageParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const CreateGroupMessageBody = zod.object({
+  "content": zod.string()
+})
+
+export const CreateGroupMessageResponse = zod.object({
+  "id": zod.number(),
+  "groupId": zod.number(),
+  "userId": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "content": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete a message (own or admin)
+ */
+export const DeleteGroupMessageParams = zod.object({
+  "id": zod.coerce.number(),
+  "messageId": zod.coerce.number()
+})
+
+export const DeleteGroupMessageResponse = zod.void()
+
+

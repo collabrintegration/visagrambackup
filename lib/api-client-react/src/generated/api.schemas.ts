@@ -569,6 +569,66 @@ export interface AnthropicError {
   error: string;
 }
 
+export interface GroupMessage {
+  id: number;
+  groupId: number;
+  userId: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  profileImageUrl?: string | null;
+  content: string;
+  createdAt: string;
+}
+
+export interface Group {
+  id: number;
+  name: string;
+  description?: string | null;
+  emoji: string;
+  adminId: string;
+  isPrivate: boolean;
+  memberCount: number;
+  isMember: boolean;
+  isAdmin: boolean;
+  lastMessage?: GroupMessage | null;
+  createdAt: string;
+}
+
+export type GroupMemberRole = typeof GroupMemberRole[keyof typeof GroupMemberRole];
+
+
+export const GroupMemberRole = {
+  admin: 'admin',
+  member: 'member',
+} as const;
+
+export interface GroupMember {
+  userId: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  profileImageUrl?: string | null;
+  role: GroupMemberRole;
+  joinedAt: string;
+}
+
+export interface CreateGroupInput {
+  name: string;
+  description?: string;
+  emoji?: string;
+  isPrivate?: boolean;
+}
+
+export interface UpdateGroupInput {
+  name?: string;
+  description?: string;
+  emoji?: string;
+  isPrivate?: boolean;
+}
+
+export interface CreateGroupMessageInput {
+  content: string;
+}
+
 export type ListCountriesParams = {
 /**
  * Search by country name
@@ -656,5 +716,13 @@ limit?: number;
 
 export type GetVisaReportsParams = {
 passportCode?: string;
+};
+
+export type ListGroupMessagesParams = {
+/**
+ * Fetch messages before this message id (for pagination)
+ */
+before?: number;
+limit?: number;
 };
 
