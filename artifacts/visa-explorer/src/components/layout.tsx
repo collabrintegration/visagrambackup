@@ -23,11 +23,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-[100dvh] flex flex-col bg-background selection:bg-primary/20 selection:text-primary">
       <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
-          <Link href="/" className="flex items-center shrink-0 group">
+          <Link href="/" className="flex items-center shrink-0 group overflow-hidden rounded-sm" style={{ width: 120, height: 36 }}>
             <img
               src="/visafy-logo.png"
               alt="Visafy"
-              className="h-9 w-auto opacity-90 group-hover:opacity-100 transition-opacity"
+              className="w-full h-full object-cover object-center opacity-90 group-hover:opacity-100 transition-opacity"
               style={{ filter: "drop-shadow(0 0 6px hsl(var(--primary) / 0.25))" }}
             />
           </Link>
