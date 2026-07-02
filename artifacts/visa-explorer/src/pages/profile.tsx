@@ -589,7 +589,12 @@ export default function Profile() {
               >
                 <Icon className="w-4 h-4" />
                 {label}
-                {id === "admin" && <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-semibold ml-0.5">ADMIN</span>}
+                {id === "admin" && (
+                  <span className="ml-1.5 inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase bg-gradient-to-r from-amber-500/30 via-primary/30 to-violet-500/30 border border-amber-400/30 text-amber-300 shadow-[0_0_8px_rgba(251,191,36,0.25)]">
+                    <Crown className="w-2.5 h-2.5 shrink-0" />
+                    Super
+                  </span>
+                )}
               </button>
             ))}
           </div>
