@@ -592,6 +592,7 @@ export interface Group {
   memberCount: number;
   isMember: boolean;
   isAdmin: boolean;
+  isPrimaryAdmin: boolean;
   hasPendingRequest?: boolean;
   lastMessage?: GroupMessage | null;
   createdAt: string;
@@ -611,6 +612,7 @@ export interface GroupMember {
   lastName?: string | null;
   profileImageUrl?: string | null;
   role: GroupMemberRole;
+  isPrimary: boolean;
   joinedAt: string;
 }
 
@@ -885,6 +887,31 @@ export const JoinGroup200Status = {
 export type JoinGroup200 = {
   ok: boolean;
   status: JoinGroup200Status;
+};
+
+export type SetGroupMemberRoleBodyRole = typeof SetGroupMemberRoleBodyRole[keyof typeof SetGroupMemberRoleBodyRole];
+
+
+export const SetGroupMemberRoleBodyRole = {
+  admin: 'admin',
+  member: 'member',
+} as const;
+
+export type SetGroupMemberRoleBody = {
+  role: SetGroupMemberRoleBodyRole;
+};
+
+export type SetGroupMemberRole200Role = typeof SetGroupMemberRole200Role[keyof typeof SetGroupMemberRole200Role];
+
+
+export const SetGroupMemberRole200Role = {
+  admin: 'admin',
+  member: 'member',
+} as const;
+
+export type SetGroupMemberRole200 = {
+  ok: boolean;
+  role: SetGroupMemberRole200Role;
 };
 
 export type ListGroupMessagesParams = {

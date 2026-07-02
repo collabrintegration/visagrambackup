@@ -17,6 +17,7 @@ export interface Group {
   memberCount: number;
   isMember: boolean;
   isAdmin: boolean;
+  isPrimaryAdmin: boolean;
   hasPendingRequest?: boolean;
   lastMessage?: GroupMessage | null;
   createdAt: Date;

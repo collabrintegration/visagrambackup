@@ -13,5 +13,6 @@ export interface GroupMember {
   lastName?: string | null;
   profileImageUrl?: string | null;
   role: GroupMemberRole;
+  isPrimary: boolean;
   joinedAt: Date;
 }

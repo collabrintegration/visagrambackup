@@ -69,6 +69,8 @@ import type {
   Review,
   ReviewsResponse,
   SendDmInput,
+  SetGroupMemberRole200,
+  SetGroupMemberRoleBody,
   StatsOverview,
   SubmitVisaReportBody,
   SupportCase,
@@ -4957,6 +4959,79 @@ export const useRemoveGroupMember = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getRemoveGroupMemberMutationOptions(options));
+    }
+
+export const getSetGroupMemberRoleUrl = (id: number,
+    userId: string,) => {
+
+
+
+
+  return `/api/groups/${id}/members/${userId}/role`
+}
+
+/**
+ * @summary Promote or demote a member (primary admin only)
+ */
+export const setGroupMemberRole = async (id: number,
+    userId: string,
+    setGroupMemberRoleBody: SetGroupMemberRoleBody, options?: RequestInit): Promise<SetGroupMemberRole200> => {
+
+  return customFetch<SetGroupMemberRole200>(getSetGroupMemberRoleUrl(id,userId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(setGroupMemberRoleBody)
+  }
+);}
+
+
+
+
+export const getSetGroupMemberRoleMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setGroupMemberRole>>, TError,{id: number;userId: string;data: BodyType<SetGroupMemberRoleBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setGroupMemberRole>>, TError,{id: number;userId: string;data: BodyType<SetGroupMemberRoleBody>}, TContext> => {
+
+const mutationKey = ['setGroupMemberRole'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setGroupMemberRole>>, {id: number;userId: string;data: BodyType<SetGroupMemberRoleBody>}> = (props) => {
+          const {id,userId,data} = props ?? {};
+
+          return  setGroupMemberRole(id,userId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetGroupMemberRoleMutationResult = NonNullable<Awaited<ReturnType<typeof setGroupMemberRole>>>
+    export type SetGroupMemberRoleMutationBody = BodyType<SetGroupMemberRoleBody>
+    export type SetGroupMemberRoleMutationError = ErrorType<void>
+
+    /**
+ * @summary Promote or demote a member (primary admin only)
+ */
+export const useSetGroupMemberRole = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setGroupMemberRole>>, TError,{id: number;userId: string;data: BodyType<SetGroupMemberRoleBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setGroupMemberRole>>,
+        TError,
+        {id: number;userId: string;data: BodyType<SetGroupMemberRoleBody>},
+        TContext
+      > => {
+      return useMutation(getSetGroupMemberRoleMutationOptions(options));
     }
 
 export const getListGroupMessagesUrl = (id: number,

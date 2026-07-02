@@ -49,7 +49,8 @@ async function buildGroupResponse(
   userId: string | null,
 ) {
   const isMember = userId ? await isMemberOf(group.id, userId) : false;
-  const isAdmin = userId ? group.adminId === userId : false;
+  const isAdmin = userId ? await isAdminOf(group.id, userId) : false;
+  const isPrimaryAdmin = userId ? group.adminId === userId : false;
   const hasPending = userId && !isMember ? await hasPendingRequest(group.id, userId) : false;
 
   const lastMsgRows = await db
@@ -79,6 +80,7 @@ async function buildGroupResponse(
     memberCount: group.memberCount,
     isMember,
     isAdmin,
+    isPrimaryAdmin,
     hasPendingRequest: hasPending,
     lastMessage: lastMsgRows[0] ?? null,
     createdAt: group.createdAt,
@@ -258,7 +260,7 @@ router.post("/groups/:id/leave", async (req: Request, res: Response) => {
   if (!group[0]) { res.status(404).json({ error: "Group not found" }); return; }
 
   if (group[0].adminId === userId) {
-    res.status(400).json({ error: "Admin cannot leave — delete the group or transfer admin first" });
+    res.status(400).json({ error: "Primary admin cannot leave — delete the group or transfer ownership first." });
     return;
   }
 
@@ -289,7 +291,8 @@ router.get("/groups/:id/members", async (req: Request, res: Response) => {
     .where(eq(groupMembersTable.groupId, groupId))
     .orderBy(groupMembersTable.joinedAt);
 
-  res.json(members);
+  const primaryAdminId = group[0].adminId;
+  res.json(members.map((m) => ({ ...m, isPrimary: m.userId === primaryAdminId })));
 });
 
 // ── Remove member ──────────────────────────────────────────────────────────
@@ -396,6 +399,41 @@ router.post("/groups/:id/join-requests/:userId/reject", async (req: Request, res
     .where(eq(groupJoinRequestsTable.id, request[0].id));
 
   res.json({ ok: true });
+});
+
+// ── Promote / demote member role (primary admin only) ──────────────────────
+router.patch("/groups/:id/members/:userId/role", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const actorId = req.user.id;
+  const groupId = Number(req.params.id);
+  const targetId = String(req.params.userId);
+  const { role } = req.body as { role?: string };
+
+  if (role !== "admin" && role !== "member") {
+    res.status(400).json({ error: "role must be 'admin' or 'member'" }); return;
+  }
+
+  const group = await db.select().from(groupsTable).where(eq(groupsTable.id, groupId)).limit(1);
+  if (!group[0]) { res.status(404).json({ error: "Group not found" }); return; }
+
+  if (group[0].adminId !== actorId) {
+    res.status(403).json({ error: "Only the primary admin can promote or demote members." }); return;
+  }
+  if (targetId === actorId) {
+    res.status(400).json({ error: "You cannot change your own role." }); return;
+  }
+
+  const target = await db.select({ id: groupMembersTable.id })
+    .from(groupMembersTable)
+    .where(and(eq(groupMembersTable.groupId, groupId), eq(groupMembersTable.userId, targetId)))
+    .limit(1);
+  if (!target[0]) { res.status(404).json({ error: "Member not found" }); return; }
+
+  await db.update(groupMembersTable)
+    .set({ role })
+    .where(and(eq(groupMembersTable.groupId, groupId), eq(groupMembersTable.userId, targetId)));
+
+  res.json({ ok: true, role });
 });
 
 // ── List messages ──────────────────────────────────────────────────────────

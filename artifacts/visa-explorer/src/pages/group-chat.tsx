@@ -11,6 +11,7 @@ import {
   useUpdateGroup,
   useDeleteGroup,
   useRemoveGroupMember,
+  useSetGroupMemberRole,
   getGetGroupQueryKey,
   getListGroupMessagesQueryKey,
   getListGroupMembersQueryKey,
@@ -141,6 +142,13 @@ export default function GroupChat() {
     }},
   });
 
+  const { mutate: setMemberRole } = useSetGroupMemberRole({
+    mutation: { onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: membersKey });
+      void queryClient.invalidateQueries({ queryKey: groupKey });
+    }},
+  });
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
@@ -178,6 +186,7 @@ export default function GroupChat() {
   }
 
   const isAdmin = group.isAdmin;
+  const isPrimaryAdmin = group.isPrimaryAdmin;
   const isMember = group.isMember;
 
   return (
@@ -354,13 +363,15 @@ export default function GroupChat() {
                 <MemberRow
                   key={m.userId}
                   member={m}
-                  isAdmin={isAdmin}
+                  isPrimaryAdmin={isPrimaryAdmin}
                   isSelf={m.userId === userId}
                   onRemove={() => removeMember({ id: groupId, userId: m.userId })}
+                  onPromote={() => setMemberRole({ id: groupId, userId: m.userId, data: { role: "admin" } })}
+                  onDemote={() => setMemberRole({ id: groupId, userId: m.userId, data: { role: "member" } })}
                 />
               ))}
             </div>
-            {!isAdmin && (
+            {!isPrimaryAdmin && isMember && (
               <div className="p-3 border-t border-border">
                 <Button
                   variant="outline"
@@ -395,13 +406,15 @@ export default function GroupChat() {
                   <MemberRow
                     key={m.userId}
                     member={m}
-                    isAdmin={isAdmin}
+                    isPrimaryAdmin={isPrimaryAdmin}
                     isSelf={m.userId === userId}
                     onRemove={() => removeMember({ id: groupId, userId: m.userId })}
+                    onPromote={() => setMemberRole({ id: groupId, userId: m.userId, data: { role: "admin" } })}
+                    onDemote={() => setMemberRole({ id: groupId, userId: m.userId, data: { role: "member" } })}
                   />
                 ))}
               </div>
-              {!isAdmin && (
+              {!isPrimaryAdmin && isMember && (
                 <div className="p-3 border-t border-border">
                   <Button
                     variant="outline"
@@ -559,34 +572,60 @@ function MessageBubble({
 }
 
 function MemberRow({
-  member, isAdmin, isSelf, onRemove,
+  member, isPrimaryAdmin, isSelf, onRemove, onPromote, onDemote,
 }: {
   member: GroupMember;
-  isAdmin: boolean;
+  isPrimaryAdmin: boolean;
   isSelf: boolean;
   onRemove: () => void;
+  onPromote: () => void;
+  onDemote: () => void;
 }) {
+  const isCoAdmin = member.role === "admin" && !member.isPrimary;
   return (
-    <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors">
+    <div className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors">
       <div className="w-8 h-8 rounded-full bg-primary/20 text-primary text-xs font-semibold flex items-center justify-center shrink-0">
         {initials(member)}
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{displayName(member)}{isSelf ? " (you)" : ""}</p>
-        {member.role === "admin" && (
+        {member.isPrimary ? (
           <p className="text-[10px] text-amber-400 flex items-center gap-1">
-            <Crown className="w-2.5 h-2.5" /> Admin
+            <Crown className="w-2.5 h-2.5" /> Owner
           </p>
-        )}
+        ) : isCoAdmin ? (
+          <p className="text-[10px] text-violet-400 flex items-center gap-1">
+            <Shield className="w-2.5 h-2.5" /> Admin
+          </p>
+        ) : null}
       </div>
-      {isAdmin && !isSelf && member.role !== "admin" && (
-        <button
-          onClick={onRemove}
-          className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-          title="Remove member"
-        >
-          <UserMinus className="w-3.5 h-3.5" />
-        </button>
+      {isPrimaryAdmin && !isSelf && !member.isPrimary && (
+        <div className="flex items-center gap-0.5">
+          {isCoAdmin ? (
+            <button
+              onClick={onDemote}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-amber-400 hover:bg-amber-400/10 transition-colors"
+              title="Demote to member"
+            >
+              <Shield className="w-3.5 h-3.5" />
+            </button>
+          ) : (
+            <button
+              onClick={onPromote}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-violet-400 hover:bg-violet-400/10 transition-colors"
+              title="Promote to admin"
+            >
+              <Shield className="w-3.5 h-3.5" />
+            </button>
+          )}
+          <button
+            onClick={onRemove}
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+            title="Remove member"
+          >
+            <UserMinus className="w-3.5 h-3.5" />
+          </button>
+        </div>
       )}
     </div>
   );

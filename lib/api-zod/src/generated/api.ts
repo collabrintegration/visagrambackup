@@ -1023,6 +1023,7 @@ export const ListGroupsResponseItem = zod.object({
   "memberCount": zod.number(),
   "isMember": zod.boolean(),
   "isAdmin": zod.boolean(),
+  "isPrimaryAdmin": zod.boolean(),
   "hasPendingRequest": zod.boolean().optional(),
   "lastMessage": zod.object({
   "id": zod.number(),
@@ -1060,6 +1061,7 @@ export const CreateGroupResponse = zod.object({
   "memberCount": zod.number(),
   "isMember": zod.boolean(),
   "isAdmin": zod.boolean(),
+  "isPrimaryAdmin": zod.boolean(),
   "hasPendingRequest": zod.boolean().optional(),
   "lastMessage": zod.object({
   "id": zod.number(),
@@ -1093,6 +1095,7 @@ export const GetGroupResponse = zod.object({
   "memberCount": zod.number(),
   "isMember": zod.boolean(),
   "isAdmin": zod.boolean(),
+  "isPrimaryAdmin": zod.boolean(),
   "hasPendingRequest": zod.boolean().optional(),
   "lastMessage": zod.object({
   "id": zod.number(),
@@ -1133,6 +1136,7 @@ export const UpdateGroupResponse = zod.object({
   "memberCount": zod.number(),
   "isMember": zod.boolean(),
   "isAdmin": zod.boolean(),
+  "isPrimaryAdmin": zod.boolean(),
   "hasPendingRequest": zod.boolean().optional(),
   "lastMessage": zod.object({
   "id": zod.number(),
@@ -1469,6 +1473,7 @@ export const ListGroupMembersResponseItem = zod.object({
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'member']),
+  "isPrimary": zod.boolean(),
   "joinedAt": zod.coerce.date()
 })
 export const ListGroupMembersResponse = zod.array(ListGroupMembersResponseItem)
@@ -1483,6 +1488,24 @@ export const RemoveGroupMemberParams = zod.object({
 })
 
 export const RemoveGroupMemberResponse = zod.void()
+
+
+/**
+ * @summary Promote or demote a member (primary admin only)
+ */
+export const SetGroupMemberRoleParams = zod.object({
+  "id": zod.coerce.number(),
+  "userId": zod.coerce.string()
+})
+
+export const SetGroupMemberRoleBody = zod.object({
+  "role": zod.enum(['admin', 'member'])
+})
+
+export const SetGroupMemberRoleResponse = zod.object({
+  "ok": zod.boolean(),
+  "role": zod.enum(['admin', 'member'])
+})
 
 
 /**
