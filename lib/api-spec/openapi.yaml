@@ -2031,7 +2031,7 @@ paths:
         "401":
           description: Unauthorized
 
-  /api/users/search:
+  /users/search:
     get:
       operationId: searchUsers
       summary: Search users by name
@@ -2060,7 +2060,7 @@ paths:
         "401":
           description: Unauthorized
 
-  /api/friends:
+  /friends:
     get:
       operationId: listFriends
       summary: List accepted friends
@@ -2078,7 +2078,7 @@ paths:
         "401":
           description: Unauthorized
 
-  /api/friends/requests:
+  /friends/requests:
     get:
       operationId: listFriendRequests
       summary: List incoming pending friend requests
@@ -2096,7 +2096,7 @@ paths:
         "401":
           description: Unauthorized
 
-  /api/friends/request/{userId}:
+  /friends/request/{userId}:
     post:
       operationId: sendFriendRequest
       summary: Send or accept a friend request
@@ -2122,7 +2122,7 @@ paths:
         "401":
           description: Unauthorized
 
-  /api/friends/accept/{requesterId}:
+  /friends/accept/{requesterId}:
     post:
       operationId: acceptFriendRequest
       summary: Accept a friend request
@@ -2148,7 +2148,7 @@ paths:
         "401":
           description: Unauthorized
 
-  /api/friends/decline/{requesterId}:
+  /friends/decline/{requesterId}:
     post:
       operationId: declineFriendRequest
       summary: Decline a friend request
@@ -2174,7 +2174,7 @@ paths:
         "401":
           description: Unauthorized
 
-  /api/friends/{userId}:
+  /friends/{userId}:
     delete:
       operationId: removeFriend
       summary: Unfriend a user
@@ -2201,7 +2201,7 @@ paths:
           description: Unauthorized
 
 
-  /api/testimonials/{userId}:
+  /testimonials/{userId}:
     get:
       operationId: listTestimonials
       summary: Get testimonials written for a user
@@ -2253,7 +2253,7 @@ paths:
         "403":
           description: Not friends
 
-  /api/testimonials/item/{id}:
+  /testimonials/item/{id}:
     delete:
       operationId: deleteTestimonial
       summary: Delete your own testimonial

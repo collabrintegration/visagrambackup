@@ -6623,7 +6623,7 @@ export const getSearchUsersUrl = (params: SearchUsersParams,) => {
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/api/users/search?${stringifiedParams}` : `/api/api/users/search`
+  return stringifiedParams.length > 0 ? `/api/users/search?${stringifiedParams}` : `/api/users/search`
 }
 
 /**
@@ -6646,7 +6646,7 @@ export const searchUsers = async (params: SearchUsersParams, options?: RequestIn
 
 export const getSearchUsersQueryKey = (params?: SearchUsersParams,) => {
     return [
-    `/api/api/users/search`, ...(params ? [params] : [])
+    `/api/users/search`, ...(params ? [params] : [])
     ] as const;
     }
 
@@ -6700,7 +6700,7 @@ export const getListFriendsUrl = () => {
 
 
 
-  return `/api/api/friends`
+  return `/api/friends`
 }
 
 /**
@@ -6723,7 +6723,7 @@ export const listFriends = async ( options?: RequestInit): Promise<FriendProfile
 
 export const getListFriendsQueryKey = () => {
     return [
-    `/api/api/friends`
+    `/api/friends`
     ] as const;
     }
 
@@ -6777,7 +6777,7 @@ export const getListFriendRequestsUrl = () => {
 
 
 
-  return `/api/api/friends/requests`
+  return `/api/friends/requests`
 }
 
 /**
@@ -6800,7 +6800,7 @@ export const listFriendRequests = async ( options?: RequestInit): Promise<Friend
 
 export const getListFriendRequestsQueryKey = () => {
     return [
-    `/api/api/friends/requests`
+    `/api/friends/requests`
     ] as const;
     }
 
@@ -6854,7 +6854,7 @@ export const getSendFriendRequestUrl = (userId: string,) => {
 
 
 
-  return `/api/api/friends/request/${userId}`
+  return `/api/friends/request/${userId}`
 }
 
 /**
@@ -6924,7 +6924,7 @@ export const getAcceptFriendRequestUrl = (requesterId: string,) => {
 
 
 
-  return `/api/api/friends/accept/${requesterId}`
+  return `/api/friends/accept/${requesterId}`
 }
 
 /**
@@ -6994,7 +6994,7 @@ export const getDeclineFriendRequestUrl = (requesterId: string,) => {
 
 
 
-  return `/api/api/friends/decline/${requesterId}`
+  return `/api/friends/decline/${requesterId}`
 }
 
 /**
@@ -7064,7 +7064,7 @@ export const getRemoveFriendUrl = (userId: string,) => {
 
 
 
-  return `/api/api/friends/${userId}`
+  return `/api/friends/${userId}`
 }
 
 /**
@@ -7134,7 +7134,7 @@ export const getListTestimonialsUrl = (userId: string,) => {
 
 
 
-  return `/api/api/testimonials/${userId}`
+  return `/api/testimonials/${userId}`
 }
 
 /**
@@ -7157,7 +7157,7 @@ export const listTestimonials = async (userId: string, options?: RequestInit): P
 
 export const getListTestimonialsQueryKey = (userId: string,) => {
     return [
-    `/api/api/testimonials/${userId}`
+    `/api/testimonials/${userId}`
     ] as const;
     }
 
@@ -7211,7 +7211,7 @@ export const getCreateTestimonialUrl = (userId: string,) => {
 
 
 
-  return `/api/api/testimonials/${userId}`
+  return `/api/testimonials/${userId}`
 }
 
 /**
@@ -7282,7 +7282,7 @@ export const getDeleteTestimonialUrl = (id: number,) => {
 
 
 
-  return `/api/api/testimonials/item/${id}`
+  return `/api/testimonials/item/${id}`
 }
 
 /**
