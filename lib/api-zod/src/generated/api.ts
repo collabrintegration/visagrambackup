@@ -1969,3 +1969,102 @@ export const UnblockUserResponse = zod.object({
 })
 
 
+/**
+ * @summary Search users by name
+ */
+export const searchUsersQueryLimitDefault = 20;
+
+export const SearchUsersQueryParams = zod.object({
+  "q": zod.coerce.string(),
+  "limit": zod.coerce.number().default(searchUsersQueryLimitDefault)
+})
+
+export const SearchUsersResponseItem = zod.object({
+  "id": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "homeCountry": zod.string().nullish(),
+  "friendshipStatus": zod.string().nullish(),
+  "iRequested": zod.boolean().nullish()
+})
+export const SearchUsersResponse = zod.array(SearchUsersResponseItem)
+
+
+/**
+ * @summary List accepted friends
+ */
+export const ListFriendsResponseItem = zod.object({
+  "id": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "homeCountry": zod.string().nullish(),
+  "friendshipSince": zod.string().nullish()
+})
+export const ListFriendsResponse = zod.array(ListFriendsResponseItem)
+
+
+/**
+ * @summary List incoming pending friend requests
+ */
+export const ListFriendRequestsResponseItem = zod.object({
+  "id": zod.string(),
+  "requesterId": zod.string().optional(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "homeCountry": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+export const ListFriendRequestsResponse = zod.array(ListFriendRequestsResponseItem)
+
+
+/**
+ * @summary Send or accept a friend request
+ */
+export const SendFriendRequestParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const SendFriendRequestResponse = zod.object({
+  "status": zod.string()
+})
+
+
+/**
+ * @summary Accept a friend request
+ */
+export const AcceptFriendRequestParams = zod.object({
+  "requesterId": zod.coerce.string()
+})
+
+export const AcceptFriendRequestResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
+ * @summary Decline a friend request
+ */
+export const DeclineFriendRequestParams = zod.object({
+  "requesterId": zod.coerce.string()
+})
+
+export const DeclineFriendRequestResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
+ * @summary Unfriend a user
+ */
+export const RemoveFriendParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const RemoveFriendResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+

@@ -11,6 +11,7 @@ import visaTrackerRouter from "./visa-tracker";
 import directMessagesRouter from "./direct-messages";
 import visaGuideRouter from "./visa-guide";
 import adminRouter from "./admin";
+import friendsRouter from "./friends";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use(visaTrackerRouter);
 router.use(directMessagesRouter);
 router.use(visaGuideRouter);
 router.use(adminRouter);
+router.use(friendsRouter);
 
 export default router;

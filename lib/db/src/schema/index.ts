@@ -1,4 +1,5 @@
 export * from "./auth";
+export * from "./friends";
 export * from "./countries";
 export * from "./visas";
 export * from "./community";

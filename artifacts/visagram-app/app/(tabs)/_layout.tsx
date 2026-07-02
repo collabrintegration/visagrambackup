@@ -13,6 +13,10 @@ import { useColors } from "@/hooks/useColors";
 function NativeTabLayout() {
   return (
     <NativeTabs>
+      <NativeTabs.Trigger name="friends">
+        <Icon sf={{ default: "person.2.circle", selected: "person.2.circle.fill" }} />
+        <Label>Friends</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="groups">
         <Icon sf={{ default: "person.3", selected: "person.3.fill" }} />
         <Label>Groups</Label>
@@ -77,6 +81,18 @@ function ClassicTabLayout() {
           ) : null,
       }}
     >
+      <Tabs.Screen
+        name="friends"
+        options={{
+          title: "Friends",
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="person.2.circle" tintColor={color} size={24} />
+            ) : (
+              <Feather name="users" size={22} color={color} />
+            ),
+        }}
+      />
       <Tabs.Screen
         name="groups"
         options={{

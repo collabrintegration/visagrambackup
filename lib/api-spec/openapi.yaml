@@ -2027,6 +2027,176 @@ paths:
         "401":
           description: Unauthorized
 
+  /api/users/search:
+    get:
+      operationId: searchUsers
+      summary: Search users by name
+      security:
+        - session: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Matching users with friendship status
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserSearchResult"
+        "401":
+          description: Unauthorized
+
+  /api/friends:
+    get:
+      operationId: listFriends
+      summary: List accepted friends
+      security:
+        - session: []
+      responses:
+        "200":
+          description: List of friends
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FriendProfile"
+        "401":
+          description: Unauthorized
+
+  /api/friends/requests:
+    get:
+      operationId: listFriendRequests
+      summary: List incoming pending friend requests
+      security:
+        - session: []
+      responses:
+        "200":
+          description: List of pending requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FriendRequest"
+        "401":
+          description: Unauthorized
+
+  /api/friends/request/{userId}:
+    post:
+      operationId: sendFriendRequest
+      summary: Send or accept a friend request
+      security:
+        - session: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Request status
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+        "401":
+          description: Unauthorized
+
+  /api/friends/accept/{requesterId}:
+    post:
+      operationId: acceptFriendRequest
+      summary: Accept a friend request
+      security:
+        - session: []
+      parameters:
+        - name: requesterId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok:
+                    type: boolean
+        "401":
+          description: Unauthorized
+
+  /api/friends/decline/{requesterId}:
+    post:
+      operationId: declineFriendRequest
+      summary: Decline a friend request
+      security:
+        - session: []
+      parameters:
+        - name: requesterId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok:
+                    type: boolean
+        "401":
+          description: Unauthorized
+
+  /api/friends/{userId}:
+    delete:
+      operationId: removeFriend
+      summary: Unfriend a user
+      security:
+        - session: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok:
+                    type: boolean
+        "401":
+          description: Unauthorized
+
+
 components:
   schemas:
     HealthStatus:
@@ -2067,6 +2237,76 @@ components:
           nullable: true
         isSuperAdmin:
           type: boolean
+        createdAt:
+          type: string
+
+    UserSearchResult:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        profileImageUrl:
+          type: string
+          nullable: true
+        homeCountry:
+          type: string
+          nullable: true
+        friendshipStatus:
+          type: string
+          nullable: true
+        iRequested:
+          type: boolean
+          nullable: true
+
+    FriendProfile:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        profileImageUrl:
+          type: string
+          nullable: true
+        homeCountry:
+          type: string
+          nullable: true
+        friendshipSince:
+          type: string
+          nullable: true
+
+    FriendRequest:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+        requesterId:
+          type: string
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        profileImageUrl:
+          type: string
+          nullable: true
+        homeCountry:
+          type: string
+          nullable: true
         createdAt:
           type: string
 

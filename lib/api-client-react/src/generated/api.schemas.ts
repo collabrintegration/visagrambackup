@@ -24,6 +24,35 @@ export interface AdminUserResult {
   createdAt: string;
 }
 
+export interface UserSearchResult {
+  id: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  profileImageUrl?: string | null;
+  homeCountry?: string | null;
+  friendshipStatus?: string | null;
+  iRequested?: boolean | null;
+}
+
+export interface FriendProfile {
+  id: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  profileImageUrl?: string | null;
+  homeCountry?: string | null;
+  friendshipSince?: string | null;
+}
+
+export interface FriendRequest {
+  id: string;
+  requesterId?: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  profileImageUrl?: string | null;
+  homeCountry?: string | null;
+  createdAt?: string;
+}
+
 export interface SiteStats {
   totalUsers: number;
   totalGroups: number;
@@ -1075,5 +1104,26 @@ export type ReportGroupMessage200 = {
 
 export type GetBlockedUsers200Item = {
   blockedId: string;
+};
+
+export type SearchUsersParams = {
+q: string;
+limit?: number;
+};
+
+export type SendFriendRequest200 = {
+  status: string;
+};
+
+export type AcceptFriendRequest200 = {
+  ok: boolean;
+};
+
+export type DeclineFriendRequest200 = {
+  ok: boolean;
+};
+
+export type RemoveFriend200 = {
+  ok: boolean;
 };
 
