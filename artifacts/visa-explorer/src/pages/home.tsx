@@ -9,6 +9,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCountryImageUrl, getCountryFallbackImageUrl } from "@/lib/countryImages";
 import AdUnit from "@/components/ad-unit";
+import NewsletterBanner from "@/components/newsletter-banner";
 
 function formatRefreshTime(iso: string | null | undefined): string {
   if (!iso) return "checking…";
@@ -458,6 +459,13 @@ export default function Home() {
               })
             )}
           </div>
+        </div>
+      </section>
+
+      {/* ── Newsletter ── */}
+      <section className="py-10 bg-background border-t border-border">
+        <div className="container mx-auto px-4 max-w-2xl">
+          <NewsletterBanner source="homepage" />
         </div>
       </section>
 

@@ -12,3 +12,4 @@ export * from "./direct-messages";
 export * from "./visa-guide";
 export * from "./analytics";
 export * from "./travel-photos";
+export * from "./newsletter";

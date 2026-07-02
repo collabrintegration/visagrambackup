@@ -15,6 +15,7 @@ import visaGuideRouter from "./visa-guide";
 import adminRouter from "./admin";
 import friendsRouter from "./friends";
 import testimonialsRouter from "./testimonials";
+import newsletterRouter from "./newsletter";
 
 const router: IRouter = Router();
 
@@ -34,5 +35,6 @@ router.use(visaGuideRouter);
 router.use(adminRouter);
 router.use(friendsRouter);
 router.use(testimonialsRouter);
+router.use(newsletterRouter);
 
 export default router;

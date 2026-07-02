@@ -28,6 +28,7 @@ import { getCountryImageUrl, getCountryFallbackImageUrl, getCountryLandmarkInfo 
 import { getCountryDetails } from "@/lib/countryDetails";
 import AdUnit from "@/components/ad-unit";
 import AffiliateLinks from "@/components/affiliate-links";
+import NewsletterBanner from "@/components/newsletter-banner";
 import CountryPhotoGallery from "@/components/country-photo-gallery";
 
 const ENTRY_STYLE: Record<string, { label: string; pill: string }> = {
@@ -474,6 +475,9 @@ export default function CountryDetail() {
         {code && (
           <AffiliateLinks countryName={country.name} countryCode={code} />
         )}
+
+        {/* ── Newsletter ── */}
+        <NewsletterBanner source={`country-${code}`} />
 
         {/* ── Travel Map Quick-Add ── */}
         {code && <TravelMapSection code={code} countryName={country.name} flagEmoji={country.flagEmoji ?? ""} />}
