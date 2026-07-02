@@ -24,10 +24,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const links = [
     { href: "/", label: "Home", icon: Compass },
-    { href: "/explore", label: "Explore", icon: MapIcon },
-    { href: "/passport", label: "Passport Power", icon: BookOpen },
     { href: "/community", label: "Community", icon: Users },
     { href: "/groups", label: "Groups", icon: Globe },
+    { href: "/explore", label: "Explore", icon: MapIcon },
+    { href: "/passport", label: "Passport Power", icon: BookOpen },
     { href: "/tracker", label: "Tracker", icon: ClipboardList },
   ];
 
