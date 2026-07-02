@@ -95,7 +95,7 @@ export default function GlobalSearch() {
   };
 
   return (
-    <div ref={containerRef} className="relative hidden md:block w-64">
+    <div ref={containerRef} className="relative hidden md:block w-96">
       {/* Search input */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
