@@ -99,6 +99,40 @@ async function buildGroupResponse(
 }
 
 // ── List groups ────────────────────────────────────────────────────────────
+router.get("/users/:userId/groups", async (req: Request, res: Response) => {
+  const callerId = getAuthUserId(req);
+  const { userId } = req.params;
+
+  const memberRows = await db
+    .select({ groupId: groupMembersTable.groupId })
+    .from(groupMembersTable)
+    .where(eq(groupMembersTable.userId, userId));
+
+  const groupIds = memberRows.map(r => r.groupId);
+  if (groupIds.length === 0) { res.json([]); return; }
+
+  const groupRows = await db
+    .select({
+      id: groupsTable.id,
+      name: groupsTable.name,
+      description: groupsTable.description,
+      emoji: groupsTable.emoji,
+      adminId: groupsTable.adminId,
+      isPrivate: groupsTable.isPrivate,
+      parentGroupId: groupsTable.parentGroupId,
+      createdAt: groupsTable.createdAt,
+      memberCount: count(groupMembersTable.id),
+    })
+    .from(groupsTable)
+    .leftJoin(groupMembersTable, eq(groupMembersTable.groupId, groupsTable.id))
+    .where(inArray(groupsTable.id, groupIds))
+    .groupBy(groupsTable.id)
+    .orderBy(desc(groupsTable.createdAt));
+
+  const enriched = await Promise.all(groupRows.map((g) => buildGroupResponse(g, callerId)));
+  res.json(enriched);
+});
+
 router.get("/groups", async (req: Request, res: Response) => {
   const userId = getAuthUserId(req);
 

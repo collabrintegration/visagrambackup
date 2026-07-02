@@ -2129,6 +2129,30 @@ paths:
         "404":
           description: User not found
 
+  /users/{userId}/groups:
+    get:
+      operationId: listUserGroups
+      summary: Get groups a user belongs to (isMember/isAdmin reflect the caller's membership)
+      security:
+        - session: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of groups the user belongs to
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Group"
+        "404":
+          description: User not found
+
   /users/{userId}/friends:
     get:
       operationId: listUserFriends

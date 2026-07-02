@@ -6857,6 +6857,83 @@ export function useGetPublicUserProfile<TData = Awaited<ReturnType<typeof getPub
 
 
 
+export const getListUserGroupsUrl = (userId: string,) => {
+
+
+
+
+  return `/api/users/${userId}/groups`
+}
+
+/**
+ * @summary Get groups a user belongs to (isMember/isAdmin reflect the caller's membership)
+ */
+export const listUserGroups = async (userId: string, options?: RequestInit): Promise<Group[]> => {
+
+  return customFetch<Group[]>(getListUserGroupsUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListUserGroupsQueryKey = (userId: string,) => {
+    return [
+    `/api/users/${userId}/groups`
+    ] as const;
+    }
+
+
+export const getListUserGroupsQueryOptions = <TData = Awaited<ReturnType<typeof listUserGroups>>, TError = ErrorType<void>>(userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listUserGroups>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListUserGroupsQueryKey(userId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listUserGroups>>> = ({ signal }) => listUserGroups(userId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: userId !== null && userId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listUserGroups>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListUserGroupsQueryResult = NonNullable<Awaited<ReturnType<typeof listUserGroups>>>
+export type ListUserGroupsQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get groups a user belongs to (isMember/isAdmin reflect the caller's membership)
+ */
+
+export function useListUserGroups<TData = Awaited<ReturnType<typeof listUserGroups>>, TError = ErrorType<void>>(
+ userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listUserGroups>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListUserGroupsQueryOptions(userId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getListUserFriendsUrl = (userId: string,) => {
 
 

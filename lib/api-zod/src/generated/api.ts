@@ -2093,6 +2093,42 @@ export const GetPublicUserProfileResponse = zod.object({
 
 
 /**
+ * @summary Get groups a user belongs to (isMember/isAdmin reflect the caller's membership)
+ */
+export const ListUserGroupsParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const ListUserGroupsResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "emoji": zod.string(),
+  "adminId": zod.string(),
+  "isPrivate": zod.boolean(),
+  "parentGroupId": zod.number().nullish(),
+  "memberCount": zod.number(),
+  "isMember": zod.boolean(),
+  "isAdmin": zod.boolean(),
+  "isPrimaryAdmin": zod.boolean(),
+  "hasPendingRequest": zod.boolean().optional(),
+  "lastMessage": zod.object({
+  "id": zod.number(),
+  "groupId": zod.number(),
+  "userId": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "content": zod.string(),
+  "gifUrl": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}).nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const ListUserGroupsResponse = zod.array(ListUserGroupsResponseItem)
+
+
+/**
  * @summary Get a user's public friends list
  */
 export const ListUserFriendsParams = zod.object({

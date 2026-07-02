@@ -4,12 +4,14 @@ import {
   useListPhotos,
   useListTestimonials,
   useListUserFriends,
+  useListUserGroups,
   useSendFriendRequest,
   useAcceptFriendRequest,
   getGetPublicUserProfileQueryKey,
   getListPhotosQueryKey,
   getListTestimonialsQueryKey,
   getListUserFriendsQueryKey,
+  getListUserGroupsQueryKey,
 } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useQueryClient } from "@tanstack/react-query";
@@ -63,6 +65,14 @@ export default function UserPublicProfilePage() {
   const { data: userFriends = [], isLoading: friendsLoading } = useListUserFriends(userId ?? "", {
     query: { queryKey: getListUserFriendsQueryKey(userId ?? ""), enabled: !!userId },
   });
+
+  const { data: userGroups = [], isLoading: groupsLoading } = useListUserGroups(userId ?? "", {
+    query: { queryKey: getListUserGroupsQueryKey(userId ?? ""), enabled: !!userId },
+  });
+
+  const [showCommonGroupsOnly, setShowCommonGroupsOnly] = useState(false);
+  const commonGroups = userGroups.filter(g => g.isMember || g.isAdmin);
+  const displayedGroups = showCommonGroupsOnly ? commonGroups : userGroups;
 
   const sendRequest = useSendFriendRequest({
     mutation: {
@@ -282,6 +292,65 @@ export default function UserPublicProfilePage() {
                     </Link>
                   );
                 })}
+              </div>
+            )}
+          </div>
+
+          {/* ── Groups ── */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                <h3 className="font-semibold text-sm">Groups</h3>
+                {userGroups.length > 0 && (
+                  <Badge variant="secondary" className="text-xs">{displayedGroups.length}{showCommonGroupsOnly ? ` of ${userGroups.length}` : ""}</Badge>
+                )}
+              </div>
+              {isAuthenticated && !isOwnProfile && commonGroups.length > 0 && (
+                <button
+                  onClick={() => setShowCommonGroupsOnly(v => !v)}
+                  className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+                    showCommonGroupsOnly
+                      ? "border-primary bg-primary/10 text-primary font-medium"
+                      : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
+                  }`}
+                >
+                  {showCommonGroupsOnly ? "Show all" : `Common groups (${commonGroups.length})`}
+                </button>
+              )}
+            </div>
+
+            {groupsLoading ? (
+              <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+            ) : displayedGroups.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border p-6 text-center">
+                <Users className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-40" />
+                <p className="text-sm text-muted-foreground">
+                  {showCommonGroupsOnly ? "No groups in common." : `${p.firstName ?? "This traveler"} hasn't joined any groups yet.`}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {displayedGroups.map((g) => (
+                  <Link key={g.id} href={`/groups/${g.id}`}>
+                    <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/40 transition-colors group cursor-pointer">
+                      <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-xl shrink-0">
+                        {g.emoji ?? "🌍"}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm truncate">{g.name}</p>
+                        {g.memberCount != null && (
+                          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                            <Users className="w-3 h-3" />{g.memberCount} member{g.memberCount !== 1 ? "s" : ""}
+                          </p>
+                        )}
+                      </div>
+                      {(g.isMember || g.isAdmin) && (
+                        <Badge variant="secondary" className="text-xs shrink-0 text-emerald-400 border-emerald-500/30 bg-emerald-500/10">In common</Badge>
+                      )}
+                    </div>
+                  </Link>
+                ))}
               </div>
             )}
           </div>
