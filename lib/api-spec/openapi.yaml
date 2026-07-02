@@ -2320,6 +2320,9 @@ components:
       properties:
         id:
           type: string
+        username:
+          type: string
+          nullable: true
         firstName:
           type: string
           nullable: true
@@ -2449,6 +2452,8 @@ components:
         id:
           type: string
         email:
+          type: ["string", "null"]
+        username:
           type: ["string", "null"]
         firstName:
           type: ["string", "null"]

@@ -26,6 +26,7 @@ export interface AdminUserResult {
 
 export interface UserSearchResult {
   id: string;
+  username?: string | null;
   firstName?: string | null;
   lastName?: string | null;
   profileImageUrl?: string | null;
@@ -85,6 +86,8 @@ export interface AuthUser {
   id: string;
   /** @nullable */
   email: string | null;
+  /** @nullable */
+  username?: string | null;
   /** @nullable */
   firstName: string | null;
   /** @nullable */

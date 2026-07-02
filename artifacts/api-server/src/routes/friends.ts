@@ -46,6 +46,7 @@ router.get("/users/search", async (req: Request, res: Response) => {
   const users = await db
     .select({
       id: usersTable.id,
+      username: usersTable.username,
       firstName: usersTable.firstName,
       lastName: usersTable.lastName,
       profileImageUrl: usersTable.profileImageUrl,
@@ -56,6 +57,7 @@ router.get("/users/search", async (req: Request, res: Response) => {
       and(
         ne(usersTable.id, myId),
         or(
+          ilike(usersTable.username, `%${q}%`),
           ilike(usersTable.firstName, `%${q}%`),
           ilike(usersTable.lastName, `%${q}%`),
           ilike(usersTable.email, `%${q}%`),

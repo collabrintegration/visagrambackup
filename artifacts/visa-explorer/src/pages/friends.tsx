@@ -766,7 +766,7 @@ export default function FriendsPage() {
                 ) : searchResults.length === 0 ? (
                   <div className="flex flex-col items-center gap-2 py-10 text-center">
                     <p className="font-semibold">No results for "{searchQuery}"</p>
-                    <p className="text-sm text-muted-foreground">Try a different name or email.</p>
+                    <p className="text-sm text-muted-foreground">Try a different name, @username, or email.</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -780,6 +780,7 @@ export default function FriendsPage() {
                             <Avatar url={u.profileImageUrl} name={name} />
                             <div className="flex-1 min-w-0">
                               <p className="font-semibold text-sm">{name}</p>
+                              {u.username && <p className="text-xs text-muted-foreground mt-0.5">@{u.username}</p>}
                               {u.homeCountry && <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><MapPin className="w-2.5 h-2.5" />{u.homeCountry}</p>}
                             </div>
                             {isFriend ? (

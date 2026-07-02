@@ -55,6 +55,7 @@ async function upsertUser(claims: Record<string, unknown>) {
   const userData = {
     id: claims.sub as string,
     email: (claims.email as string) || null,
+    username: (claims.username as string) || null,
     firstName: (claims.first_name as string) || null,
     lastName: (claims.last_name as string) || null,
     profileImageUrl: (claims.profile_image_url || claims.picture) as
@@ -255,6 +256,7 @@ router.get("/callback", async (req: Request, res: Response) => {
     user: {
       id: dbUser.id,
       email: dbUser.email,
+      username: dbUser.username,
       firstName: dbUser.firstName,
       lastName: dbUser.lastName,
       profileImageUrl: dbUser.profileImageUrl,
