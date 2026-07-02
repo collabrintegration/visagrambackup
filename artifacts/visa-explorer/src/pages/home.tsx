@@ -1,6 +1,6 @@
-import { useGetStatsOverview, getGetStatsOverviewQueryKey } from "@workspace/api-client-react";
+import { useGetStatsOverview, getGetStatsOverviewQueryKey, useListGroups, getListGroupsQueryKey } from "@workspace/api-client-react";
 import { Link } from "wouter";
-import { ArrowRight, Zap, Globe2, ShieldCheck, MapPin, CheckCircle2, Compass, RefreshCw } from "lucide-react";
+import { ArrowRight, Zap, Globe2, ShieldCheck, MapPin, CheckCircle2, Compass, RefreshCw, Users, MessageSquare, Star, HelpCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCountryImageUrl, getCountryFallbackImageUrl } from "@/lib/countryImages";
 import AdUnit from "@/components/ad-unit";
@@ -33,9 +33,15 @@ export default function Home() {
   const { data: stats, isLoading } = useGetStatsOverview({
     query: {
       queryKey: getGetStatsOverviewQueryKey(),
-      refetchInterval: 5 * 60 * 1000,   // re-poll stats every 5 minutes
+      refetchInterval: 5 * 60 * 1000,
     }
   });
+
+  const { data: groups = [] } = useListGroups({
+    query: { queryKey: getListGroupsQueryKey() },
+  });
+
+  const topGroups = [...groups].sort((a, b) => b.memberCount - a.memberCount).slice(0, 4);
 
   return (
     <div className="w-full">
@@ -198,6 +204,108 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── Community & Groups ── */}
+      <section className="py-24 bg-card/20 border-y border-border">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-14">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary/80 text-sm font-medium mb-5 border border-primary/20">
+              <Users className="w-3.5 h-3.5" /> Traveler Community
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Travel smarter, together</h2>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              Real stories, honest reviews, and live group chats from thousands of travelers worldwide.
+            </p>
+          </div>
+
+          {/* Two feature cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-12">
+            {/* Community card */}
+            <Link href="/community" className="group relative bg-card border border-border rounded-3xl p-8 hover:border-primary/40 transition-all overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-rose-900/8 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="relative z-10">
+                <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 border border-primary/20 group-hover:bg-primary/20 transition-colors">
+                  <MessageSquare className="w-5 h-5 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold text-foreground mb-3">Community Feed</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed mb-6">
+                  Read visa tips, real travel reviews, and answer fellow traveler questions. Share what worked for you.
+                </p>
+                <div className="flex flex-wrap gap-3 mb-6">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-full">
+                    <Star className="w-3 h-3 text-amber-400" /> Country reviews
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-full">
+                    <HelpCircle className="w-3 h-3 text-primary" /> Visa Q&A
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-full">
+                    <Globe2 className="w-3 h-3 text-emerald-400" /> 190+ countries
+                  </div>
+                </div>
+                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary group-hover:gap-2.5 transition-all">
+                  Browse the feed <ArrowRight className="w-4 h-4" />
+                </span>
+              </div>
+            </Link>
+
+            {/* Groups card */}
+            <Link href="/groups" className="group relative bg-card border border-border rounded-3xl p-8 hover:border-primary/40 transition-all overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-rose-900/8 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="relative z-10">
+                <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 border border-primary/20 group-hover:bg-primary/20 transition-colors">
+                  <Users className="w-5 h-5 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold text-foreground mb-3">Travel Groups</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed mb-6">
+                  Join private or public group chats with travelers who share your destination or interest. Chat in real time.
+                </p>
+
+                {/* Live group previews */}
+                {topGroups.length > 0 ? (
+                  <div className="space-y-2 mb-6">
+                    {topGroups.map((g) => (
+                      <div key={g.id} className="flex items-center gap-2.5 bg-muted/40 rounded-xl px-3 py-2">
+                        <span className="text-base">{g.emoji}</span>
+                        <span className="text-xs font-medium flex-1 truncate">{g.name}</span>
+                        <span className="text-[11px] text-muted-foreground shrink-0 flex items-center gap-1">
+                          <Users className="w-2.5 h-2.5" />{g.memberCount}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-3 mb-6">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-full">
+                      <MessageSquare className="w-3 h-3 text-primary" /> Real-time chat
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-full">
+                      <Users className="w-3 h-3 text-primary" /> Private groups
+                    </div>
+                  </div>
+                )}
+
+                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary group-hover:gap-2.5 transition-all">
+                  Find your group <ArrowRight className="w-4 h-4" />
+                </span>
+              </div>
+            </Link>
+          </div>
+
+          {/* Social proof strip */}
+          <div className="flex flex-wrap items-center justify-center gap-8 text-center">
+            {[
+              { icon: Star, label: "Real reviews", color: "text-amber-400" },
+              { icon: MessageSquare, label: "Active Q&A", color: "text-primary" },
+              { icon: Users, label: "Live group chats", color: "text-emerald-400" },
+            ].map(({ icon: Icon, label, color }) => (
+              <div key={label} className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Icon className={`w-4 h-4 ${color}`} />
+                <span>{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── Top passports ── */}
       <section className="py-20 bg-card/20 border-y border-border">
         <div className="container mx-auto px-4">
@@ -259,13 +367,16 @@ export default function Home() {
             <div className="absolute inset-0 bg-black/20 [mask-image:radial-gradient(ellipse_at_center,transparent_40%,black)]" />
             <div className="relative z-10">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to explore?</h2>
-              <p className="text-white/60 mb-8 max-w-md mx-auto">Start by checking what your passport can unlock — then plan your next trip with confidence.</p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <p className="text-white/60 mb-8 max-w-md mx-auto">Check visa rules, read real traveler reviews, and connect with your travel community.</p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center flex-wrap">
                 <Link href="/explore" className="inline-flex items-center justify-center gap-2 bg-white text-primary px-7 py-3.5 rounded-full font-semibold hover:bg-white/90 transition-all shadow-lg">
-                  Browse all destinations <ArrowRight className="w-4 h-4" />
+                  <Compass className="w-4 h-4" /> Browse destinations
                 </Link>
-                <Link href="/passport" className="inline-flex items-center justify-center gap-2 glass text-white px-7 py-3.5 rounded-full font-semibold hover:bg-white/10 transition-all">
-                  Check my passport
+                <Link href="/community" className="inline-flex items-center justify-center gap-2 glass text-white px-7 py-3.5 rounded-full font-semibold hover:bg-white/10 transition-all border border-white/20">
+                  <MessageSquare className="w-4 h-4" /> Community feed
+                </Link>
+                <Link href="/groups" className="inline-flex items-center justify-center gap-2 glass text-white px-7 py-3.5 rounded-full font-semibold hover:bg-white/10 transition-all border border-white/20">
+                  <Users className="w-4 h-4" /> Join a group
                 </Link>
               </div>
             </div>
