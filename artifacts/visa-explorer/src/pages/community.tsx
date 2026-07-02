@@ -4,16 +4,19 @@ import {
   useGetCommunityFeed,
   getGetCommunityFeedQueryKey,
   useListCountries,
+  useCreateQuestion,
 } from "@workspace/api-client-react";
 import type { FeedItem, Country } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   MessageSquare, Star, Globe, Users, Loader2, MapPin, LogIn,
-  TrendingUp, Search, X, ChevronDown, Filter,
+  TrendingUp, Search, X, ChevronDown, Filter, PenLine, Save,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import AdUnit from "@/components/ad-unit";
+import CountryCombobox from "@/components/country-combobox";
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -131,10 +134,17 @@ type FeedType = "all" | "question" | "review";
 
 export default function Community() {
   const { isAuthenticated, isLoading: authLoading, login } = useAuth();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<FeedType>("all");
   const [countryFilter, setCountryFilter] = useState<string>("");
   const [countryOpen, setCountryOpen] = useState(false);
+
+  // Ask Question modal state
+  const [showAskModal, setShowAskModal] = useState(false);
+  const [askCountry, setAskCountry] = useState<string | null>(null);
+  const [askTitle, setAskTitle] = useState("");
+  const [askBody, setAskBody] = useState("");
 
   const { data: feed = [], isLoading: feedLoading } = useGetCommunityFeed(
     { limit: 100 },
@@ -146,6 +156,18 @@ export default function Community() {
   );
 
   const { data: allCountries = [] } = useListCountries();
+
+  const { mutate: createQuestion, isPending: isCreatingQuestion } = useCreateQuestion({
+    mutation: {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: getGetCommunityFeedQueryKey({ limit: 100 }) });
+        setShowAskModal(false);
+        setAskCountry(null);
+        setAskTitle("");
+        setAskBody("");
+      },
+    },
+  });
 
   const isLoading = authLoading || feedLoading;
 
@@ -190,6 +212,7 @@ export default function Community() {
     : null;
 
   return (
+    <>
     <div className="min-h-screen bg-background">
       {/* Hero */}
       <div className="border-b border-border/60 bg-card/30">
@@ -206,10 +229,16 @@ export default function Community() {
                 Real reviews, questions, and experiences from travelers around the world.
               </p>
             </div>
-            {!authLoading && !isAuthenticated && (
-              <Button onClick={login} className="shrink-0">
-                <LogIn className="w-4 h-4 mr-2" /> Sign in to contribute
-              </Button>
+            {!authLoading && (
+              isAuthenticated ? (
+                <Button onClick={() => setShowAskModal(true)} className="shrink-0">
+                  <PenLine className="w-4 h-4 mr-2" /> Ask a Question
+                </Button>
+              ) : (
+                <Button onClick={login} variant="outline" className="shrink-0">
+                  <LogIn className="w-4 h-4 mr-2" /> Sign in to contribute
+                </Button>
+              )
             )}
           </div>
         </div>
@@ -383,5 +412,64 @@ export default function Community() {
         )}
       </div>
     </div>
+
+    {/* ── Ask a Question Modal ─────────────────────────────────────── */}
+    {showAskModal && (
+      <div
+        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+        onClick={(e) => { if (e.target === e.currentTarget) setShowAskModal(false); }}
+      >
+        <div className="bg-card border border-border rounded-2xl w-full max-w-lg shadow-2xl">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+            <h2 className="font-semibold text-lg">Ask a Question</h2>
+            <button onClick={() => setShowAskModal(false)} className="text-muted-foreground hover:text-foreground">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="p-6 space-y-4">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1.5 block font-medium">Country</label>
+              <CountryCombobox
+                value={askCountry}
+                onChange={setAskCountry}
+                placeholder="Which country is your question about?"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1.5 block font-medium">Question title</label>
+              <input
+                value={askTitle}
+                onChange={(e) => setAskTitle(e.target.value)}
+                placeholder="e.g. Do I need a visa if I have a US passport?"
+                className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                maxLength={160}
+              />
+              <p className="text-xs text-muted-foreground mt-1 text-right">{askTitle.length}/160</p>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1.5 block font-medium">Details</label>
+              <textarea
+                value={askBody}
+                onChange={(e) => setAskBody(e.target.value)}
+                placeholder="Add any relevant context — your passport, visa type, trip dates, what you've already tried…"
+                className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm resize-none h-28 focus:outline-none focus:ring-1 focus:ring-primary/50"
+              />
+            </div>
+            <div className="flex gap-3 pt-1">
+              <Button
+                className="flex-1"
+                disabled={isCreatingQuestion || !askCountry || !askTitle.trim() || !askBody.trim()}
+                onClick={() => createQuestion({ data: { countryCode: askCountry!, title: askTitle.trim(), body: askBody.trim() } })}
+              >
+                {isCreatingQuestion ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Save className="w-4 h-4 mr-1.5" />}
+                Post Question
+              </Button>
+              <Button variant="ghost" onClick={() => setShowAskModal(false)}>Cancel</Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
