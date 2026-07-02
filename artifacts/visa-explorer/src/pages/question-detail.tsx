@@ -298,12 +298,13 @@ export default function QuestionDetailPage() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-3xl">
         {/* Back */}
-        <Link href={`/country/${question.countryCode}`}>
-          <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 group">
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-            {question.countryFlag} {question.countryName ?? question.countryCode}
-          </button>
-        </Link>
+        <button
+          onClick={() => window.history.back()}
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 group"
+        >
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+          Back
+        </button>
 
         {/* Question card */}
         <div className="bg-card border border-border rounded-2xl p-6 mb-6">
