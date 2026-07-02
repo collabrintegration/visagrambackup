@@ -16,7 +16,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 import { useGetPassportRankings, useListDestinationsByPassport } from "@workspace/api-client-react";
 
-function flagEmoji(code: string) {
+function flagEmoji(code: string | undefined | null) {
+  if (!code || code.length < 2) return "🏳";
   return code
     .toUpperCase()
     .split("")
