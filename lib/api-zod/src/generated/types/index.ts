@@ -81,6 +81,7 @@ export * from './setGroupMemberRole200';
 export * from './setGroupMemberRole200Role';
 export * from './setGroupMemberRoleBody';
 export * from './setGroupMemberRoleBodyRole';
+export * from './siteStats';
 export * from './statsOverview';
 export * from './submitVisaReportBody';
 export * from './submitVisaReportBodyResult';

@@ -77,6 +77,7 @@ import type {
   SendDmInput,
   SetGroupMemberRole200,
   SetGroupMemberRoleBody,
+  SiteStats,
   StatsOverview,
   SubmitVisaReportBody,
   SupportCase,
@@ -122,6 +123,83 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetAdminSiteStatsUrl = () => {
+
+
+
+
+  return `/api/api/admin/site-stats`
+}
+
+/**
+ * @summary Get site-wide statistics (super admin only)
+ */
+export const getAdminSiteStats = async ( options?: RequestInit): Promise<SiteStats> => {
+
+  return customFetch<SiteStats>(getGetAdminSiteStatsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminSiteStatsQueryKey = () => {
+    return [
+    `/api/api/admin/site-stats`
+    ] as const;
+    }
+
+
+export const getGetAdminSiteStatsQueryOptions = <TData = Awaited<ReturnType<typeof getAdminSiteStats>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminSiteStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminSiteStatsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminSiteStats>>> = ({ signal }) => getAdminSiteStats({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminSiteStats>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminSiteStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminSiteStats>>>
+export type GetAdminSiteStatsQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get site-wide statistics (super admin only)
+ */
+
+export function useGetAdminSiteStats<TData = Awaited<ReturnType<typeof getAdminSiteStats>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminSiteStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminSiteStatsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getListAnthropicConversationsUrl = () => {
 

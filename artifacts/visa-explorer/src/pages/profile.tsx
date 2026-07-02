@@ -14,6 +14,7 @@ import {
   useListGroupJoinRequests,
   useApproveGroupJoinRequest,
   useRejectGroupJoinRequest,
+  useGetAdminSiteStats,
   getGetTravelMapQueryKey,
   getGetMyActivityQueryKey,
   getGetCurrentAuthUserQueryKey,
@@ -21,6 +22,7 @@ import {
   getGetFollowedQuestionsQueryKey,
   getListGroupsQueryKey,
   getListGroupJoinRequestsQueryKey,
+  getGetAdminSiteStatsQueryKey,
 } from "@workspace/api-client-react";
 import type { ActivityQuestion, Group, GroupJoinRequest } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
@@ -29,7 +31,7 @@ import {
   Map, CheckCircle2, Heart, LogIn, Loader2, Trash2, Globe,
   User, MessageSquare, BookOpen, ChevronDown, ShieldAlert,
   PlusCircle, X, Clock, RefreshCw, XCircle, Bell, PenLine, Save,
-  Users, Crown, Lock, UserCheck, UserX, ChevronRight,
+  Users, Crown, Lock, UserCheck, UserX, ChevronRight, BarChart2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -51,7 +53,7 @@ const STATUS_CONFIG = {
 } as const;
 
 type TravelStatus = keyof typeof STATUS_CONFIG;
-type ProfileTab = "travel" | "activity" | "cases" | "groups";
+type ProfileTab = "travel" | "activity" | "cases" | "groups" | "admin";
 type ActivitySubTab = "asked" | "answered" | "following";
 
 const CASE_STATUS: Record<string, { label: string; cls: string; icon: typeof Clock }> = {
@@ -375,6 +377,11 @@ export default function Profile() {
     query: { queryKey: getGetMyCasesQueryKey(), enabled: isAuthenticated && activeTab === "cases" },
   });
 
+  const isSuperAdmin = (user as { isSuperAdmin?: boolean })?.isSuperAdmin === true;
+  const { data: siteStats, isLoading: statsLoading } = useGetAdminSiteStats({
+    query: { queryKey: getGetAdminSiteStatsQueryKey(), enabled: isAuthenticated && isSuperAdmin && activeTab === "admin" },
+  });
+
   const [showNewCase, setShowNewCase] = useState(false);
   const [caseSubject, setCaseSubject] = useState("");
   const [caseBody, setCaseBody] = useState("");
@@ -563,12 +570,13 @@ export default function Profile() {
           </div>
 
           {/* Main tabs */}
-          <div className="flex gap-1 mt-8 border-b border-border -mb-px">
+          <div className="flex gap-1 mt-8 border-b border-border -mb-px flex-wrap">
             {[
               { id: "travel" as const, label: "Travel Map", icon: Map },
               { id: "activity" as const, label: "My Q&A", icon: BookOpen },
               { id: "cases" as const, label: "Support Cases", icon: ShieldAlert },
               { id: "groups" as const, label: "My Groups", icon: Users },
+              ...(isSuperAdmin ? [{ id: "admin" as const, label: "Site Stats", icon: BarChart2 }] : []),
             ].map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
@@ -581,6 +589,7 @@ export default function Profile() {
               >
                 <Icon className="w-4 h-4" />
                 {label}
+                {id === "admin" && <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-semibold ml-0.5">ADMIN</span>}
               </button>
             ))}
           </div>
@@ -919,6 +928,99 @@ export default function Profile() {
                     </Link>
                   );
                 })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Admin / Site Stats Tab ──────────────────────────────────── */}
+        {activeTab === "admin" && isSuperAdmin && (
+          <div className="max-w-3xl">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <BarChart2 className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="font-bold text-lg">Site Statistics</h2>
+                <p className="text-xs text-muted-foreground">Live counts across the entire platform — visible only to super admins.</p>
+              </div>
+            </div>
+
+            {statsLoading ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : !siteStats ? (
+              <div className="text-center py-20 text-muted-foreground">
+                <BarChart2 className="w-12 h-12 mx-auto mb-4 opacity-30" />
+                <p>Could not load stats.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Users */}
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Users</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[
+                      { label: "Total Registered Users", value: siteStats.totalUsers, icon: User, color: "text-blue-400", bg: "bg-blue-500/10" },
+                    ].map(({ label, value, icon: Icon, color, bg }) => (
+                      <div key={label} className="bg-card border border-border rounded-2xl p-5 flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
+                          <Icon className={`w-5 h-5 ${color}`} />
+                        </div>
+                        <div>
+                          <div className="text-2xl font-bold">{value.toLocaleString()}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">{label}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Groups */}
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Groups</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {[
+                      { label: "Total Groups", value: siteStats.totalGroups, icon: Users, color: "text-violet-400", bg: "bg-violet-500/10" },
+                      { label: "Public Groups", value: siteStats.publicGroups, icon: Globe, color: "text-emerald-400", bg: "bg-emerald-500/10" },
+                      { label: "Private Groups", value: siteStats.privateGroups, icon: Lock, color: "text-amber-400", bg: "bg-amber-500/10" },
+                    ].map(({ label, value, icon: Icon, color, bg }) => (
+                      <div key={label} className="bg-card border border-border rounded-2xl p-5 flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
+                          <Icon className={`w-5 h-5 ${color}`} />
+                        </div>
+                        <div>
+                          <div className="text-2xl font-bold">{value.toLocaleString()}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">{label}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Content</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[
+                      { label: "Visa Applications Tracked", value: siteStats.totalVisaEntries, icon: BookOpen, color: "text-primary", bg: "bg-primary/10" },
+                      { label: "Travel Map Entries", value: siteStats.totalTravelEntries, icon: Map, color: "text-cyan-400", bg: "bg-cyan-500/10" },
+                      { label: "Community Reviews", value: siteStats.totalReviews, icon: CheckCircle2, color: "text-emerald-400", bg: "bg-emerald-500/10" },
+                      { label: "Community Questions", value: siteStats.totalQuestions, icon: MessageSquare, color: "text-orange-400", bg: "bg-orange-500/10" },
+                    ].map(({ label, value, icon: Icon, color, bg }) => (
+                      <div key={label} className="bg-card border border-border rounded-2xl p-5 flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
+                          <Icon className={`w-5 h-5 ${color}`} />
+                        </div>
+                        <div>
+                          <div className="text-2xl font-bold">{value.toLocaleString()}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">{label}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
           </div>

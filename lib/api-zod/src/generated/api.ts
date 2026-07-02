@@ -9,6 +9,21 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary Get site-wide statistics (super admin only)
+ */
+export const GetAdminSiteStatsResponse = zod.object({
+  "totalUsers": zod.number(),
+  "totalGroups": zod.number(),
+  "publicGroups": zod.number(),
+  "privateGroups": zod.number(),
+  "totalVisaEntries": zod.number(),
+  "totalTravelEntries": zod.number(),
+  "totalReviews": zod.number(),
+  "totalQuestions": zod.number()
+})
+
+
+/**
  * @summary List all conversations
  */
 export const ListAnthropicConversationsResponseItem = zod.object({

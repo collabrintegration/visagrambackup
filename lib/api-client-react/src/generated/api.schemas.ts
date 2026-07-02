@@ -13,6 +13,17 @@ export interface OkResponse {
   ok: boolean;
 }
 
+export interface SiteStats {
+  totalUsers: number;
+  totalGroups: number;
+  publicGroups: number;
+  privateGroups: number;
+  totalVisaEntries: number;
+  totalTravelEntries: number;
+  totalReviews: number;
+  totalQuestions: number;
+}
+
 export interface AuthUser {
   id: string;
   /** @nullable */

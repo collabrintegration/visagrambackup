@@ -31,6 +31,23 @@ tags:
   - name: dm
     description: Private direct messages between users
 paths:
+  /api/admin/site-stats:
+    get:
+      operationId: getAdminSiteStats
+      tags: [admin]
+      summary: Get site-wide statistics (super admin only)
+      security:
+        - session: []
+      responses:
+        "200":
+          description: Site statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteStats"
+        "403":
+          description: Forbidden
+
   /anthropic/conversations:
     get:
       operationId: listAnthropicConversations
@@ -1979,6 +1996,27 @@ components:
         ok:
           type: boolean
       required: [ok]
+
+    SiteStats:
+      type: object
+      required: [totalUsers, totalGroups, publicGroups, privateGroups, totalVisaEntries, totalTravelEntries, totalReviews, totalQuestions]
+      properties:
+        totalUsers:
+          type: integer
+        totalGroups:
+          type: integer
+        publicGroups:
+          type: integer
+        privateGroups:
+          type: integer
+        totalVisaEntries:
+          type: integer
+        totalTravelEntries:
+          type: integer
+        totalReviews:
+          type: integer
+        totalQuestions:
+          type: integer
 
     AuthUser:
       type: object
