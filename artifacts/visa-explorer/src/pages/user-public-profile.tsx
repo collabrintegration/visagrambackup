@@ -70,6 +70,7 @@ export default function UserPublicProfilePage() {
     query: { queryKey: getListUserGroupsQueryKey(userId ?? ""), enabled: !!userId },
   });
 
+  const [activeTab, setActiveTab] = useState<"friends" | "groups">("friends");
   const [showCommonGroupsOnly, setShowCommonGroupsOnly] = useState(false);
   const commonGroups = userGroups.filter(g => g.isMember || g.isAdmin);
   const displayedGroups = showCommonGroupsOnly ? commonGroups : userGroups;
@@ -246,111 +247,126 @@ export default function UserPublicProfilePage() {
 
         </aside>
 
-        {/* ── RIGHT PANEL — stacked sections ── */}
+        {/* ── RIGHT PANEL ── */}
         <div className="flex-1 min-w-0 space-y-6">
 
-          {/* ── Friends ── */}
+          {/* ── Friends / Groups tabs ── */}
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Users className="w-4 h-4 text-muted-foreground" />
-              <h3 className="font-semibold text-sm">Friends</h3>
-              {userFriends.length > 0 && (
-                <Badge variant="secondary" className="text-xs">{userFriends.length}</Badge>
-              )}
-            </div>
-
-            {friendsLoading ? (
-              <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
-            ) : userFriends.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border p-6 text-center">
-                <Users className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-40" />
-                <p className="text-sm text-muted-foreground">No friends yet.</p>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                {userFriends.map((friend) => {
-                  const friendName = [friend.firstName, friend.lastName].filter(Boolean).join(" ") || "Traveler";
-                  return (
-                    <Link key={friend.id} href={`/user/${friend.id}`}>
-                      <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/40 transition-colors group cursor-pointer">
-                        {friend.profileImageUrl ? (
-                          <img src={friend.profileImageUrl} alt={friendName} className="w-10 h-10 rounded-full object-cover shrink-0 ring-2 ring-border" />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-pink-500 flex items-center justify-center shrink-0">
-                            <span className="text-sm font-bold text-white">{friendName.charAt(0).toUpperCase()}</span>
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold truncate">{friendName}</p>
-                          {friend.homeCountry && (
-                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                              <MapPin className="w-2.5 h-2.5" />{friend.homeCountry}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* ── Groups ── */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-muted-foreground" />
-                <h3 className="font-semibold text-sm">Groups</h3>
-                {userGroups.length > 0 && (
-                  <Badge variant="secondary" className="text-xs">{displayedGroups.length}{showCommonGroupsOnly ? ` of ${userGroups.length}` : ""}</Badge>
-                )}
-              </div>
-              {isAuthenticated && !isOwnProfile && commonGroups.length > 0 && (
+            {/* Tab bar */}
+            <div className="flex items-center gap-1 border-b border-border mb-4">
+              {([
+                { key: "friends" as const, label: "Friends", count: userFriends.length },
+                { key: "groups" as const, label: "Groups", count: userGroups.length },
+              ]).map((t) => (
                 <button
-                  onClick={() => setShowCommonGroupsOnly(v => !v)}
-                  className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                    showCommonGroupsOnly
-                      ? "border-primary bg-primary/10 text-primary font-medium"
-                      : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
+                  key={t.key}
+                  onClick={() => setActiveTab(t.key)}
+                  className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                    activeTab === t.key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {showCommonGroupsOnly ? "Show all" : `Common groups (${commonGroups.length})`}
+                  <Users className="w-4 h-4" />
+                  {t.label}
+                  {t.count > 0 && (
+                    <Badge variant={activeTab === t.key ? "default" : "secondary"} className="text-xs px-1.5 py-0 h-5">
+                      {t.count}
+                    </Badge>
+                  )}
                 </button>
-              )}
+              ))}
             </div>
 
-            {groupsLoading ? (
-              <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
-            ) : displayedGroups.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border p-6 text-center">
-                <Users className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-40" />
-                <p className="text-sm text-muted-foreground">
-                  {showCommonGroupsOnly ? "No groups in common." : `${p.firstName ?? "This traveler"} hasn't joined any groups yet.`}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {displayedGroups.map((g) => (
-                  <Link key={g.id} href={`/groups/${g.id}`}>
-                    <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/40 transition-colors group cursor-pointer">
-                      <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-xl shrink-0">
-                        {g.emoji ?? "🌍"}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate">{g.name}</p>
-                        {g.memberCount != null && (
-                          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                            <Users className="w-3 h-3" />{g.memberCount} member{g.memberCount !== 1 ? "s" : ""}
-                          </p>
-                        )}
-                      </div>
-                      {(g.isMember || g.isAdmin) && (
-                        <Badge variant="secondary" className="text-xs shrink-0 text-emerald-400 border-emerald-500/30 bg-emerald-500/10">In common</Badge>
-                      )}
-                    </div>
-                  </Link>
-                ))}
+            {/* Friends tab content */}
+            {activeTab === "friends" && (
+              friendsLoading ? (
+                <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+              ) : userFriends.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border p-6 text-center">
+                  <Users className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-40" />
+                  <p className="text-sm text-muted-foreground">No friends yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {userFriends.map((friend) => {
+                    const friendName = [friend.firstName, friend.lastName].filter(Boolean).join(" ") || "Traveler";
+                    return (
+                      <Link key={friend.id} href={`/user/${friend.id}`}>
+                        <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/40 transition-colors cursor-pointer">
+                          {friend.profileImageUrl ? (
+                            <img src={friend.profileImageUrl} alt={friendName} className="w-10 h-10 rounded-full object-cover shrink-0 ring-2 ring-border" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-pink-500 flex items-center justify-center shrink-0">
+                              <span className="text-sm font-bold text-white">{friendName.charAt(0).toUpperCase()}</span>
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold truncate">{friendName}</p>
+                            {friend.homeCountry && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                                <MapPin className="w-2.5 h-2.5" />{friend.homeCountry}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )
+            )}
+
+            {/* Groups tab content */}
+            {activeTab === "groups" && (
+              <div>
+                {/* Common groups filter */}
+                {isAuthenticated && !isOwnProfile && commonGroups.length > 0 && (
+                  <div className="flex justify-end mb-3">
+                    <button
+                      onClick={() => setShowCommonGroupsOnly(v => !v)}
+                      className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+                        showCommonGroupsOnly
+                          ? "border-primary bg-primary/10 text-primary font-medium"
+                          : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
+                      }`}
+                    >
+                      {showCommonGroupsOnly ? `Show all (${userGroups.length})` : `Common groups (${commonGroups.length})`}
+                    </button>
+                  </div>
+                )}
+
+                {groupsLoading ? (
+                  <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+                ) : displayedGroups.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-border p-6 text-center">
+                    <Users className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-40" />
+                    <p className="text-sm text-muted-foreground">
+                      {showCommonGroupsOnly ? "No groups in common." : `${p.firstName ?? "This traveler"} hasn't joined any groups yet.`}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {displayedGroups.map((g) => (
+                      <Link key={g.id} href={`/groups/${g.id}`}>
+                        <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/40 transition-colors cursor-pointer">
+                          <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-xl shrink-0">
+                            {g.emoji ?? "🌍"}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm truncate">{g.name}</p>
+                            {g.memberCount != null && (
+                              <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                                <Users className="w-3 h-3" />{g.memberCount} member{g.memberCount !== 1 ? "s" : ""}
+                              </p>
+                            )}
+                          </div>
+                          {(g.isMember || g.isAdmin) && (
+                            <Badge variant="secondary" className="text-xs shrink-0 text-emerald-400 border-emerald-500/30 bg-emerald-500/10">In common</Badge>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
