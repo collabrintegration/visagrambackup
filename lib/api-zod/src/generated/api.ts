@@ -1065,6 +1065,7 @@ export const ListGroupsResponseItem = zod.object({
   "emoji": zod.string(),
   "adminId": zod.string(),
   "isPrivate": zod.boolean(),
+  "parentGroupId": zod.number().nullish(),
   "memberCount": zod.number(),
   "isMember": zod.boolean(),
   "isAdmin": zod.boolean(),
@@ -1103,6 +1104,7 @@ export const CreateGroupResponse = zod.object({
   "emoji": zod.string(),
   "adminId": zod.string(),
   "isPrivate": zod.boolean(),
+  "parentGroupId": zod.number().nullish(),
   "memberCount": zod.number(),
   "isMember": zod.boolean(),
   "isAdmin": zod.boolean(),
@@ -1137,6 +1139,7 @@ export const GetGroupResponse = zod.object({
   "emoji": zod.string(),
   "adminId": zod.string(),
   "isPrivate": zod.boolean(),
+  "parentGroupId": zod.number().nullish(),
   "memberCount": zod.number(),
   "isMember": zod.boolean(),
   "isAdmin": zod.boolean(),
@@ -1178,6 +1181,7 @@ export const UpdateGroupResponse = zod.object({
   "emoji": zod.string(),
   "adminId": zod.string(),
   "isPrivate": zod.boolean(),
+  "parentGroupId": zod.number().nullish(),
   "memberCount": zod.number(),
   "isMember": zod.boolean(),
   "isAdmin": zod.boolean(),
@@ -1663,5 +1667,116 @@ export const DeleteGroupMessageParams = zod.object({
 })
 
 export const DeleteGroupMessageResponse = zod.void()
+
+
+/**
+ * @summary List subgroups of a parent group
+ */
+export const ListSubgroupsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListSubgroupsResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "emoji": zod.string(),
+  "adminId": zod.string(),
+  "isPrivate": zod.boolean(),
+  "parentGroupId": zod.number().nullish(),
+  "memberCount": zod.number(),
+  "isMember": zod.boolean(),
+  "isAdmin": zod.boolean(),
+  "isPrimaryAdmin": zod.boolean(),
+  "hasPendingRequest": zod.boolean().optional(),
+  "lastMessage": zod.object({
+  "id": zod.number(),
+  "groupId": zod.number(),
+  "userId": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "content": zod.string(),
+  "gifUrl": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}).nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const ListSubgroupsResponse = zod.array(ListSubgroupsResponseItem)
+
+
+/**
+ * @summary Create a subgroup inside a parent group (any member)
+ */
+export const CreateSubgroupParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const CreateSubgroupBody = zod.object({
+  "name": zod.string(),
+  "description": zod.string().optional(),
+  "emoji": zod.string().optional(),
+  "memberIds": zod.array(zod.string()).optional()
+})
+
+export const CreateSubgroupResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "emoji": zod.string(),
+  "adminId": zod.string(),
+  "isPrivate": zod.boolean(),
+  "parentGroupId": zod.number().nullish(),
+  "memberCount": zod.number(),
+  "isMember": zod.boolean(),
+  "isAdmin": zod.boolean(),
+  "isPrimaryAdmin": zod.boolean(),
+  "hasPendingRequest": zod.boolean().optional(),
+  "lastMessage": zod.object({
+  "id": zod.number(),
+  "groupId": zod.number(),
+  "userId": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "content": zod.string(),
+  "gifUrl": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}).nullish(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary List users blocked by the current user
+ */
+export const GetBlockedUsersResponseItem = zod.object({
+  "blockedId": zod.string()
+})
+export const GetBlockedUsersResponse = zod.array(GetBlockedUsersResponseItem)
+
+
+/**
+ * @summary Block a user
+ */
+export const BlockUserParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const BlockUserResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
+ * @summary Unblock a user
+ */
+export const UnblockUserParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const UnblockUserResponse = zod.object({
+  "ok": zod.boolean()
+})
 
 

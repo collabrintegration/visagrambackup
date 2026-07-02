@@ -12,17 +12,24 @@ import {
   useDeleteGroup,
   useRemoveGroupMember,
   useSetGroupMemberRole,
+  useListSubgroups,
+  useCreateSubgroup,
+  useBlockUser,
+  useUnblockUser,
+  useGetBlockedUsers,
   getGetGroupQueryKey,
   getListGroupMessagesQueryKey,
   getListGroupMembersQueryKey,
   getListGroupsQueryKey,
+  getListSubgroupsQueryKey,
 } from "@workspace/api-client-react";
-import type { GroupMessage, GroupMember } from "@workspace/api-client-react";
+import type { GroupMessage, GroupMember, Group } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, Send, Loader2, Users, Crown, Trash2, UserMinus, Settings,
-  X, Lock, Globe, LogIn, UserPlus, Shield, ImageIcon,
+  X, Lock, Globe, LogIn, UserPlus, Shield, ImageIcon, GitFork, Plus,
+  Ban, Check, ChevronRight, ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +68,11 @@ export default function GroupChat() {
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editEmoji, setEditEmoji] = useState("🌍");
+  const [showCreateSubgroup, setShowCreateSubgroup] = useState(false);
+  const [sgName, setSgName] = useState("");
+  const [sgDesc, setSgDesc] = useState("");
+  const [sgEmoji, setSgEmoji] = useState("👥");
+  const [sgMemberIds, setSgMemberIds] = useState<string[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -148,6 +160,37 @@ export default function GroupChat() {
       void queryClient.invalidateQueries({ queryKey: groupKey });
     }},
   });
+
+  const subgroupsKey = getListSubgroupsQueryKey(groupId);
+  const { data: subgroups = [] } = useListSubgroups(groupId, {
+    query: { queryKey: subgroupsKey, enabled: !!group?.isMember },
+  });
+
+  const { mutate: createSubgroup, isPending: isCreatingSg } = useCreateSubgroup({
+    mutation: {
+      onSuccess: (newSg) => {
+        void queryClient.invalidateQueries({ queryKey: subgroupsKey });
+        setShowCreateSubgroup(false);
+        setSgName(""); setSgDesc(""); setSgEmoji("👥"); setSgMemberIds([]);
+        // Post invite link to parent chat
+        sendMessage({ id: groupId, data: { content: `📢 A new sub-group was created: ${newSg.emoji} ${newSg.name} — join at /groups/${newSg.id}` } });
+      },
+    },
+  });
+
+  const { mutate: blockUser } = useBlockUser({
+    mutation: { onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["getBlockedUsers"] }) },
+  });
+
+  const { mutate: unblockUser } = useUnblockUser({
+    mutation: { onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["getBlockedUsers"] }) },
+  });
+
+  const { data: blockedList = [] } = useGetBlockedUsers({
+    query: { queryKey: ["getBlockedUsers"], enabled: isAuthenticated },
+  });
+
+  const blockedIds = new Set(blockedList.map((b) => b.blockedId));
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -352,7 +395,7 @@ export default function GroupChat() {
 
         {/* ── Persistent members sidebar (desktop) ── */}
         {isMember && (
-          <div className="hidden md:flex w-60 flex-col border-l border-border bg-card/30">
+          <div className="hidden md:flex w-64 flex-col border-l border-border bg-card/30">
             <div className="px-4 py-3 border-b border-border">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5" /> Members · {group.memberCount}
@@ -365,12 +408,43 @@ export default function GroupChat() {
                   member={m}
                   isPrimaryAdmin={isPrimaryAdmin}
                   isSelf={m.userId === userId}
+                  isBlocked={blockedIds.has(m.userId)}
                   onRemove={() => removeMember({ id: groupId, userId: m.userId })}
                   onPromote={() => setMemberRole({ id: groupId, userId: m.userId, data: { role: "admin" } })}
                   onDemote={() => setMemberRole({ id: groupId, userId: m.userId, data: { role: "member" } })}
+                  onBlock={() => blockUser({ userId: m.userId })}
+                  onUnblock={() => unblockUser({ userId: m.userId })}
                 />
               ))}
             </div>
+
+            {/* Sub-groups section */}
+            {group.parentGroupId === null && (
+              <div className="border-t border-border">
+                <div className="px-4 py-2.5 flex items-center justify-between">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <GitFork className="w-3.5 h-3.5" /> Sub-groups · {subgroups.length}
+                  </h3>
+                  <button
+                    onClick={() => setShowCreateSubgroup(true)}
+                    className="p-1 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                    title="Create sub-group"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                {subgroups.length === 0 ? (
+                  <p className="text-[11px] text-muted-foreground px-4 pb-3">No sub-groups yet.</p>
+                ) : (
+                  <div className="pb-2 px-2 space-y-0.5">
+                    {subgroups.map((sg) => (
+                      <SubgroupRow key={sg.id} sg={sg} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {!isPrimaryAdmin && isMember && (
               <div className="p-3 border-t border-border">
                 <Button
@@ -408,12 +482,42 @@ export default function GroupChat() {
                     member={m}
                     isPrimaryAdmin={isPrimaryAdmin}
                     isSelf={m.userId === userId}
+                    isBlocked={blockedIds.has(m.userId)}
                     onRemove={() => removeMember({ id: groupId, userId: m.userId })}
                     onPromote={() => setMemberRole({ id: groupId, userId: m.userId, data: { role: "admin" } })}
                     onDemote={() => setMemberRole({ id: groupId, userId: m.userId, data: { role: "member" } })}
+                    onBlock={() => blockUser({ userId: m.userId })}
+                    onUnblock={() => unblockUser({ userId: m.userId })}
                   />
                 ))}
               </div>
+
+              {/* Sub-groups (mobile) */}
+              {group.parentGroupId === null && (
+                <div className="border-t border-border px-3 py-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                      <GitFork className="w-3 h-3" /> Sub-groups
+                    </span>
+                    <button
+                      onClick={() => { setShowCreateSubgroup(true); setShowMembers(false); }}
+                      className="p-1 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  {subgroups.length === 0 ? (
+                    <p className="text-[11px] text-muted-foreground">No sub-groups yet.</p>
+                  ) : (
+                    <div className="space-y-0.5">
+                      {subgroups.map((sg) => (
+                        <SubgroupRow key={sg.id} sg={sg} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {!isPrimaryAdmin && isMember && (
                 <div className="p-3 border-t border-border">
                   <Button
@@ -430,6 +534,105 @@ export default function GroupChat() {
           </div>
         )}
       </div>
+
+      {/* Create Sub-group modal */}
+      {showCreateSubgroup && isMember && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowCreateSubgroup(false); }}
+        >
+          <div className="bg-card border border-border rounded-2xl w-full max-w-md shadow-2xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
+              <h3 className="font-semibold text-lg flex items-center gap-2">
+                <GitFork className="w-5 h-5 text-primary" /> Create Sub-group
+              </h3>
+              <button onClick={() => setShowCreateSubgroup(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
+              <div className="flex gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1.5 block font-medium">Emoji</label>
+                  <input
+                    value={sgEmoji}
+                    onChange={(e) => setSgEmoji(e.target.value)}
+                    className="w-16 bg-background border border-border rounded-lg px-2 py-2.5 text-sm text-center focus:outline-none focus:ring-1 focus:ring-primary/50"
+                    maxLength={4}
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="text-xs text-muted-foreground mb-1.5 block font-medium">Name *</label>
+                  <input
+                    value={sgName}
+                    onChange={(e) => setSgName(e.target.value)}
+                    placeholder="e.g. Budget Travelers"
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                    maxLength={80}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1.5 block font-medium">Description</label>
+                <textarea
+                  value={sgDesc}
+                  onChange={(e) => setSgDesc(e.target.value)}
+                  placeholder="What is this sub-group about?"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm resize-none h-16 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  maxLength={300}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1.5 block font-medium">
+                  Add members from this group
+                </label>
+                <div className="space-y-1 max-h-40 overflow-y-auto border border-border rounded-lg p-2">
+                  {members.filter((m) => m.userId !== userId).length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-2">No other members yet</p>
+                  ) : (
+                    members.filter((m) => m.userId !== userId).map((m) => {
+                      const checked = sgMemberIds.includes(m.userId);
+                      return (
+                        <button
+                          key={m.userId}
+                          type="button"
+                          onClick={() => setSgMemberIds((prev) =>
+                            checked ? prev.filter((id) => id !== m.userId) : [...prev, m.userId]
+                          )}
+                          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors text-left ${checked ? "bg-primary/15 text-primary" : "hover:bg-muted/50 text-foreground"}`}
+                        >
+                          <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border transition-colors ${checked ? "bg-primary border-primary" : "border-border"}`}>
+                            {checked && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
+                          </div>
+                          <div className="w-6 h-6 rounded-full bg-primary/20 text-primary text-[10px] font-semibold flex items-center justify-center shrink-0">
+                            {initials(m)}
+                          </div>
+                          <span className="text-sm truncate">{displayName(m)}</span>
+                          {m.isPrimary && <Crown className="w-3 h-3 text-amber-400 shrink-0" />}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+                {sgMemberIds.length > 0 && (
+                  <p className="text-[11px] text-muted-foreground mt-1">{sgMemberIds.length} member{sgMemberIds.length > 1 ? "s" : ""} selected (you are added automatically)</p>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-3 px-6 pb-6 shrink-0">
+              <Button
+                className="flex-1"
+                disabled={isCreatingSg || !sgName.trim()}
+                onClick={() => createSubgroup({ id: groupId, data: { name: sgName, description: sgDesc || undefined, emoji: sgEmoji, memberIds: sgMemberIds } })}
+              >
+                {isCreatingSg ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <GitFork className="w-4 h-4 mr-1.5" />}
+                Create Sub-group
+              </Button>
+              <Button variant="ghost" onClick={() => setShowCreateSubgroup(false)}>Cancel</Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Settings panel (admin only) */}
       {showSettings && isAdmin && (
@@ -572,23 +775,28 @@ function MessageBubble({
 }
 
 function MemberRow({
-  member, isPrimaryAdmin, isSelf, onRemove, onPromote, onDemote,
+  member, isPrimaryAdmin, isSelf, isBlocked, onRemove, onPromote, onDemote, onBlock, onUnblock,
 }: {
   member: GroupMember;
   isPrimaryAdmin: boolean;
   isSelf: boolean;
+  isBlocked: boolean;
   onRemove: () => void;
   onPromote: () => void;
   onDemote: () => void;
+  onBlock: () => void;
+  onUnblock: () => void;
 }) {
   const isCoAdmin = member.role === "admin" && !member.isPrimary;
   return (
     <div className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors">
-      <div className="w-8 h-8 rounded-full bg-primary/20 text-primary text-xs font-semibold flex items-center justify-center shrink-0">
+      <div className={`w-8 h-8 rounded-full text-xs font-semibold flex items-center justify-center shrink-0 ${isBlocked ? "bg-muted text-muted-foreground" : "bg-primary/20 text-primary"}`}>
         {initials(member)}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{displayName(member)}{isSelf ? " (you)" : ""}</p>
+        <p className={`text-sm font-medium truncate ${isBlocked ? "text-muted-foreground line-through" : ""}`}>
+          {displayName(member)}{isSelf ? " (you)" : ""}
+        </p>
         {member.isPrimary ? (
           <p className="text-[10px] text-amber-400 flex items-center gap-1">
             <Crown className="w-2.5 h-2.5" /> Owner
@@ -597,36 +805,66 @@ function MemberRow({
           <p className="text-[10px] text-violet-400 flex items-center gap-1">
             <Shield className="w-2.5 h-2.5" /> Admin
           </p>
+        ) : isBlocked ? (
+          <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+            <Ban className="w-2.5 h-2.5" /> Blocked
+          </p>
         ) : null}
       </div>
-      {isPrimaryAdmin && !isSelf && !member.isPrimary && (
-        <div className="flex items-center gap-0.5">
-          {isCoAdmin ? (
+      <div className="flex items-center gap-0.5">
+        {isPrimaryAdmin && !isSelf && !member.isPrimary && (
+          <>
+            {isCoAdmin ? (
+              <button
+                onClick={onDemote}
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-amber-400 hover:bg-amber-400/10 transition-colors"
+                title="Demote to member"
+              >
+                <Shield className="w-3.5 h-3.5" />
+              </button>
+            ) : (
+              <button
+                onClick={onPromote}
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-violet-400 hover:bg-violet-400/10 transition-colors"
+                title="Promote to admin"
+              >
+                <Shield className="w-3.5 h-3.5" />
+              </button>
+            )}
             <button
-              onClick={onDemote}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-amber-400 hover:bg-amber-400/10 transition-colors"
-              title="Demote to member"
+              onClick={onRemove}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+              title="Remove member"
             >
-              <Shield className="w-3.5 h-3.5" />
+              <UserMinus className="w-3.5 h-3.5" />
             </button>
-          ) : (
-            <button
-              onClick={onPromote}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-violet-400 hover:bg-violet-400/10 transition-colors"
-              title="Promote to admin"
-            >
-              <Shield className="w-3.5 h-3.5" />
-            </button>
-          )}
+          </>
+        )}
+        {!isSelf && (
           <button
-            onClick={onRemove}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-            title="Remove member"
+            onClick={isBlocked ? onUnblock : onBlock}
+            className={`p-1.5 rounded-lg transition-colors ${isBlocked ? "text-orange-400 hover:bg-orange-400/10" : "text-muted-foreground hover:text-orange-400 hover:bg-orange-400/10"}`}
+            title={isBlocked ? "Unblock user" : "Block user"}
           >
-            <UserMinus className="w-3.5 h-3.5" />
+            <Ban className="w-3.5 h-3.5" />
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
+  );
+}
+
+function SubgroupRow({ sg }: { sg: Group }) {
+  return (
+    <Link href={`/groups/${sg.id}`}>
+      <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group">
+        <span className="text-base">{sg.emoji}</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium truncate">{sg.name}</p>
+          <p className="text-[10px] text-muted-foreground">{sg.memberCount} member{sg.memberCount !== 1 ? "s" : ""}</p>
+        </div>
+        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+      </div>
+    </Link>
   );
 }

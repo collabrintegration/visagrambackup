@@ -14,6 +14,7 @@ export interface Group {
   emoji: string;
   adminId: string;
   isPrivate: boolean;
+  parentGroupId?: number | null;
   memberCount: number;
   isMember: boolean;
   isAdmin: boolean;

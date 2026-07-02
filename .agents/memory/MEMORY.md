@@ -1,0 +1,2 @@
+- [Drizzle select must match buildGroupResponse](drizzle-select-parentgroupid.md) — every `select()` feeding `buildGroupResponse` must include `parentGroupId`; omitting it causes TS2345.
+- [useGetBlockedUsers requires explicit queryKey](use-get-blocked-users-query.md) — the generated hook's `query` option requires `queryKey` to be set explicitly; `{ enabled }` alone fails TS2741.

@@ -1721,6 +1721,122 @@ paths:
         "404":
           description: Not found
 
+  /groups/{id}/subgroups:
+    get:
+      operationId: listSubgroups
+      tags: [groups]
+      summary: List subgroups of a parent group
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of subgroups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Group"
+        "404":
+          description: Not found
+    post:
+      operationId: createSubgroup
+      tags: [groups]
+      summary: Create a subgroup inside a parent group (any member)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSubgroupInput"
+      responses:
+        "201":
+          description: Subgroup created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Group"
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Not a member of parent group
+        "404":
+          description: Parent group not found
+
+  # ── User blocking ─────────────────────────────────────────────────────────
+  /users/me/blocked:
+    get:
+      operationId: getBlockedUsers
+      tags: [users]
+      summary: List users blocked by the current user
+      responses:
+        "200":
+          description: List of blocked user IDs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [blockedId]
+                  properties:
+                    blockedId:
+                      type: string
+        "401":
+          description: Unauthorized
+
+  /users/{userId}/block:
+    post:
+      operationId: blockUser
+      tags: [users]
+      summary: Block a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User blocked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "401":
+          description: Unauthorized
+    delete:
+      operationId: unblockUser
+      tags: [users]
+      summary: Unblock a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User unblocked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "401":
+          description: Unauthorized
+
 components:
   schemas:
     HealthStatus:
@@ -2670,6 +2786,9 @@ components:
           type: string
         isPrivate:
           type: boolean
+        parentGroupId:
+          type: integer
+          nullable: true
         memberCount:
           type: integer
         isMember:
@@ -2798,6 +2917,21 @@ components:
         gifUrl:
           type: string
           nullable: true
+
+    CreateSubgroupInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        emoji:
+          type: string
+        memberIds:
+          type: array
+          items:
+            type: string
 
     DmConversation:
       type: object

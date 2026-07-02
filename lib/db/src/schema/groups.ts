@@ -9,6 +9,7 @@ export const groupsTable = pgTable("groups", {
   emoji: text("emoji").notNull().default("🌍"),
   adminId: text("admin_id").notNull(),
   isPrivate: boolean("is_private").notNull().default(false),
+  parentGroupId: integer("parent_group_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -45,8 +46,18 @@ export const groupJoinRequestsTable = pgTable("group_join_requests", {
   unique("group_join_requests_unique").on(t.groupId, t.userId),
 ]);
 
+export const blockedUsersTable = pgTable("blocked_users", {
+  id: serial("id").primaryKey(),
+  blockerId: text("blocker_id").notNull(),
+  blockedId: text("blocked_id").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  unique("blocked_users_unique").on(t.blockerId, t.blockedId),
+]);
+
 export const insertGroupMessageSchema = createInsertSchema(groupMessagesTable).omit({ id: true, userId: true, createdAt: true });
 export type InsertGroupMessage = z.infer<typeof insertGroupMessageSchema>;
 export type GroupMessage = typeof groupMessagesTable.$inferSelect;
 export type GroupMember = typeof groupMembersTable.$inferSelect;
 export type GroupJoinRequest = typeof groupJoinRequestsTable.$inferSelect;
+export type BlockedUser = typeof blockedUsersTable.$inferSelect;

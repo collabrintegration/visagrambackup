@@ -592,6 +592,7 @@ export interface Group {
   emoji: string;
   adminId: string;
   isPrivate: boolean;
+  parentGroupId?: number | null;
   memberCount: number;
   isMember: boolean;
   isAdmin: boolean;
@@ -656,6 +657,13 @@ export interface UpdateGroupInput {
 export interface CreateGroupMessageInput {
   content?: string;
   gifUrl?: string | null;
+}
+
+export interface CreateSubgroupInput {
+  name: string;
+  description?: string;
+  emoji?: string;
+  memberIds?: string[];
 }
 
 export type DmConversationStatus = typeof DmConversationStatus[keyof typeof DmConversationStatus];
@@ -967,5 +975,9 @@ export type ListGroupMessagesParams = {
  */
 before?: number;
 limit?: number;
+};
+
+export type GetBlockedUsers200Item = {
+  blockedId: string;
 };
 

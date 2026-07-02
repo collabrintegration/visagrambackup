@@ -40,6 +40,7 @@ import type {
   CreateQuestionWithCountryBody,
   CreateReplyBody,
   CreateReviewBody,
+  CreateSubgroupInput,
   CreateSupportCaseBody,
   CreateVisaApplicationInput,
   DmConversation,
@@ -48,6 +49,7 @@ import type {
   ErrorResponse,
   FeedItem,
   FollowStatus,
+  GetBlockedUsers200Item,
   GetCommunityFeedParams,
   GetVisaReportsParams,
   Group,
@@ -5624,5 +5626,370 @@ export const useDeleteGroupMessage = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getDeleteGroupMessageMutationOptions(options));
+    }
+
+export const getListSubgroupsUrl = (id: number,) => {
+
+
+
+
+  return `/api/groups/${id}/subgroups`
+}
+
+/**
+ * @summary List subgroups of a parent group
+ */
+export const listSubgroups = async (id: number, options?: RequestInit): Promise<Group[]> => {
+
+  return customFetch<Group[]>(getListSubgroupsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSubgroupsQueryKey = (id: number,) => {
+    return [
+    `/api/groups/${id}/subgroups`
+    ] as const;
+    }
+
+
+export const getListSubgroupsQueryOptions = <TData = Awaited<ReturnType<typeof listSubgroups>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSubgroups>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSubgroupsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSubgroups>>> = ({ signal }) => listSubgroups(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSubgroups>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSubgroupsQueryResult = NonNullable<Awaited<ReturnType<typeof listSubgroups>>>
+export type ListSubgroupsQueryError = ErrorType<void>
+
+
+/**
+ * @summary List subgroups of a parent group
+ */
+
+export function useListSubgroups<TData = Awaited<ReturnType<typeof listSubgroups>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSubgroups>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSubgroupsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateSubgroupUrl = (id: number,) => {
+
+
+
+
+  return `/api/groups/${id}/subgroups`
+}
+
+/**
+ * @summary Create a subgroup inside a parent group (any member)
+ */
+export const createSubgroup = async (id: number,
+    createSubgroupInput: CreateSubgroupInput, options?: RequestInit): Promise<Group> => {
+
+  return customFetch<Group>(getCreateSubgroupUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createSubgroupInput)
+  }
+);}
+
+
+
+
+export const getCreateSubgroupMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSubgroup>>, TError,{id: number;data: BodyType<CreateSubgroupInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSubgroup>>, TError,{id: number;data: BodyType<CreateSubgroupInput>}, TContext> => {
+
+const mutationKey = ['createSubgroup'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSubgroup>>, {id: number;data: BodyType<CreateSubgroupInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createSubgroup(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSubgroupMutationResult = NonNullable<Awaited<ReturnType<typeof createSubgroup>>>
+    export type CreateSubgroupMutationBody = BodyType<CreateSubgroupInput>
+    export type CreateSubgroupMutationError = ErrorType<void>
+
+    /**
+ * @summary Create a subgroup inside a parent group (any member)
+ */
+export const useCreateSubgroup = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSubgroup>>, TError,{id: number;data: BodyType<CreateSubgroupInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSubgroup>>,
+        TError,
+        {id: number;data: BodyType<CreateSubgroupInput>},
+        TContext
+      > => {
+      return useMutation(getCreateSubgroupMutationOptions(options));
+    }
+
+export const getGetBlockedUsersUrl = () => {
+
+
+
+
+  return `/api/users/me/blocked`
+}
+
+/**
+ * @summary List users blocked by the current user
+ */
+export const getBlockedUsers = async ( options?: RequestInit): Promise<GetBlockedUsers200Item[]> => {
+
+  return customFetch<GetBlockedUsers200Item[]>(getGetBlockedUsersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBlockedUsersQueryKey = () => {
+    return [
+    `/api/users/me/blocked`
+    ] as const;
+    }
+
+
+export const getGetBlockedUsersQueryOptions = <TData = Awaited<ReturnType<typeof getBlockedUsers>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBlockedUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBlockedUsersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBlockedUsers>>> = ({ signal }) => getBlockedUsers({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBlockedUsers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetBlockedUsersQueryResult = NonNullable<Awaited<ReturnType<typeof getBlockedUsers>>>
+export type GetBlockedUsersQueryError = ErrorType<void>
+
+
+/**
+ * @summary List users blocked by the current user
+ */
+
+export function useGetBlockedUsers<TData = Awaited<ReturnType<typeof getBlockedUsers>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBlockedUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetBlockedUsersQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getBlockUserUrl = (userId: string,) => {
+
+
+
+
+  return `/api/users/${userId}/block`
+}
+
+/**
+ * @summary Block a user
+ */
+export const blockUser = async (userId: string, options?: RequestInit): Promise<OkResponse> => {
+
+  return customFetch<OkResponse>(getBlockUserUrl(userId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getBlockUserMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof blockUser>>, TError,{userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof blockUser>>, TError,{userId: string}, TContext> => {
+
+const mutationKey = ['blockUser'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof blockUser>>, {userId: string}> = (props) => {
+          const {userId} = props ?? {};
+
+          return  blockUser(userId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BlockUserMutationResult = NonNullable<Awaited<ReturnType<typeof blockUser>>>
+
+    export type BlockUserMutationError = ErrorType<void>
+
+    /**
+ * @summary Block a user
+ */
+export const useBlockUser = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof blockUser>>, TError,{userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof blockUser>>,
+        TError,
+        {userId: string},
+        TContext
+      > => {
+      return useMutation(getBlockUserMutationOptions(options));
+    }
+
+export const getUnblockUserUrl = (userId: string,) => {
+
+
+
+
+  return `/api/users/${userId}/block`
+}
+
+/**
+ * @summary Unblock a user
+ */
+export const unblockUser = async (userId: string, options?: RequestInit): Promise<OkResponse> => {
+
+  return customFetch<OkResponse>(getUnblockUserUrl(userId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getUnblockUserMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unblockUser>>, TError,{userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unblockUser>>, TError,{userId: string}, TContext> => {
+
+const mutationKey = ['unblockUser'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unblockUser>>, {userId: string}> = (props) => {
+          const {userId} = props ?? {};
+
+          return  unblockUser(userId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnblockUserMutationResult = NonNullable<Awaited<ReturnType<typeof unblockUser>>>
+
+    export type UnblockUserMutationError = ErrorType<void>
+
+    /**
+ * @summary Unblock a user
+ */
+export const useUnblockUser = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unblockUser>>, TError,{userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof unblockUser>>,
+        TError,
+        {userId: string},
+        TContext
+      > => {
+      return useMutation(getUnblockUserMutationOptions(options));
     }
 

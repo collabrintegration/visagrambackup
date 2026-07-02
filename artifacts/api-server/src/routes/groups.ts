@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { db, groupsTable, groupMembersTable, groupMessagesTable, groupJoinRequestsTable, usersTable } from "@workspace/db";
-import { eq, and, desc, lt, count, sql } from "drizzle-orm";
+import { db, groupsTable, groupMembersTable, groupMessagesTable, groupJoinRequestsTable, usersTable, blockedUsersTable } from "@workspace/db";
+import { eq, and, desc, lt, count, sql, inArray } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -77,6 +77,7 @@ async function buildGroupResponse(
     emoji: group.emoji,
     adminId: group.adminId,
     isPrivate: group.isPrivate,
+    parentGroupId: (group as typeof groupsTable.$inferSelect & { memberCount: number }).parentGroupId ?? null,
     memberCount: group.memberCount,
     isMember,
     isAdmin,
@@ -99,6 +100,7 @@ router.get("/groups", async (req: Request, res: Response) => {
       emoji: groupsTable.emoji,
       adminId: groupsTable.adminId,
       isPrivate: groupsTable.isPrivate,
+      parentGroupId: groupsTable.parentGroupId,
       createdAt: groupsTable.createdAt,
       memberCount: count(groupMembersTable.id),
     })
@@ -159,6 +161,7 @@ router.get("/groups/:id", async (req: Request, res: Response) => {
       emoji: groupsTable.emoji,
       adminId: groupsTable.adminId,
       isPrivate: groupsTable.isPrivate,
+      parentGroupId: groupsTable.parentGroupId,
       createdAt: groupsTable.createdAt,
       memberCount: count(groupMembersTable.id),
     })
@@ -527,6 +530,122 @@ router.delete("/groups/:id/messages/:messageId", async (req: Request, res: Respo
 
   await db.delete(groupMessagesTable).where(eq(groupMessagesTable.id, messageId));
   res.status(204).end();
+});
+
+// ── List subgroups ──────────────────────────────────────────────────────────
+router.get("/groups/:id/subgroups", async (req: Request, res: Response) => {
+  const userId = getAuthUserId(req);
+  const parentGroupId = Number(req.params.id);
+
+  const parent = await db.select({ id: groupsTable.id }).from(groupsTable).where(eq(groupsTable.id, parentGroupId)).limit(1);
+  if (!parent[0]) { res.status(404).json({ error: "Group not found" }); return; }
+
+  const rows = await db
+    .select({
+      id: groupsTable.id,
+      name: groupsTable.name,
+      description: groupsTable.description,
+      emoji: groupsTable.emoji,
+      adminId: groupsTable.adminId,
+      isPrivate: groupsTable.isPrivate,
+      parentGroupId: groupsTable.parentGroupId,
+      createdAt: groupsTable.createdAt,
+      memberCount: count(groupMembersTable.id),
+    })
+    .from(groupsTable)
+    .leftJoin(groupMembersTable, eq(groupMembersTable.groupId, groupsTable.id))
+    .where(eq(groupsTable.parentGroupId, parentGroupId))
+    .groupBy(groupsTable.id)
+    .orderBy(desc(groupsTable.createdAt));
+
+  const enriched = await Promise.all(rows.map((g) => buildGroupResponse(g, userId)));
+  res.json(enriched);
+});
+
+// ── Create subgroup ─────────────────────────────────────────────────────────
+router.post("/groups/:id/subgroups", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const userId = req.user.id;
+  const parentGroupId = Number(req.params.id);
+
+  const parent = await db.select().from(groupsTable).where(eq(groupsTable.id, parentGroupId)).limit(1);
+  if (!parent[0]) { res.status(404).json({ error: "Parent group not found" }); return; }
+  if (parent[0].parentGroupId !== null) {
+    res.status(400).json({ error: "Cannot create a subgroup under another subgroup." });
+    return;
+  }
+  if (!(await isMemberOf(parentGroupId, userId))) {
+    res.status(403).json({ error: "You must be a member of the parent group." });
+    return;
+  }
+
+  const { name, description, emoji = "👥", memberIds = [] } = req.body as {
+    name?: string;
+    description?: string;
+    emoji?: string;
+    memberIds?: string[];
+  };
+
+  if (!name?.trim()) { res.status(400).json({ error: "name is required" }); return; }
+
+  // Validate all provided memberIds are actually in the parent group
+  let validMemberIds: string[] = [];
+  if (memberIds.length > 0) {
+    const parentMembers = await db
+      .select({ userId: groupMembersTable.userId })
+      .from(groupMembersTable)
+      .where(and(eq(groupMembersTable.groupId, parentGroupId), inArray(groupMembersTable.userId, memberIds)));
+    validMemberIds = parentMembers.map((m) => m.userId);
+  }
+
+  const [subgroup] = await db
+    .insert(groupsTable)
+    .values({ name: name.trim(), description: description?.trim() ?? null, emoji, isPrivate: false, adminId: userId, parentGroupId })
+    .returning();
+
+  // Add creator as admin
+  const memberInserts = [{ groupId: subgroup.id, userId, role: "admin" }];
+  // Add selected members
+  for (const mid of validMemberIds) {
+    if (mid !== userId) memberInserts.push({ groupId: subgroup.id, userId: mid, role: "member" });
+  }
+  await db.insert(groupMembersTable).values(memberInserts).onConflictDoNothing();
+
+  res.status(201).json(await buildGroupResponse({ ...subgroup, memberCount: memberInserts.length }, userId));
+});
+
+// ── Block user ──────────────────────────────────────────────────────────────
+router.post("/users/:userId/block", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const blockerId = req.user.id;
+  const blockedId = String(req.params.userId);
+  if (blockerId === blockedId) { res.status(400).json({ error: "Cannot block yourself" }); return; }
+
+  await db.insert(blockedUsersTable).values({ blockerId, blockedId }).onConflictDoNothing();
+  res.json({ ok: true });
+});
+
+// ── Unblock user ────────────────────────────────────────────────────────────
+router.delete("/users/:userId/block", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const blockerId = req.user.id;
+  const blockedId = String(req.params.userId);
+
+  await db.delete(blockedUsersTable).where(and(eq(blockedUsersTable.blockerId, blockerId), eq(blockedUsersTable.blockedId, blockedId)));
+  res.json({ ok: true });
+});
+
+// ── Get blocked users ───────────────────────────────────────────────────────
+router.get("/users/me/blocked", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const blockerId = req.user.id;
+
+  const rows = await db
+    .select({ blockedId: blockedUsersTable.blockedId })
+    .from(blockedUsersTable)
+    .where(eq(blockedUsersTable.blockerId, blockerId));
+
+  res.json(rows);
 });
 
 export default router;
