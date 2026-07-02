@@ -13,6 +13,7 @@ export interface AdminUserResult {
   lastName?: string | null;
   profileImageUrl?: string | null;
   homeCountry?: string | null;
+  username?: string | null;
   isSuperAdmin: boolean;
   createdAt: string;
 }

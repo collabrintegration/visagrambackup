@@ -23,7 +23,7 @@ import type {
   AcceptFriendRequest200,
   AddSupportCommentBody,
   AdminSearchUsersParams,
-  AdminUserResult,
+  AdminUsersPage,
   Answer,
   AnswerReply,
   AnthropicConversation,
@@ -155,9 +155,9 @@ export const getAdminSearchUsersUrl = (params?: AdminSearchUsersParams,) => {
 /**
  * @summary Search users by name or email (super admin only)
  */
-export const adminSearchUsers = async (params?: AdminSearchUsersParams, options?: RequestInit): Promise<AdminUserResult[]> => {
+export const adminSearchUsers = async (params?: AdminSearchUsersParams, options?: RequestInit): Promise<AdminUsersPage> => {
 
-  return customFetch<AdminUserResult[]>(getAdminSearchUsersUrl(params),
+  return customFetch<AdminUsersPage>(getAdminSearchUsersUrl(params),
   {
     ...options,
     method: 'GET'

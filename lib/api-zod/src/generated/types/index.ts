@@ -12,6 +12,7 @@ export * from './addSupportCommentBody';
 export * from './addSupportCommentBodyStatus';
 export * from './adminSearchUsersParams';
 export * from './adminUserResult';
+export * from './adminUsersPage';
 export * from './answer';
 export * from './answerReply';
 export * from './anthropicConversation';

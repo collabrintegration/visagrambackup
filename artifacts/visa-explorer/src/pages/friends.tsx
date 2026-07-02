@@ -34,7 +34,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   UserPlus, UserCheck, UserMinus, Search, Users, Inbox,
   Clock, MapPin, LogIn, X, Check, Loader2, Star, Trash2,
-  Globe, ChevronRight, MessageSquare, Crown, Lock, ArrowLeft, Camera, Mail, Eye, EyeOff,
+  Globe, ChevronLeft, ChevronRight, MessageSquare, Crown, Lock, ArrowLeft, Camera, Mail, Eye, EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -490,14 +490,26 @@ interface FriendsListSectionProps {
   onFindPeople: () => void;
 }
 
+const FRIENDS_PAGE_SIZE = 10;
+
 function FriendsListSection({ friends, loading, onRemove, onMessage, onFindPeople }: FriendsListSectionProps) {
   const [q, setQ] = useState("");
+  const [page, setPage] = useState(0);
+
   const filtered = q.trim()
     ? friends.filter(f => {
         const name = [f.firstName, f.lastName].filter(Boolean).join(" ").toLowerCase();
         return name.includes(q.toLowerCase()) || (f.homeCountry ?? "").toLowerCase().includes(q.toLowerCase());
       })
     : friends;
+
+  const totalPages = Math.ceil(filtered.length / FRIENDS_PAGE_SIZE);
+  const paginated = filtered.slice(page * FRIENDS_PAGE_SIZE, (page + 1) * FRIENDS_PAGE_SIZE);
+
+  const handleSearch = (val: string) => {
+    setQ(val);
+    setPage(0);
+  };
 
   return (
     <div className="space-y-3">
@@ -506,7 +518,7 @@ function FriendsListSection({ friends, loading, onRemove, onMessage, onFindPeopl
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <input
             value={q}
-            onChange={e => setQ(e.target.value)}
+            onChange={e => handleSearch(e.target.value)}
             placeholder="Search friends…"
             className="w-full pl-9 pr-4 py-2 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
           />
@@ -527,7 +539,7 @@ function FriendsListSection({ friends, loading, onRemove, onMessage, onFindPeopl
             <p className="text-sm text-muted-foreground">No friends match "<span className="text-foreground">{q}</span>"</p>
           </div>
         ) : (
-          filtered.map(f => (
+          paginated.map(f => (
             <FriendRow
               key={f.id}
               {...f}
@@ -537,6 +549,27 @@ function FriendsListSection({ friends, loading, onRemove, onMessage, onFindPeopl
           ))
         )}
       </div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-1">
+          <button
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />Prev
+          </button>
+          <span className="text-xs text-muted-foreground">
+            {page + 1} / {totalPages} &nbsp;·&nbsp; {filtered.length} friend{filtered.length !== 1 ? "s" : ""}
+          </span>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+            disabled={page >= totalPages - 1}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            Next<ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -12,23 +12,28 @@ import * as zod from 'zod';
  * @summary Search users by name or email (super admin only)
  */
 export const adminSearchUsersQueryLimitDefault = 20;
+export const adminSearchUsersQueryOffsetDefault = 0;
 
 export const AdminSearchUsersQueryParams = zod.object({
   "q": zod.coerce.string().optional().describe('Search query (name or email)'),
-  "limit": zod.coerce.number().default(adminSearchUsersQueryLimitDefault)
+  "limit": zod.coerce.number().default(adminSearchUsersQueryLimitDefault),
+  "offset": zod.coerce.number().default(adminSearchUsersQueryOffsetDefault)
 })
 
-export const AdminSearchUsersResponseItem = zod.object({
+export const AdminSearchUsersResponse = zod.object({
+  "users": zod.array(zod.object({
   "id": zod.string(),
   "email": zod.string().nullish(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
   "homeCountry": zod.string().nullish(),
+  "username": zod.string().nullish(),
   "isSuperAdmin": zod.boolean(),
   "createdAt": zod.string()
+})),
+  "total": zod.number()
 })
-export const AdminSearchUsersResponse = zod.array(AdminSearchUsersResponseItem)
 
 
 /**

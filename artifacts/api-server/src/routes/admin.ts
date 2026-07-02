@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request } from "express";
 import { db, usersTable, groupsTable, visaApplicationsTable, travelEntriesTable, reviewsTable, questionsTable, pageViewsTable } from "@workspace/db";
-import { count, eq, sql, gte, or, ilike } from "drizzle-orm";
+import { count, eq, sql, gte, or, ilike, desc } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -22,33 +22,40 @@ router.get("/api/admin/users/search", async (req, res) => {
 
   const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
   const limit = Math.min(Number(req.query.limit) || 20, 100);
+  const offset = Math.max(Number(req.query.offset) || 0, 0);
 
-  const rows = await db
-    .select({
-      id: usersTable.id,
-      email: usersTable.email,
-      firstName: usersTable.firstName,
-      lastName: usersTable.lastName,
-      profileImageUrl: usersTable.profileImageUrl,
-      homeCountry: usersTable.homeCountry,
-      isSuperAdmin: usersTable.isSuperAdmin,
-      createdAt: usersTable.createdAt,
-    })
-    .from(usersTable)
-    .where(
-      q.length > 0
-        ? or(
-            ilike(usersTable.firstName, `%${q}%`),
-            ilike(usersTable.lastName, `%${q}%`),
-            ilike(usersTable.email, `%${q}%`),
-            ilike(sql`concat(${usersTable.firstName}, ' ', ${usersTable.lastName})`, `%${q}%`),
-          )
-        : undefined
-    )
-    .orderBy(usersTable.createdAt)
-    .limit(limit);
+  const where = q.length > 0
+    ? or(
+        ilike(usersTable.username, `%${q}%`),
+        ilike(usersTable.firstName, `%${q}%`),
+        ilike(usersTable.lastName, `%${q}%`),
+        ilike(usersTable.email, `%${q}%`),
+        ilike(sql`concat(${usersTable.firstName}, ' ', ${usersTable.lastName})`, `%${q}%`),
+      )
+    : undefined;
 
-  res.json(rows);
+  const [rows, [totalRow]] = await Promise.all([
+    db
+      .select({
+        id: usersTable.id,
+        email: usersTable.email,
+        username: usersTable.username,
+        firstName: usersTable.firstName,
+        lastName: usersTable.lastName,
+        profileImageUrl: usersTable.profileImageUrl,
+        homeCountry: usersTable.homeCountry,
+        isSuperAdmin: usersTable.isSuperAdmin,
+        createdAt: usersTable.createdAt,
+      })
+      .from(usersTable)
+      .where(where)
+      .orderBy(desc(usersTable.createdAt))
+      .limit(limit)
+      .offset(offset),
+    db.select({ total: count() }).from(usersTable).where(where),
+  ]);
+
+  res.json({ users: rows, total: totalRow?.total ?? 0 });
 });
 
 router.post("/track", async (req, res) => {

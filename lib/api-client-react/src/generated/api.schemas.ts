@@ -20,8 +20,14 @@ export interface AdminUserResult {
   lastName?: string | null;
   profileImageUrl?: string | null;
   homeCountry?: string | null;
+  username?: string | null;
   isSuperAdmin: boolean;
   createdAt: string;
+}
+
+export interface AdminUsersPage {
+  users: AdminUserResult[];
+  total: number;
 }
 
 export interface UserSearchResult {
@@ -964,6 +970,7 @@ export type AdminSearchUsersParams = {
  */
 q?: string;
 limit?: number;
+offset?: number;
 };
 
 export type ListCountriesParams = {

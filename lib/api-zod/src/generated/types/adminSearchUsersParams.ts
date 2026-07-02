@@ -12,4 +12,5 @@ export type AdminSearchUsersParams = {
  */
 q?: string;
 limit?: number;
+offset?: number;
 };

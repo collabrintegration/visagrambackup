@@ -27,7 +27,7 @@ import {
   Map, CheckCircle2, Heart, LogIn, Loader2, Trash2, Globe,
   User, MessageSquare, BookOpen, ChevronDown, ShieldAlert,
   PlusCircle, X, Clock, RefreshCw, XCircle, Bell, PenLine, Save,
-  Users, Crown, Lock, UserCheck, UserX, ChevronRight, BarChart2, Inbox,
+  Users, Crown, Lock, UserCheck, UserX, ChevronLeft, ChevronRight, BarChart2, Inbox,
   TrendingUp, Activity, Search, Shield, Mail, Calendar,
   Camera, Eye, EyeOff,
 } from "lucide-react";
@@ -188,13 +188,18 @@ export default function Profile() {
     query: { queryKey: getGetAdminSiteStatsQueryKey(), enabled: isAuthenticated && isSuperAdmin && activeTab === "admin" },
   });
 
+  const ADMIN_PAGE_SIZE = 15;
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [userSearchInput, setUserSearchInput] = useState("");
-  const userSearchParams = { q: userSearchQuery, limit: 30 };
-  const { data: userSearchResults, isLoading: userSearchLoading } = useAdminSearchUsers(
+  const [adminPage, setAdminPage] = useState(0);
+  const userSearchParams = { q: userSearchQuery, limit: ADMIN_PAGE_SIZE, offset: adminPage * ADMIN_PAGE_SIZE };
+  const { data: adminUsersData, isLoading: userSearchLoading } = useAdminSearchUsers(
     userSearchParams,
     { query: { queryKey: getAdminSearchUsersQueryKey(userSearchParams), enabled: isAuthenticated && isSuperAdmin && activeTab === "admin" } },
   );
+  const userSearchResults = adminUsersData?.users ?? [];
+  const adminTotalUsers = adminUsersData?.total ?? 0;
+  const adminTotalPages = Math.ceil(adminTotalUsers / ADMIN_PAGE_SIZE);
 
   const [showNewCase, setShowNewCase] = useState(false);
   const [caseSubject, setCaseSubject] = useState("");
@@ -990,7 +995,7 @@ export default function Profile() {
 
               <form
                 className="flex gap-2 mb-4"
-                onSubmit={(e) => { e.preventDefault(); setUserSearchQuery(userSearchInput.trim()); }}
+                onSubmit={(e) => { e.preventDefault(); setAdminPage(0); setUserSearchQuery(userSearchInput.trim()); }}
               >
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -1008,7 +1013,7 @@ export default function Profile() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => { setUserSearchQuery(""); setUserSearchInput(""); }}
+                    onClick={() => { setAdminPage(0); setUserSearchQuery(""); setUserSearchInput(""); }}
                   >
                     <X className="w-4 h-4" />
                   </Button>
@@ -1019,11 +1024,12 @@ export default function Profile() {
                 <div className="flex justify-center py-8">
                   <Loader2 className="w-6 h-6 animate-spin text-primary" />
                 </div>
-              ) : userSearchResults && userSearchResults.length > 0 ? (
+              ) : userSearchResults.length > 0 ? (
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground mb-2">
-                    {userSearchResults.length} result{userSearchResults.length !== 1 ? "s" : ""}
-                    {userSearchQuery ? ` for "${userSearchQuery}"` : " (showing all recent)"}
+                    {adminTotalUsers.toLocaleString()} user{adminTotalUsers !== 1 ? "s" : ""}
+                    {userSearchQuery ? ` matching "${userSearchQuery}"` : " total (newest first)"}
+                    {adminTotalPages > 1 && ` — page ${adminPage + 1} of ${adminTotalPages}`}
                   </p>
                   {userSearchResults.map((u: AdminUserResult) => {
                     const fullName = [u.firstName, u.lastName].filter(Boolean).join(" ") || "—";
@@ -1040,6 +1046,9 @@ export default function Profile() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-semibold text-sm truncate">{fullName}</span>
+                            {(u as { username?: string | null }).username && (
+                              <span className="text-xs text-muted-foreground">@{(u as { username?: string | null }).username}</span>
+                            )}
                             {u.isSuperAdmin && (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
                                 <Shield className="w-3 h-3" />Super Admin
@@ -1066,6 +1075,31 @@ export default function Profile() {
                       </div>
                     );
                   })}
+                  {adminTotalPages > 1 && (
+                    <div className="flex items-center justify-between pt-2 px-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAdminPage(p => Math.max(0, p - 1))}
+                        disabled={adminPage === 0}
+                        className="h-8 px-3 text-xs"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5 mr-1" />Prev
+                      </Button>
+                      <span className="text-xs text-muted-foreground">
+                        {adminPage + 1} / {adminTotalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAdminPage(p => Math.min(adminTotalPages - 1, p + 1))}
+                        disabled={adminPage >= adminTotalPages - 1}
+                        className="h-8 px-3 text-xs"
+                      >
+                        Next<ChevronRight className="w-3.5 h-3.5 ml-1" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ) : userSearchQuery ? (
                 <div className="text-center py-10 text-muted-foreground">
