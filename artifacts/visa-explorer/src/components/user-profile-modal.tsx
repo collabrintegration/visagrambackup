@@ -1,6 +1,6 @@
 import { useGetPublicUserProfile, getGetPublicUserProfileQueryKey, useSendFriendRequest, useAcceptFriendRequest, getSearchUsersQueryKey, getListFriendRequestsQueryKey, useListPhotos, getListPhotosQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { X, MapPin, Globe, CheckCircle2, Heart, UserPlus, UserCheck, Clock, Check, Loader2, Camera } from "lucide-react";
+import { X, MapPin, Globe, CheckCircle2, Heart, UserPlus, UserCheck, Clock, Check, Loader2, Camera, User, Hash, Calendar, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 function Avatar({ url, name, size = "lg" }: { url?: string | null; name: string; size?: "lg" | "xl" }) {
@@ -12,6 +12,16 @@ function Avatar({ url, name, size = "lg" }: { url?: string | null; name: string;
   return (
     <div className={`${dim} rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary ring-2 ring-border`}>
       {initials || "?"}
+    </div>
+  );
+}
+
+function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
+  return (
+    <div className="flex items-center gap-3 py-2.5 border-b border-border/50 last:border-0">
+      <div className="text-muted-foreground shrink-0">{icon}</div>
+      <span className="text-xs text-muted-foreground w-20 shrink-0">{label}</span>
+      <span className="text-sm font-medium truncate">{value}</span>
     </div>
   );
 }
@@ -56,9 +66,9 @@ export default function UserProfileModal({ userId, onClose, onInvalidate }: Prop
     },
   });
 
-  const name = profile
-    ? [profile.firstName, profile.lastName].filter(Boolean).join(" ") || "Traveler"
-    : "…";
+  const firstName = profile?.firstName ?? "";
+  const lastName = profile?.lastName ?? "";
+  const fullName = [firstName, lastName].filter(Boolean).join(" ") || "Traveler";
 
   const isFriend = profile?.friendshipStatus === "accepted";
   const isPending = profile?.friendshipStatus === "pending";
@@ -69,9 +79,9 @@ export default function UserProfileModal({ userId, onClose, onInvalidate }: Prop
       className="fixed inset-0 z-[300] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-card shadow-2xl overflow-hidden">
+      <div className="w-full max-w-sm rounded-2xl border border-border bg-card shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
         {/* Header bar */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
           <span className="text-sm font-semibold text-muted-foreground">Traveler Profile</span>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-muted transition-colors">
             <X className="w-4 h-4" />
@@ -83,121 +93,147 @@ export default function UserProfileModal({ userId, onClose, onInvalidate }: Prop
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <div className="p-5 space-y-5">
-            {/* Avatar + name */}
-            <div className="flex items-center gap-4">
-              <Avatar url={profile.profileImageUrl} name={name} size="xl" />
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-lg leading-tight">{name}</p>
-                {profile.username && (
-                  <p className="text-sm text-muted-foreground">@{profile.username}</p>
-                )}
-                <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
-                  {profile.location && (
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />{profile.location}
+          <div className="overflow-y-auto flex-1">
+            <div className="p-5 space-y-5">
+
+              {/* Avatar + display name */}
+              <div className="flex items-center gap-4">
+                <Avatar url={profile.profileImageUrl} name={fullName} size="xl" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-lg leading-tight">{fullName}</p>
+                  {profile.username && (
+                    <p className="text-sm text-muted-foreground">@{profile.username}</p>
+                  )}
+                  {/* Friendship badge */}
+                  {isFriend && (
+                    <span className="inline-flex items-center gap-1 mt-1 text-xs text-emerald-400 font-medium">
+                      <UserCheck className="w-3 h-3" /> Friends
                     </span>
                   )}
-                  {!profile.location && profile.homeCountry && (
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Globe className="w-3 h-3" />{profile.homeCountry}
+                  {isPending && iRequested && (
+                    <span className="inline-flex items-center gap-1 mt-1 text-xs text-muted-foreground font-medium">
+                      <Clock className="w-3 h-3" /> Request sent
                     </span>
                   )}
-                  {profile.age && (
-                    <span className="text-xs text-muted-foreground">Age {profile.age}</span>
+                  {isPending && !iRequested && (
+                    <span className="inline-flex items-center gap-1 mt-1 text-xs text-primary font-medium">
+                      <UserPlus className="w-3 h-3" /> Wants to connect
+                    </span>
                   )}
-                  {profile.sex && (
-                    <span className="text-xs text-muted-foreground">{profile.sex}</span>
-                  )}
                 </div>
               </div>
-            </div>
 
-            {/* Bio */}
-            {profile.bio && (
-              <p className="text-sm text-muted-foreground leading-relaxed">{profile.bio}</p>
-            )}
-
-            {/* Travel stats */}
-            {((profile.visitedCount ?? 0) > 0 || (profile.wantToVisitCount ?? 0) > 0) && (
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-center">
-                  <div className="flex items-center justify-center gap-1.5 mb-0.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="text-xs text-emerald-400 font-medium">Visited</span>
-                  </div>
-                  <p className="text-2xl font-bold text-emerald-400">{profile.visitedCount ?? 0}</p>
-                  <p className="text-xs text-muted-foreground">countries</p>
-                </div>
-                <div className="rounded-xl bg-primary/10 border border-primary/20 p-3 text-center">
-                  <div className="flex items-center justify-center gap-1.5 mb-0.5">
-                    <Heart className="w-3.5 h-3.5 text-primary" />
-                    <span className="text-xs text-primary font-medium">Wishlist</span>
-                  </div>
-                  <p className="text-2xl font-bold text-primary">{profile.wantToVisitCount ?? 0}</p>
-                  <p className="text-xs text-muted-foreground">countries</p>
-                </div>
-              </div>
-            )}
-
-            {/* Travel photos strip */}
-            {userPhotos.length > 0 && (
-              <div>
-                <div className="flex items-center gap-1.5 mb-2">
-                  <Camera className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span className="text-xs font-medium text-muted-foreground">Travel Photos</span>
-                  <span className="text-xs text-muted-foreground/60">({userPhotos.length})</span>
-                </div>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {userPhotos.slice(0, 9).map((photo) => (
-                    <div key={photo.id} className="aspect-square rounded-lg overflow-hidden bg-muted">
-                      <img
-                        src={`/api/storage${photo.objectPath}`}
-                        alt={photo.caption ?? "Travel photo"}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Friend action */}
-            <div>
-              {isFriend ? (
-                <Button variant="outline" className="w-full" disabled>
-                  <UserCheck className="w-4 h-4 mr-2 text-emerald-500" />
-                  Already Friends
-                </Button>
-              ) : isPending && iRequested ? (
-                <Button variant="outline" className="w-full" disabled>
-                  <Clock className="w-4 h-4 mr-2" />
-                  Request Sent
-                </Button>
-              ) : isPending && !iRequested ? (
-                <Button
-                  className="w-full"
-                  onClick={() => acceptRequest.mutate({ requesterId: userId })}
-                  disabled={acceptRequest.isPending}
-                >
-                  {acceptRequest.isPending
-                    ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    : <Check className="w-4 h-4 mr-2" />}
-                  Accept Friend Request
-                </Button>
-              ) : (
-                <Button
-                  className="w-full"
-                  onClick={() => sendRequest.mutate({ userId })}
-                  disabled={sendRequest.isPending}
-                >
-                  {sendRequest.isPending
-                    ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    : <UserPlus className="w-4 h-4 mr-2" />}
-                  Add Friend
-                </Button>
+              {/* Bio */}
+              {profile.bio && (
+                <p className="text-sm text-muted-foreground leading-relaxed">{profile.bio}</p>
               )}
+
+              {/* Info grid */}
+              <div className="bg-muted/30 rounded-xl px-4 py-1">
+                {firstName && (
+                  <InfoRow icon={<User className="w-3.5 h-3.5" />} label="First Name" value={firstName} />
+                )}
+                {lastName && (
+                  <InfoRow icon={<User className="w-3.5 h-3.5" />} label="Last Name" value={lastName} />
+                )}
+                {profile.age && (
+                  <InfoRow icon={<Calendar className="w-3.5 h-3.5" />} label="Age" value={profile.age} />
+                )}
+                {profile.sex && (
+                  <InfoRow icon={<Users className="w-3.5 h-3.5" />} label="Sex" value={profile.sex} />
+                )}
+                {(profile.location || profile.homeCountry) && (
+                  <InfoRow
+                    icon={profile.location ? <MapPin className="w-3.5 h-3.5" /> : <Globe className="w-3.5 h-3.5" />}
+                    label="Location"
+                    value={profile.location ?? profile.homeCountry ?? ""}
+                  />
+                )}
+                <InfoRow icon={<Hash className="w-3.5 h-3.5" />} label="User ID" value={profile.id} />
+              </div>
+
+              {/* Travel stats */}
+              {((profile.visitedCount ?? 0) > 0 || (profile.wantToVisitCount ?? 0) > 0) && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-center">
+                    <div className="flex items-center justify-center gap-1.5 mb-0.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-xs text-emerald-400 font-medium">Visited</span>
+                    </div>
+                    <p className="text-2xl font-bold text-emerald-400">{profile.visitedCount ?? 0}</p>
+                    <p className="text-xs text-muted-foreground">countries</p>
+                  </div>
+                  <div className="rounded-xl bg-primary/10 border border-primary/20 p-3 text-center">
+                    <div className="flex items-center justify-center gap-1.5 mb-0.5">
+                      <Heart className="w-3.5 h-3.5 text-primary" />
+                      <span className="text-xs text-primary font-medium">Wishlist</span>
+                    </div>
+                    <p className="text-2xl font-bold text-primary">{profile.wantToVisitCount ?? 0}</p>
+                    <p className="text-xs text-muted-foreground">countries</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Travel photos strip */}
+              {userPhotos.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Camera className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-xs font-medium text-muted-foreground">Travel Photos</span>
+                    <span className="text-xs text-muted-foreground/60">({userPhotos.length})</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {userPhotos.slice(0, 9).map((photo) => (
+                      <div key={photo.id} className="aspect-square rounded-lg overflow-hidden bg-muted">
+                        <img
+                          src={`/api/storage${photo.objectPath}`}
+                          alt={photo.caption ?? "Travel photo"}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Friend action */}
+              <div>
+                {isFriend ? (
+                  <Button variant="outline" className="w-full" disabled>
+                    <UserCheck className="w-4 h-4 mr-2 text-emerald-500" />
+                    Already Friends
+                  </Button>
+                ) : isPending && iRequested ? (
+                  <Button variant="outline" className="w-full" disabled>
+                    <Clock className="w-4 h-4 mr-2" />
+                    Request Sent
+                  </Button>
+                ) : isPending && !iRequested ? (
+                  <Button
+                    className="w-full"
+                    onClick={() => acceptRequest.mutate({ requesterId: userId })}
+                    disabled={acceptRequest.isPending}
+                  >
+                    {acceptRequest.isPending
+                      ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      : <Check className="w-4 h-4 mr-2" />}
+                    Accept Friend Request
+                  </Button>
+                ) : (
+                  <Button
+                    className="w-full"
+                    onClick={() => sendRequest.mutate({ userId })}
+                    disabled={sendRequest.isPending}
+                  >
+                    {sendRequest.isPending
+                      ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      : <UserPlus className="w-4 h-4 mr-2" />}
+                    Add Friend
+                  </Button>
+                )}
+              </div>
+
             </div>
           </div>
         )}
