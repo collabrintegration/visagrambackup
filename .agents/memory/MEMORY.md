@@ -4,3 +4,5 @@
 - [Drizzle TS2769 overloads in api-server](drizzle-overloads.md) — Drizzle `and/or/eq` combos trigger TS2769 in api-server; pre-existing in friends.ts; esbuild compiles regardless so server runs fine.
 - [Mobile app structure](mobile-app.md) — Expo app at artifacts/visagram-app; 4 tabs: Explore, Community, Passport, Profile; setBaseUrl called at top of _layout.tsx; Midnight Rose dark theme in constants/colors.ts.
 - [API double-prefix routing](api-routing.md) — OpenAPI spec has /api in both server URL and path entries; codegen generates /api/api/... calls; Express router-level routes must include /api/ prefix to match.
+- [Object Storage setup](object-storage-setup.md) — GCS bucket provisioned; presigned-URL flow works; pnpm override for Uppy must use literal version "19.1.0" not "$react".
+- [Orval mutation calling convention](orval-mutations.md) — generated mutations wrap body in `{ data: ... }`, e.g. `useCreatePhoto.mutate({ data: { ... } })` not a plain object.

@@ -2344,6 +2344,105 @@ paths:
         "401":
           description: Unauthorized
 
+  /storage/uploads/request-url:
+    post:
+      operationId: requestUploadUrl
+      summary: Request a presigned upload URL for object storage
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestUploadUrlBody"
+      responses:
+        "200":
+          description: Presigned URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RequestUploadUrlResponse"
+        "401":
+          description: Unauthorized
+
+  /photos:
+    get:
+      operationId: listPhotos
+      summary: List travel photos (by country or user)
+      parameters:
+        - name: countryCode
+          in: query
+          schema:
+            type: string
+        - name: userId
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 24
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Photo list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TravelPhotoList"
+    post:
+      operationId: createPhoto
+      summary: Save a travel photo after upload
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePhotoBody"
+      responses:
+        "201":
+          description: Created photo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TravelPhoto"
+        "401":
+          description: Unauthorized
+
+  /photos/{id}:
+    delete:
+      operationId: deletePhoto
+      summary: Delete a travel photo
+      security:
+        - session: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+
 components:
   schemas:
     HealthStatus:
@@ -4093,3 +4192,72 @@ components:
               avgDays:
                 type: number
                 nullable: true
+
+    RequestUploadUrlBody:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name:
+          type: string
+        size:
+          type: integer
+        contentType:
+          type: string
+
+    RequestUploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL:
+          type: string
+        objectPath:
+          type: string
+
+    TravelPhoto:
+      type: object
+      required: [id, userId, countryCode, objectPath, isPublic, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        countryCode:
+          type: string
+        objectPath:
+          type: string
+        caption:
+          type: string
+          nullable: true
+        orientation:
+          type: string
+          nullable: true
+        isPublic:
+          type: boolean
+        createdAt:
+          type: string
+
+    TravelPhotoList:
+      type: object
+      required: [photos, total]
+      properties:
+        photos:
+          type: array
+          items:
+            $ref: "#/components/schemas/TravelPhoto"
+        total:
+          type: integer
+
+    CreatePhotoBody:
+      type: object
+      required: [countryCode, objectPath]
+      properties:
+        countryCode:
+          type: string
+        objectPath:
+          type: string
+        caption:
+          type: string
+          nullable: true
+        orientation:
+          type: string
+          nullable: true

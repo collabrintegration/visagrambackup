@@ -2224,3 +2224,80 @@ export const DeleteTestimonialResponse = zod.object({
 })
 
 
+/**
+ * @summary Request a presigned upload URL for object storage
+ */
+export const RequestUploadUrlBody = zod.object({
+  "name": zod.string(),
+  "size": zod.number(),
+  "contentType": zod.string()
+})
+
+export const RequestUploadUrlResponse = zod.object({
+  "uploadURL": zod.string(),
+  "objectPath": zod.string()
+})
+
+
+/**
+ * @summary List travel photos (by country or user)
+ */
+export const listPhotosQueryLimitDefault = 24;
+export const listPhotosQueryOffsetDefault = 0;
+
+export const ListPhotosQueryParams = zod.object({
+  "countryCode": zod.coerce.string().optional(),
+  "userId": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().default(listPhotosQueryLimitDefault),
+  "offset": zod.coerce.number().default(listPhotosQueryOffsetDefault)
+})
+
+export const ListPhotosResponse = zod.object({
+  "photos": zod.array(zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "countryCode": zod.string(),
+  "objectPath": zod.string(),
+  "caption": zod.string().nullish(),
+  "orientation": zod.string().nullish(),
+  "isPublic": zod.boolean(),
+  "createdAt": zod.string()
+})),
+  "total": zod.number()
+})
+
+
+/**
+ * @summary Save a travel photo after upload
+ */
+export const CreatePhotoBody = zod.object({
+  "countryCode": zod.string(),
+  "objectPath": zod.string(),
+  "caption": zod.string().nullish(),
+  "orientation": zod.string().nullish()
+})
+
+export const CreatePhotoResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "countryCode": zod.string(),
+  "objectPath": zod.string(),
+  "caption": zod.string().nullish(),
+  "orientation": zod.string().nullish(),
+  "isPublic": zod.boolean(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a travel photo
+ */
+export const DeletePhotoParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeletePhotoResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+

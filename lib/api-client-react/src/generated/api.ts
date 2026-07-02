@@ -40,6 +40,7 @@ import type {
   CreateAnswerBody,
   CreateGroupInput,
   CreateGroupMessageInput,
+  CreatePhotoBody,
   CreateQuestionBody,
   CreateQuestionWithCountryBody,
   CreateReplyBody,
@@ -70,6 +71,7 @@ import type {
   ListCountriesParams,
   ListDestinationsByPassportParams,
   ListGroupMessagesParams,
+  ListPhotosParams,
   ListVisaGuideEntriesParams,
   ListVisasParams,
   OkResponse,
@@ -82,6 +84,8 @@ import type {
   RemoveFriend200,
   ReportGroupMessage200,
   ReportGroupMessageBody,
+  RequestUploadUrlBody,
+  RequestUploadUrlResponse,
   Review,
   ReviewsResponse,
   SearchUsersParams,
@@ -97,6 +101,8 @@ import type {
   TestimonialItem,
   TrackPageViewBody,
   TravelEntry,
+  TravelPhoto,
+  TravelPhotoList,
   UpdateGroupInput,
   UpdateProfileBody,
   UpdateVisaApplicationInput,
@@ -7501,5 +7507,299 @@ export const useDeleteTestimonial = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getDeleteTestimonialMutationOptions(options));
+    }
+
+export const getRequestUploadUrlUrl = () => {
+
+
+
+
+  return `/api/storage/uploads/request-url`
+}
+
+/**
+ * @summary Request a presigned upload URL for object storage
+ */
+export const requestUploadUrl = async (requestUploadUrlBody: RequestUploadUrlBody, options?: RequestInit): Promise<RequestUploadUrlResponse> => {
+
+  return customFetch<RequestUploadUrlResponse>(getRequestUploadUrlUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(requestUploadUrlBody)
+  }
+);}
+
+
+
+
+export const getRequestUploadUrlMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,{data: BodyType<RequestUploadUrlBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,{data: BodyType<RequestUploadUrlBody>}, TContext> => {
+
+const mutationKey = ['requestUploadUrl'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestUploadUrl>>, {data: BodyType<RequestUploadUrlBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestUploadUrl(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestUploadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof requestUploadUrl>>>
+    export type RequestUploadUrlMutationBody = BodyType<RequestUploadUrlBody>
+    export type RequestUploadUrlMutationError = ErrorType<void>
+
+    /**
+ * @summary Request a presigned upload URL for object storage
+ */
+export const useRequestUploadUrl = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,{data: BodyType<RequestUploadUrlBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestUploadUrl>>,
+        TError,
+        {data: BodyType<RequestUploadUrlBody>},
+        TContext
+      > => {
+      return useMutation(getRequestUploadUrlMutationOptions(options));
+    }
+
+export const getListPhotosUrl = (params?: ListPhotosParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/photos?${stringifiedParams}` : `/api/photos`
+}
+
+/**
+ * @summary List travel photos (by country or user)
+ */
+export const listPhotos = async (params?: ListPhotosParams, options?: RequestInit): Promise<TravelPhotoList> => {
+
+  return customFetch<TravelPhotoList>(getListPhotosUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPhotosQueryKey = (params?: ListPhotosParams,) => {
+    return [
+    `/api/photos`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListPhotosQueryOptions = <TData = Awaited<ReturnType<typeof listPhotos>>, TError = ErrorType<unknown>>(params?: ListPhotosParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPhotos>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPhotosQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPhotos>>> = ({ signal }) => listPhotos(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPhotos>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPhotosQueryResult = NonNullable<Awaited<ReturnType<typeof listPhotos>>>
+export type ListPhotosQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List travel photos (by country or user)
+ */
+
+export function useListPhotos<TData = Awaited<ReturnType<typeof listPhotos>>, TError = ErrorType<unknown>>(
+ params?: ListPhotosParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPhotos>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPhotosQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreatePhotoUrl = () => {
+
+
+
+
+  return `/api/photos`
+}
+
+/**
+ * @summary Save a travel photo after upload
+ */
+export const createPhoto = async (createPhotoBody: CreatePhotoBody, options?: RequestInit): Promise<TravelPhoto> => {
+
+  return customFetch<TravelPhoto>(getCreatePhotoUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createPhotoBody)
+  }
+);}
+
+
+
+
+export const getCreatePhotoMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPhoto>>, TError,{data: BodyType<CreatePhotoBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createPhoto>>, TError,{data: BodyType<CreatePhotoBody>}, TContext> => {
+
+const mutationKey = ['createPhoto'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPhoto>>, {data: BodyType<CreatePhotoBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createPhoto(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreatePhotoMutationResult = NonNullable<Awaited<ReturnType<typeof createPhoto>>>
+    export type CreatePhotoMutationBody = BodyType<CreatePhotoBody>
+    export type CreatePhotoMutationError = ErrorType<void>
+
+    /**
+ * @summary Save a travel photo after upload
+ */
+export const useCreatePhoto = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPhoto>>, TError,{data: BodyType<CreatePhotoBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createPhoto>>,
+        TError,
+        {data: BodyType<CreatePhotoBody>},
+        TContext
+      > => {
+      return useMutation(getCreatePhotoMutationOptions(options));
+    }
+
+export const getDeletePhotoUrl = (id: number,) => {
+
+
+
+
+  return `/api/photos/${id}`
+}
+
+/**
+ * @summary Delete a travel photo
+ */
+export const deletePhoto = async (id: number, options?: RequestInit): Promise<OkResponse> => {
+
+  return customFetch<OkResponse>(getDeletePhotoUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeletePhotoMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePhoto>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deletePhoto>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deletePhoto'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deletePhoto>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deletePhoto(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeletePhotoMutationResult = NonNullable<Awaited<ReturnType<typeof deletePhoto>>>
+
+    export type DeletePhotoMutationError = ErrorType<void>
+
+    /**
+ * @summary Delete a travel photo
+ */
+export const useDeletePhoto = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePhoto>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deletePhoto>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeletePhotoMutationOptions(options));
     }
 

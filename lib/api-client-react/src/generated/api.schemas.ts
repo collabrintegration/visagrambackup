@@ -1039,6 +1039,40 @@ export interface VisaTrackerAnalytics {
   byVisaType: VisaTrackerAnalyticsByVisaTypeItem[];
 }
 
+export interface RequestUploadUrlBody {
+  name: string;
+  size: number;
+  contentType: string;
+}
+
+export interface RequestUploadUrlResponse {
+  uploadURL: string;
+  objectPath: string;
+}
+
+export interface TravelPhoto {
+  id: number;
+  userId: string;
+  countryCode: string;
+  objectPath: string;
+  caption?: string | null;
+  orientation?: string | null;
+  isPublic: boolean;
+  createdAt: string;
+}
+
+export interface TravelPhotoList {
+  photos: TravelPhoto[];
+  total: number;
+}
+
+export interface CreatePhotoBody {
+  countryCode: string;
+  objectPath: string;
+  caption?: string | null;
+  orientation?: string | null;
+}
+
 export type AdminSearchUsersParams = {
 /**
  * Search query (name or email)
@@ -1239,5 +1273,12 @@ export type RemoveFriend200 = {
 
 export type CreateTestimonialBody = {
   content: string;
+};
+
+export type ListPhotosParams = {
+countryCode?: string;
+userId?: string;
+limit?: number;
+offset?: number;
 };
 

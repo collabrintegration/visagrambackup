@@ -28,6 +28,7 @@ import { getCountryImageUrl, getCountryFallbackImageUrl, getCountryLandmarkInfo 
 import { getCountryDetails } from "@/lib/countryDetails";
 import AdUnit from "@/components/ad-unit";
 import SafetyWingBanner from "@/components/safetywing-banner";
+import CountryPhotoGallery from "@/components/country-photo-gallery";
 
 const ENTRY_STYLE: Record<string, { label: string; pill: string }> = {
   visa_free:       { label: "Visa-Free",       pill: "bg-emerald-500/10 text-emerald-400" },
@@ -484,6 +485,9 @@ export default function CountryDetail() {
 
         {/* ── Reviews ── */}
         {code && <ReviewsSection code={code} countryName={country.name} />}
+
+        {/* ── Photo Gallery ── */}
+        {code && <CountryPhotoGallery countryCode={code} countryName={country.name} />}
 
         {/* ── Q&A ── */}
         {code && <QASection code={code} countryName={country.name} />}
