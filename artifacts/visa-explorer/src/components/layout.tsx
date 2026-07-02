@@ -120,7 +120,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     ) : (
                       <User className="w-4 h-4" />
                     )}
-                    {user?.firstName ?? "Profile"}
+                    {[user?.firstName, user?.lastName].filter(Boolean).join(" ") || user?.username || "Profile"}
                     <ChevronDown className={`w-3.5 h-3.5 transition-transform ${profileOpen ? "rotate-180" : ""}`} />
                   </button>
 

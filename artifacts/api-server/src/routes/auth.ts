@@ -52,7 +52,7 @@ function getSafeReturnTo(value: unknown): string {
 }
 
 async function upsertUser(claims: Record<string, unknown>) {
-  const userData = {
+  const insertData = {
     id: claims.sub as string,
     email: (claims.email as string) || null,
     username: (claims.username as string) || null,
@@ -65,11 +65,15 @@ async function upsertUser(claims: Record<string, unknown>) {
 
   const [user] = await db
     .insert(usersTable)
-    .values(userData)
+    .values(insertData)
     .onConflictDoUpdate({
       target: usersTable.id,
+      // On login, only refresh system-managed fields (email, avatar).
+      // Never overwrite user-editable fields (firstName, lastName, username)
+      // so manual profile edits survive across logins and deployments.
       set: {
-        ...userData,
+        email: insertData.email,
+        profileImageUrl: insertData.profileImageUrl,
         updatedAt: new Date(),
       },
     })
