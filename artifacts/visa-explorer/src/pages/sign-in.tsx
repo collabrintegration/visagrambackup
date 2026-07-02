@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
 import { Button } from "@/components/ui/button";
-import { LogIn, Globe } from "lucide-react";
+import { LogIn, Globe, Loader2 } from "lucide-react";
 
 export default function SignIn() {
   const [, navigate] = useLocation();
@@ -13,6 +13,14 @@ export default function SignIn() {
       navigate("/");
     }
   }, [isAuthenticated, isLoading, navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100dvh-4rem)]">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex items-center justify-center min-h-[calc(100dvh-4rem)] overflow-hidden">
