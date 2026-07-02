@@ -98,3 +98,7 @@ export * from './visaPassportStat';
 export * from './visaReportItem';
 export * from './visaReportsStats';
 export * from './visaSummary';
+export * from './visaTrackerAnalytics';
+export * from './visaTrackerAnalyticsByCountryItem';
+export * from './visaTrackerAnalyticsByPassportItem';
+export * from './visaTrackerAnalyticsByVisaTypeItem';

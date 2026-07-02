@@ -7,6 +7,7 @@ export const visaApplicationsTable = pgTable("visa_applications", {
   userId: text("user_id").notNull(),
   countryCode: text("country_code").notNull(),
   countryName: text("country_name").notNull(),
+  passportCode: text("passport_code"),
   visaType: text("visa_type").notNull(),
   applicationDate: text("application_date").notNull(),
   status: text("status").notNull().default("applied"),

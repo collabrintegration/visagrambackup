@@ -1361,6 +1361,43 @@ export const MarkDmReadResponse = zod.unknown()
 
 
 /**
+ * @summary Aggregate analytics for the visa application tracker
+ */
+export const GetVisaTrackerAnalyticsResponse = zod.object({
+  "total": zod.number(),
+  "approved": zod.number(),
+  "pending": zod.number(),
+  "rejected": zod.number(),
+  "avgDays": zod.number().nullish(),
+  "byPassport": zod.array(zod.object({
+  "passportCode": zod.string(),
+  "passportName": zod.string().nullish(),
+  "passportFlag": zod.string().nullish(),
+  "total": zod.number(),
+  "approved": zod.number(),
+  "rejected": zod.number(),
+  "approvalRate": zod.number().nullish(),
+  "avgDays": zod.number().nullish()
+})),
+  "byCountry": zod.array(zod.object({
+  "countryCode": zod.string(),
+  "countryName": zod.string(),
+  "total": zod.number(),
+  "approved": zod.number(),
+  "approvalRate": zod.number().nullish(),
+  "avgDays": zod.number().nullish()
+})),
+  "byVisaType": zod.array(zod.object({
+  "visaType": zod.string(),
+  "total": zod.number(),
+  "approved": zod.number(),
+  "approvalRate": zod.number().nullish(),
+  "avgDays": zod.number().nullish()
+}))
+})
+
+
+/**
  * @summary List all community visa applications
  */
 export const ListVisaApplicationsResponseItem = zod.object({
@@ -1371,10 +1408,14 @@ export const ListVisaApplicationsResponseItem = zod.object({
   "profileImageUrl": zod.string().nullish(),
   "countryCode": zod.string(),
   "countryName": zod.string(),
+  "passportCode": zod.string().nullish(),
+  "passportName": zod.string().nullish(),
+  "passportFlag": zod.string().nullish(),
   "visaType": zod.enum(['travel', 'work', 'study', 'pr', 'citizenship']),
   "applicationDate": zod.string(),
   "status": zod.enum(['applied', 'in_review', 'approved', 'rejected', 'withdrawn']),
   "grantedDate": zod.string().nullish(),
+  "processingDays": zod.number().nullish(),
   "comment": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -1388,6 +1429,7 @@ export const ListVisaApplicationsResponse = zod.array(ListVisaApplicationsRespon
 export const CreateVisaApplicationBody = zod.object({
   "countryCode": zod.string(),
   "countryName": zod.string(),
+  "passportCode": zod.string().nullish(),
   "visaType": zod.enum(['travel', 'work', 'study', 'pr', 'citizenship']),
   "applicationDate": zod.string(),
   "status": zod.enum(['applied', 'in_review', 'approved', 'rejected', 'withdrawn']).optional(),
@@ -1402,10 +1444,14 @@ export const CreateVisaApplicationResponse = zod.object({
   "profileImageUrl": zod.string().nullish(),
   "countryCode": zod.string(),
   "countryName": zod.string(),
+  "passportCode": zod.string().nullish(),
+  "passportName": zod.string().nullish(),
+  "passportFlag": zod.string().nullish(),
   "visaType": zod.enum(['travel', 'work', 'study', 'pr', 'citizenship']),
   "applicationDate": zod.string(),
   "status": zod.enum(['applied', 'in_review', 'approved', 'rejected', 'withdrawn']),
   "grantedDate": zod.string().nullish(),
+  "processingDays": zod.number().nullish(),
   "comment": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -1433,10 +1479,14 @@ export const UpdateVisaApplicationResponse = zod.object({
   "profileImageUrl": zod.string().nullish(),
   "countryCode": zod.string(),
   "countryName": zod.string(),
+  "passportCode": zod.string().nullish(),
+  "passportName": zod.string().nullish(),
+  "passportFlag": zod.string().nullish(),
   "visaType": zod.enum(['travel', 'work', 'study', 'pr', 'citizenship']),
   "applicationDate": zod.string(),
   "status": zod.enum(['applied', 'in_review', 'approved', 'rejected', 'withdrawn']),
   "grantedDate": zod.string().nullish(),
+  "processingDays": zod.number().nullish(),
   "comment": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()

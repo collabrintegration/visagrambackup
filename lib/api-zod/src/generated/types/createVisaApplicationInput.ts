@@ -11,6 +11,7 @@ import type { CreateVisaApplicationInputVisaType } from './createVisaApplication
 export interface CreateVisaApplicationInput {
   countryCode: string;
   countryName: string;
+  passportCode?: string | null;
   visaType: CreateVisaApplicationInputVisaType;
   applicationDate: string;
   status?: CreateVisaApplicationInputStatus;

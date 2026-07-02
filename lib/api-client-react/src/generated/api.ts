@@ -85,7 +85,8 @@ import type {
   VisaDetail,
   VisaListResponse,
   VisaReportItem,
-  VisaReportsStats
+  VisaReportsStats,
+  VisaTrackerAnalytics
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -4514,6 +4515,83 @@ export const useMarkDmRead = <TError = ErrorType<void>,
       > => {
       return useMutation(getMarkDmReadMutationOptions(options));
     }
+
+export const getGetVisaTrackerAnalyticsUrl = () => {
+
+
+
+
+  return `/api/visa-tracker/analytics`
+}
+
+/**
+ * @summary Aggregate analytics for the visa application tracker
+ */
+export const getVisaTrackerAnalytics = async ( options?: RequestInit): Promise<VisaTrackerAnalytics> => {
+
+  return customFetch<VisaTrackerAnalytics>(getGetVisaTrackerAnalyticsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetVisaTrackerAnalyticsQueryKey = () => {
+    return [
+    `/api/visa-tracker/analytics`
+    ] as const;
+    }
+
+
+export const getGetVisaTrackerAnalyticsQueryOptions = <TData = Awaited<ReturnType<typeof getVisaTrackerAnalytics>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVisaTrackerAnalytics>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetVisaTrackerAnalyticsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getVisaTrackerAnalytics>>> = ({ signal }) => getVisaTrackerAnalytics({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getVisaTrackerAnalytics>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetVisaTrackerAnalyticsQueryResult = NonNullable<Awaited<ReturnType<typeof getVisaTrackerAnalytics>>>
+export type GetVisaTrackerAnalyticsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Aggregate analytics for the visa application tracker
+ */
+
+export function useGetVisaTrackerAnalytics<TData = Awaited<ReturnType<typeof getVisaTrackerAnalytics>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVisaTrackerAnalytics>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetVisaTrackerAnalyticsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getListVisaApplicationsUrl = () => {
 

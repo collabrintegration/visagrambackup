@@ -16,10 +16,14 @@ export interface VisaApplication {
   profileImageUrl?: string | null;
   countryCode: string;
   countryName: string;
+  passportCode?: string | null;
+  passportName?: string | null;
+  passportFlag?: string | null;
   visaType: VisaApplicationVisaType;
   applicationDate: string;
   status: VisaApplicationStatus;
   grantedDate?: string | null;
+  processingDays?: number | null;
   comment?: string | null;
   createdAt: Date;
   updatedAt: Date;

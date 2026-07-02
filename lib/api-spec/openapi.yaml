@@ -1336,6 +1336,19 @@ paths:
         "401":
           description: Unauthorized
 
+  /visa-tracker/analytics:
+    get:
+      operationId: getVisaTrackerAnalytics
+      tags: [tracker]
+      summary: Aggregate analytics for the visa application tracker
+      responses:
+        "200":
+          description: Analytics summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisaTrackerAnalytics"
+
   /visa-tracker:
     get:
       operationId: listVisaApplications
@@ -2881,6 +2894,15 @@ components:
           type: string
         countryName:
           type: string
+        passportCode:
+          type: string
+          nullable: true
+        passportName:
+          type: string
+          nullable: true
+        passportFlag:
+          type: string
+          nullable: true
         visaType:
           type: string
           enum: [travel, work, study, pr, citizenship]
@@ -2891,6 +2913,9 @@ components:
           enum: [applied, in_review, approved, rejected, withdrawn]
         grantedDate:
           type: string
+          nullable: true
+        processingDays:
+          type: integer
           nullable: true
         comment:
           type: string
@@ -2910,6 +2935,9 @@ components:
           type: string
         countryName:
           type: string
+        passportCode:
+          type: string
+          nullable: true
         visaType:
           type: string
           enum: [travel, work, study, pr, citizenship]
@@ -2934,3 +2962,83 @@ components:
         comment:
           type: string
           nullable: true
+
+    VisaTrackerAnalytics:
+      type: object
+      required: [total, approved, pending, rejected, byPassport, byCountry, byVisaType]
+      properties:
+        total:
+          type: integer
+        approved:
+          type: integer
+        pending:
+          type: integer
+        rejected:
+          type: integer
+        avgDays:
+          type: number
+          nullable: true
+        byPassport:
+          type: array
+          items:
+            type: object
+            required: [passportCode, total, approved, rejected]
+            properties:
+              passportCode:
+                type: string
+              passportName:
+                type: string
+                nullable: true
+              passportFlag:
+                type: string
+                nullable: true
+              total:
+                type: integer
+              approved:
+                type: integer
+              rejected:
+                type: integer
+              approvalRate:
+                type: number
+                nullable: true
+              avgDays:
+                type: number
+                nullable: true
+        byCountry:
+          type: array
+          items:
+            type: object
+            required: [countryCode, countryName, total, approved]
+            properties:
+              countryCode:
+                type: string
+              countryName:
+                type: string
+              total:
+                type: integer
+              approved:
+                type: integer
+              approvalRate:
+                type: number
+                nullable: true
+              avgDays:
+                type: number
+                nullable: true
+        byVisaType:
+          type: array
+          items:
+            type: object
+            required: [visaType, total, approved]
+            properties:
+              visaType:
+                type: string
+              total:
+                type: integer
+              approved:
+                type: integer
+              approvalRate:
+                type: number
+                nullable: true
+              avgDays:
+                type: number
+                nullable: true

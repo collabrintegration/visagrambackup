@@ -732,10 +732,14 @@ export interface VisaApplication {
   profileImageUrl?: string | null;
   countryCode: string;
   countryName: string;
+  passportCode?: string | null;
+  passportName?: string | null;
+  passportFlag?: string | null;
   visaType: VisaApplicationVisaType;
   applicationDate: string;
   status: VisaApplicationStatus;
   grantedDate?: string | null;
+  processingDays?: number | null;
   comment?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -766,6 +770,7 @@ export const CreateVisaApplicationInputStatus = {
 export interface CreateVisaApplicationInput {
   countryCode: string;
   countryName: string;
+  passportCode?: string | null;
   visaType: CreateVisaApplicationInputVisaType;
   applicationDate: string;
   status?: CreateVisaApplicationInputStatus;
@@ -787,6 +792,45 @@ export interface UpdateVisaApplicationInput {
   status?: UpdateVisaApplicationInputStatus;
   grantedDate?: string | null;
   comment?: string | null;
+}
+
+export type VisaTrackerAnalyticsByPassportItem = {
+  passportCode: string;
+  passportName?: string | null;
+  passportFlag?: string | null;
+  total: number;
+  approved: number;
+  rejected: number;
+  approvalRate?: number | null;
+  avgDays?: number | null;
+};
+
+export type VisaTrackerAnalyticsByCountryItem = {
+  countryCode: string;
+  countryName: string;
+  total: number;
+  approved: number;
+  approvalRate?: number | null;
+  avgDays?: number | null;
+};
+
+export type VisaTrackerAnalyticsByVisaTypeItem = {
+  visaType: string;
+  total: number;
+  approved: number;
+  approvalRate?: number | null;
+  avgDays?: number | null;
+};
+
+export interface VisaTrackerAnalytics {
+  total: number;
+  approved: number;
+  pending: number;
+  rejected: number;
+  avgDays?: number | null;
+  byPassport: VisaTrackerAnalyticsByPassportItem[];
+  byCountry: VisaTrackerAnalyticsByCountryItem[];
+  byVisaType: VisaTrackerAnalyticsByVisaTypeItem[];
 }
 
 export type ListCountriesParams = {
