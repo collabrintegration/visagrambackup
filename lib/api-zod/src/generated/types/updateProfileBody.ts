@@ -9,4 +9,9 @@
 export interface UpdateProfileBody {
   /** @nullable */
   homeCountry?: string | null;
+  /** @nullable */
+  bio?: string | null;
+  /** @nullable */
+  profileImageUrl?: string | null;
+  isPrivate?: boolean;
 }

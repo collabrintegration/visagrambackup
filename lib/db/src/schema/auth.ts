@@ -21,6 +21,7 @@ export const usersTable = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   homeCountry: varchar("home_country"),
   bio: varchar("bio", { length: 300 }),
+  isPrivate: boolean("is_private").notNull().default(false),
   isSuperAdmin: boolean("is_super_admin").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),

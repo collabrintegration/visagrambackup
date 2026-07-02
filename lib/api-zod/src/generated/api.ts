@@ -382,6 +382,7 @@ export const GetCurrentAuthUserResponse = zod.object({
   "profileImageUrl": zod.string().nullable(),
   "homeCountry": zod.string().nullish(),
   "bio": zod.string().nullish(),
+  "isPrivate": zod.boolean().optional(),
   "isSuperAdmin": zod.boolean().optional()
 }),zod.null()])
 })
@@ -880,7 +881,10 @@ export const DeleteTravelEntryResponse = zod.object({
  * @summary Update the authenticated user's profile
  */
 export const UpdateMyProfileBody = zod.object({
-  "homeCountry": zod.string().nullish()
+  "homeCountry": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "isPrivate": zod.boolean().optional()
 })
 
 export const UpdateMyProfileResponse = zod.object({
@@ -891,6 +895,7 @@ export const UpdateMyProfileResponse = zod.object({
   "profileImageUrl": zod.string().nullable(),
   "homeCountry": zod.string().nullish(),
   "bio": zod.string().nullish(),
+  "isPrivate": zod.boolean().optional(),
   "isSuperAdmin": zod.boolean().optional()
 })
 

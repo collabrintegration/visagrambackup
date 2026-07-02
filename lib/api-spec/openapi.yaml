@@ -2460,6 +2460,8 @@ components:
           type: ["string", "null"]
         bio:
           type: ["string", "null"]
+        isPrivate:
+          type: boolean
         isSuperAdmin:
           type: boolean
 
@@ -3097,6 +3099,12 @@ components:
       properties:
         homeCountry:
           type: ["string", "null"]
+        bio:
+          type: ["string", "null"]
+        profileImageUrl:
+          type: ["string", "null"]
+        isPrivate:
+          type: boolean
 
     UserActivity:
       type: object

@@ -95,6 +95,7 @@ export interface AuthUser {
   homeCountry?: string | null;
   /** @nullable */
   bio?: string | null;
+  isPrivate?: boolean;
   isSuperAdmin?: boolean;
 }
 
@@ -476,6 +477,11 @@ export interface PassportRankEntry {
 export interface UpdateProfileBody {
   /** @nullable */
   homeCountry?: string | null;
+  /** @nullable */
+  bio?: string | null;
+  /** @nullable */
+  profileImageUrl?: string | null;
+  isPrivate?: boolean;
 }
 
 export interface ActivityQuestion {

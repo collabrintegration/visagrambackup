@@ -90,10 +90,15 @@ router.patch("/users/me", async (req: Request, res: Response) => {
     res.status(401).json({ error: "Login required" });
     return;
   }
-  const { homeCountry, bio } = req.body;
+  const { homeCountry, bio, profileImageUrl, isPrivate } = req.body;
+  const patch: Partial<typeof usersTable.$inferInsert> = { updatedAt: new Date() };
+  if ("homeCountry" in req.body) patch.homeCountry = homeCountry ?? null;
+  if ("bio" in req.body) patch.bio = bio ?? null;
+  if ("profileImageUrl" in req.body) patch.profileImageUrl = profileImageUrl ?? null;
+  if ("isPrivate" in req.body) patch.isPrivate = Boolean(isPrivate);
   const [updated] = await db
     .update(usersTable)
-    .set({ homeCountry: homeCountry ?? null, bio: bio ?? null, updatedAt: new Date() })
+    .set(patch)
     .where(eq(usersTable.id, req.user.id))
     .returning();
   res.json(updated);

@@ -20,5 +20,6 @@ export interface AuthUser {
   homeCountry?: string | null;
   /** @nullable */
   bio?: string | null;
+  isPrivate?: boolean;
   isSuperAdmin?: boolean;
 }
