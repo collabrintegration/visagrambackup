@@ -27,7 +27,7 @@ import { Button } from "@/components/ui/button";
 import { getCountryImageUrl, getCountryFallbackImageUrl, getCountryLandmarkInfo } from "@/lib/countryImages";
 import { getCountryDetails } from "@/lib/countryDetails";
 import AdUnit from "@/components/ad-unit";
-import SafetyWingBanner from "@/components/safetywing-banner";
+import AffiliateLinks from "@/components/affiliate-links";
 import CountryPhotoGallery from "@/components/country-photo-gallery";
 
 const ENTRY_STYLE: Record<string, { label: string; pill: string }> = {
@@ -470,15 +470,10 @@ export default function CountryDetail() {
           </div>
         )}
 
-        {/* ── Ad unit — between visa cards and community sections ── */}
-        <div className="py-2">
-          <AdUnit slot="2345678901" format="auto" className="pt-5" />
-        </div>
-
-        {/* ── SafetyWing affiliate ── */}
-        <div className="py-2">
-          <SafetyWingBanner />
-        </div>
+        {/* ── Affiliate links ── */}
+        {code && (
+          <AffiliateLinks countryName={country.name} countryCode={code} />
+        )}
 
         {/* ── Travel Map Quick-Add ── */}
         {code && <TravelMapSection code={code} countryName={country.name} flagEmoji={country.flagEmoji ?? ""} />}
