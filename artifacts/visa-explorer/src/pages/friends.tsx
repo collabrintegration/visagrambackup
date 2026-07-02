@@ -804,18 +804,6 @@ function FriendsGroupsTab() {
 
   return (
     <div className="space-y-6">
-      {totalGroups > 0 && (
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-          <input
-            value={groupSearch}
-            onChange={e => handleSearch(e.target.value)}
-            placeholder="Search groups…"
-            className="w-full pl-9 pr-4 py-2 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
-          />
-        </div>
-      )}
-
       <div className="space-y-8">
         {adminGroups.length > 0 && (
           <div>
@@ -823,6 +811,17 @@ function FriendsGroupsTab() {
               <Crown className="w-4 h-4 text-amber-400" />
               <h3 className="font-semibold text-sm">Groups I Admin</h3>
               <span className="text-xs text-muted-foreground">({adminGroups.length})</span>
+              {totalGroups > 4 && (
+                <div className="relative ml-auto">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                  <input
+                    value={groupSearch}
+                    onChange={e => handleSearch(e.target.value)}
+                    placeholder="Search…"
+                    className="pl-7 pr-3 py-1 rounded-lg border border-border bg-background text-xs w-36 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  />
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               {pagedAdmin.map((g) => <AdminGroupPanel key={g.id} group={g} />)}
@@ -842,6 +841,17 @@ function FriendsGroupsTab() {
               <Users className="w-4 h-4 text-primary" />
               <h3 className="font-semibold text-sm">Groups I'm In</h3>
               <span className="text-xs text-muted-foreground">({myGroups.length})</span>
+              {adminGroups.length === 0 && totalGroups > 4 && (
+                <div className="relative ml-auto">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                  <input
+                    value={groupSearch}
+                    onChange={e => handleSearch(e.target.value)}
+                    placeholder="Search…"
+                    className="pl-7 pr-3 py-1 rounded-lg border border-border bg-background text-xs w-36 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  />
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               {pagedMember.map((g) => (
