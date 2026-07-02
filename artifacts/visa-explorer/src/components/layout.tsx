@@ -101,9 +101,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
-          {/* Global search */}
-          <GlobalSearch />
-
           {/* Auth section */}
           <div className="flex items-center gap-2 shrink-0">
             {authLoading ? (
