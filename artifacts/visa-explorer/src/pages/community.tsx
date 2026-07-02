@@ -472,37 +472,54 @@ export default function Community() {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-3 gap-3 lg:grid-cols-4">
+                <div className="grid grid-cols-3 gap-3">
                   {filteredSidebarGroups.slice(groupPage * GROUPS_PER_PAGE, (groupPage + 1) * GROUPS_PER_PAGE).map((g) => (
                     <div
                       key={g.id}
-                      className="bg-card border border-border rounded-2xl p-3 hover:border-primary/40 transition-colors flex flex-col items-center text-center aspect-square justify-between"
+                      className="bg-card border border-border rounded-2xl p-4 hover:border-primary/40 transition-colors flex flex-col gap-3"
                     >
-                      <div className="flex-1 flex flex-col items-center justify-center gap-1 min-h-0">
-                        <span className="text-3xl leading-none">{g.emoji}</span>
-                        <div className="flex items-center gap-1 mt-1">
-                          <p className="text-xs font-semibold line-clamp-2 leading-tight">{g.name}</p>
-                          {g.isPrivate && <Lock className="w-2.5 h-2.5 text-muted-foreground shrink-0" />}
-                        </div>
-                        <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-                          <Users className="w-2.5 h-2.5" />{g.memberCount}
-                        </span>
+                      {/* Emoji + privacy badge */}
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="text-5xl leading-none">{g.emoji}</span>
+                        {g.isPrivate && (
+                          <span className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full shrink-0 mt-1">
+                            <Lock className="w-2.5 h-2.5" /> Private
+                          </span>
+                        )}
                       </div>
-                      <div className="w-full mt-2">
+
+                      {/* Name + description */}
+                      <div className="flex-1 min-h-0">
+                        <p className="font-semibold text-sm leading-tight line-clamp-2">{g.name}</p>
+                        {g.description && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+                            {g.description}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Member count */}
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Users className="w-3 h-3" />
+                        <span>{g.memberCount} member{g.memberCount !== 1 ? "s" : ""}</span>
+                      </div>
+
+                      {/* Action button */}
+                      <div>
                         {g.isMember ? (
                           <Link href={`/groups/${g.id}`}>
-                            <Button size="sm" className="w-full h-7 text-xs">
-                              <MessageSquare className="w-3 h-3 mr-1" />Chat
+                            <Button size="sm" className="w-full">
+                              <MessageSquare className="w-3.5 h-3.5 mr-1.5" /> Open Chat
                             </Button>
                           </Link>
                         ) : isAuthenticated ? (
-                          <Button size="sm" variant="outline" className="w-full h-7 text-xs" onClick={() => joinGroup({ id: g.id })}>
-                            <UserPlus className="w-3 h-3 mr-1" />
-                            {g.isPrivate ? "Request" : "Join"}
+                          <Button size="sm" variant="outline" className="w-full" onClick={() => joinGroup({ id: g.id })}>
+                            <UserPlus className="w-3.5 h-3.5 mr-1.5" />
+                            {g.isPrivate ? "Request to Join" : "Join Group"}
                           </Button>
                         ) : (
-                          <Button size="sm" variant="outline" className="w-full h-7 text-xs" onClick={login}>
-                            <LogIn className="w-3 h-3 mr-1" />Join
+                          <Button size="sm" variant="outline" className="w-full" onClick={login}>
+                            <LogIn className="w-3.5 h-3.5 mr-1.5" /> Sign in to Join
                           </Button>
                         )}
                       </div>
