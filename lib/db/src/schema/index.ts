@@ -1,5 +1,6 @@
 export * from "./auth";
 export * from "./friends";
+export * from "./testimonials";
 export * from "./countries";
 export * from "./visas";
 export * from "./community";

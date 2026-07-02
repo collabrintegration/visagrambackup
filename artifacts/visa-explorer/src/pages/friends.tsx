@@ -8,20 +8,30 @@ import {
   useAcceptFriendRequest,
   useDeclineFriendRequest,
   useRemoveFriend,
+  useListTestimonials,
+  useCreateTestimonial,
+  useDeleteTestimonial,
+  useGetCurrentAuthUser,
   getListFriendsQueryKey,
   getListFriendRequestsQueryKey,
+  getListTestimonialsQueryKey,
+  getSearchUsersQueryKey,
 } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   UserPlus, UserCheck, UserMinus, Search, Users, Inbox,
-  Clock, MapPin, LogIn, X, Check, Loader2,
+  Clock, MapPin, LogIn, X, Check, Loader2, Star, Trash2,
+  Calendar, Globe, ChevronRight, MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { Link, useLocation } from "wouter";
 import { useDebounce } from "@/hooks/use-debounce";
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -33,45 +43,279 @@ function timeAgo(dateStr: string): string {
   return months === 1 ? "1 month ago" : `${months} months ago`;
 }
 
-function Avatar({ url, name, size = "md" }: { url?: string | null; name: string; size?: "sm" | "md" | "lg" }) {
-  const initials = name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
-  const sizeClass = size === "lg" ? "w-14 h-14 text-lg" : size === "sm" ? "w-8 h-8 text-xs" : "w-11 h-11 text-sm";
-  if (url) {
-    return (
-      <img
-        src={url}
-        alt={name}
-        className={`${sizeClass} rounded-full object-cover shrink-0`}
-      />
-    );
-  }
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+
+function Avatar({
+  url, name, size = "md",
+}: { url?: string | null; name: string; size?: "sm" | "md" | "lg" | "xl" }) {
+  const initials = name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?";
+  const cls = { sm: "w-8 h-8 text-xs", md: "w-10 h-10 text-sm", lg: "w-14 h-14 text-base", xl: "w-20 h-20 text-2xl" }[size];
+  if (url) return <img src={url} alt={name} className={`${cls} rounded-full object-cover shrink-0 ring-2 ring-border`} />;
   return (
-    <div className={`${sizeClass} rounded-full bg-gradient-to-br from-primary to-pink-500 flex items-center justify-center text-white font-bold shrink-0`}>
-      {initials || "?"}
+    <div className={`${cls} rounded-full bg-gradient-to-br from-primary to-pink-500 flex items-center justify-center text-white font-bold shrink-0`}>
+      {initials}
     </div>
   );
 }
 
-type ActiveTab = "friends" | "requests" | "search";
+// ── Left Panel: My Profile ────────────────────────────────────────────────────
+
+function ProfilePanel({ friendCount }: { friendCount: number }) {
+  const { data: authData } = useGetCurrentAuthUser();
+  const user = authData?.user;
+  if (!user) return null;
+  const name = [user.firstName, user.lastName].filter(Boolean).join(" ") || "Traveler";
+
+  return (
+    <aside className="w-72 shrink-0 space-y-4">
+      {/* Profile card */}
+      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+        {/* Cover gradient */}
+        <div className="h-20 bg-gradient-to-br from-primary/40 via-purple-500/30 to-pink-500/40" />
+        <div className="px-5 pb-5 -mt-10">
+          <Avatar url={user.profileImageUrl} name={name} size="xl" />
+          <h2 className="mt-3 text-xl font-bold leading-tight">{name}</h2>
+          {user.email && (
+            <p className="text-sm text-muted-foreground mt-0.5 truncate">{user.email}</p>
+          )}
+          <div className="mt-3 space-y-1.5">
+            {user.homeCountry && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <MapPin className="w-3.5 h-3.5 shrink-0" />
+                <span>{user.homeCountry}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Globe className="w-3.5 h-3.5 shrink-0" />
+              <span>Member of Visagram</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Your Stats</h3>
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { label: "Friends", value: friendCount, icon: <Users className="w-4 h-4 text-primary" /> },
+            { label: "Country", value: user.homeCountry ?? "—", icon: <MapPin className="w-4 h-4 text-pink-500" /> },
+          ].map((s) => (
+            <div key={s.label} className="rounded-xl bg-muted/40 p-3 text-center">
+              <div className="flex justify-center mb-1">{s.icon}</div>
+              <p className="text-lg font-bold leading-tight">{s.value}</p>
+              <p className="text-xs text-muted-foreground">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Quick links */}
+      <div className="rounded-2xl border border-border bg-card p-4 space-y-1">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Quick links</h3>
+        {[
+          { href: "/profile", label: "Edit Profile" },
+          { href: "/tracker", label: "My Visa Tracker" },
+          { href: "/messages", label: "Direct Messages" },
+          { href: "/groups", label: "My Groups" },
+        ].map((l) => (
+          <Link key={l.href} href={l.href}
+            className="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            {l.label}
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        ))}
+      </div>
+    </aside>
+  );
+}
+
+// ── Right Panel: Friends List ─────────────────────────────────────────────────
+
+type RightTab = "friends" | "requests" | "search";
+
+function FriendRow({ id, firstName, lastName, profileImageUrl, homeCountry, friendshipSince, onRemove, onMessage }: {
+  id: string; firstName?: string | null; lastName?: string | null;
+  profileImageUrl?: string | null; homeCountry?: string | null; friendshipSince?: string | null;
+  onRemove: () => void; onMessage: () => void;
+}) {
+  const name = [firstName, lastName].filter(Boolean).join(" ") || "Traveler";
+  return (
+    <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/40 transition-colors group">
+      <Avatar url={profileImageUrl} name={name} size="md" />
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-sm truncate">{name}</p>
+        <div className="flex items-center gap-2 mt-0.5">
+          {homeCountry && <span className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="w-2.5 h-2.5" />{homeCountry}</span>}
+          {friendshipSince && <span className="text-xs text-muted-foreground">· {timeAgo(friendshipSince)}</span>}
+        </div>
+      </div>
+      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button onClick={onMessage} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" title="Message">
+          <MessageSquare className="w-3.5 h-3.5" />
+        </button>
+        <button onClick={onRemove} className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Remove friend">
+          <UserMinus className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Testimonials section ──────────────────────────────────────────────────────
+
+function TestimonialsSection({ myId, myName, friendIds }: { myId: string; myName: string; friendIds: Set<string> }) {
+  const queryClient = useQueryClient();
+  const { data: testimonials = [], isLoading } = useListTestimonials(myId, { query: { queryKey: getListTestimonialsQueryKey(myId), enabled: !!myId } });
+  const createTestimonial = useCreateTestimonial();
+  const deleteTestimonial = useDeleteTestimonial();
+  const [writing, setWriting] = useState(false);
+  const [text, setText] = useState("");
+
+  const handleSubmit = () => {
+    if (!text.trim() || text.trim().length < 10) return;
+    // This is writing a testimonial ABOUT yourself from a friend — not applicable here
+    // Instead we show the write box only to friends viewing this page
+    // The form posts to /api/testimonials/{myId} but we need the currently logged-in user to be a friend
+    // For the profile owner's own page, we show read-only testimonials
+    // The write form is shown on OTHER people's pages — keep this for now as "invite a friend to write"
+    setText("");
+    setWriting(false);
+  };
+
+  return (
+    <div className="mt-6">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Star className="w-4 h-4 text-yellow-400" />
+          <h3 className="font-semibold text-sm">Testimonials</h3>
+          {testimonials.length > 0 && (
+            <Badge variant="secondary" className="text-xs">{testimonials.length}</Badge>
+          )}
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="flex justify-center py-6"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div>
+      ) : testimonials.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-border p-6 text-center">
+          <Star className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-40" />
+          <p className="text-sm text-muted-foreground">No testimonials yet.</p>
+          <p className="text-xs text-muted-foreground mt-1">Your friends can write kind words about you here.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {testimonials.map((t) => {
+            const authorName = [t.authorFirstName, t.authorLastName].filter(Boolean).join(" ") || "Traveler";
+            return (
+              <div key={t.id} className="rounded-xl border border-border bg-muted/20 p-4">
+                <div className="flex items-start gap-3">
+                  <Avatar url={t.authorImageUrl} name={authorName} size="sm" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold">{authorName}</p>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground">{timeAgo(t.createdAt)}</span>
+                        <button
+                          className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
+                          onClick={() => deleteTestimonial.mutate({ id: t.id }, {
+                            onSuccess: () => queryClient.invalidateQueries({ queryKey: getListTestimonialsQueryKey(myId) }),
+                          })}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                    {t.authorCountry && (
+                      <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                        <MapPin className="w-2.5 h-2.5" />{t.authorCountry}
+                      </p>
+                    )}
+                    <p className="text-sm mt-2 leading-relaxed text-foreground/90 italic">"{t.content}"</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Write Testimonial (for friend's profile — shown in search results) ────────
+
+function WriteTestimonialInline({ targetId, targetName, isFriend }: { targetId: string; targetName: string; isFriend: boolean }) {
+  const queryClient = useQueryClient();
+  const { data: existing = [] } = useListTestimonials(targetId, { query: { queryKey: getListTestimonialsQueryKey(targetId), enabled: isFriend } });
+  const create = useCreateTestimonial();
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState(() => existing[0]?.content ?? "");
+
+  if (!isFriend) return null;
+  const alreadyWrote = existing.length > 0;
+
+  return (
+    <div className="mt-2">
+      {!open ? (
+        <button
+          className="text-xs text-primary hover:underline flex items-center gap-1"
+          onClick={() => { setOpen(true); setText(existing[0]?.content ?? ""); }}
+        >
+          <Star className="w-3 h-3" />
+          {alreadyWrote ? "Edit your testimonial" : "Write a testimonial"}
+        </button>
+      ) : (
+        <div className="mt-2 space-y-2">
+          <Textarea
+            value={text}
+            onChange={e => setText(e.target.value)}
+            placeholder={`Share something kind about ${targetName}…`}
+            rows={3}
+            maxLength={500}
+            className="text-sm resize-none"
+          />
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">{text.length}/500</span>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button size="sm" disabled={text.trim().length < 10 || create.isPending}
+                onClick={() => create.mutate({ userId: targetId, data: { content: text.trim() } }, {
+                  onSuccess: () => {
+                    setOpen(false);
+                    queryClient.invalidateQueries({ queryKey: getListTestimonialsQueryKey(targetId) });
+                  },
+                })}
+              >
+                {create.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Post"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function FriendsPage() {
   const [, navigate] = useLocation();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user: authUser } = useAuth();
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>("friends");
+  const [rightTab, setRightTab] = useState<RightTab>("friends");
   const [searchRaw, setSearchRaw] = useState("");
   const searchQuery = useDebounce(searchRaw, 300);
 
-  const { data: friends = [], isLoading: loadingFriends } = useListFriends({
-    query: { enabled: isAuthenticated },
-  });
-  const { data: requests = [], isLoading: loadingRequests } = useListFriendRequests({
-    query: { enabled: isAuthenticated },
-  });
+  const { data: friends = [], isLoading: loadingFriends } = useListFriends({ query: { queryKey: getListFriendsQueryKey(), enabled: isAuthenticated } });
+  const { data: requests = [], isLoading: loadingRequests } = useListFriendRequests({ query: { queryKey: getListFriendRequestsQueryKey(), enabled: isAuthenticated } });
   const { data: searchResults = [], isLoading: loadingSearch } = useSearchUsers(
     { q: searchQuery },
-    { query: { enabled: isAuthenticated && searchQuery.trim().length >= 2 } },
+    { query: { queryKey: getSearchUsersQueryKey({ q: searchQuery }), enabled: isAuthenticated && searchQuery.trim().length >= 2 } },
   );
 
   const sendRequest = useSendFriendRequest();
@@ -84,12 +328,12 @@ export default function FriendsPage() {
     queryClient.invalidateQueries({ queryKey: getListFriendRequestsQueryKey() });
   }, [queryClient]);
 
+  const friendIds = new Set(friends.map(f => f.id));
+  const myId = (authUser as { id?: string })?.id ?? "";
+  const myName = [(authUser as { firstName?: string })?.firstName, (authUser as { lastName?: string })?.lastName].filter(Boolean).join(" ") || "Me";
+
   if (authLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
   }
 
   if (!isAuthenticated) {
@@ -100,317 +344,177 @@ export default function FriendsPage() {
         </div>
         <div>
           <h2 className="text-2xl font-bold mb-2">Sign in to see friends</h2>
-          <p className="text-muted-foreground max-w-sm">
-            Connect with fellow travelers, share visa tips, and build your travel community.
-          </p>
+          <p className="text-muted-foreground max-w-sm">Connect with fellow travelers, share visa tips, and build your travel community.</p>
         </div>
-        <Button onClick={() => navigate("/sign-in")}>
-          <LogIn className="w-4 h-4 mr-2" />
-          Sign in
-        </Button>
+        <Button onClick={() => navigate("/sign-in")}><LogIn className="w-4 h-4 mr-2" />Sign in</Button>
       </div>
     );
   }
 
   return (
     <>
-      <Helmet>
-        <title>Friends — Visagram</title>
-      </Helmet>
+      <Helmet><title>Friends — Visagram</title></Helmet>
 
-      <div className="container mx-auto px-4 py-8 max-w-3xl">
-        {/* Page header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold tracking-tight mb-1">Friends</h1>
-          <p className="text-muted-foreground">Connect with travelers from around the world</p>
-        </div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex gap-6 items-start">
 
-        {/* Tabs */}
-        <div className="flex gap-1 border-b border-border mb-6">
-          {([
-            { key: "friends", label: "Friends", icon: Users, count: friends.length },
-            { key: "requests", label: "Requests", icon: Inbox, count: requests.length },
-            { key: "search", label: "Find People", icon: Search, count: null },
-          ] as const).map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
-                activeTab === tab.key
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <tab.icon className="w-4 h-4" />
-              {tab.label}
-              {tab.count !== null && tab.count > 0 && (
-                <Badge variant={activeTab === tab.key ? "default" : "secondary"} className="text-xs px-1.5 py-0 h-5">
-                  {tab.count}
-                </Badge>
-              )}
-            </button>
-          ))}
-        </div>
+          {/* ── LEFT PANEL: My Profile ── */}
+          <ProfilePanel friendCount={friends.length} />
 
-        {/* ── Friends list ── */}
-        {activeTab === "friends" && (
-          <div className="space-y-2">
-            {loadingFriends ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : friends.length === 0 ? (
-              <EmptyState
-                icon={<Users className="w-10 h-10 text-muted-foreground" />}
-                title="No friends yet"
-                description="Search for travelers and send them a friend request to get started."
-                action={<Button size="sm" onClick={() => setActiveTab("search")}><Search className="w-4 h-4 mr-1.5" />Find People</Button>}
-              />
-            ) : (
-              friends.map((f) => {
-                const name = [f.firstName, f.lastName].filter(Boolean).join(" ") || "Traveler";
-                return (
-                  <div
-                    key={f.id}
-                    className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:bg-muted/40 transition-colors"
-                  >
-                    <Avatar url={f.profileImageUrl} name={name} />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate">{name}</p>
-                      {f.homeCountry && (
-                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                          <MapPin className="w-3 h-3" />
-                          {f.homeCountry}
-                        </p>
-                      )}
-                      {f.friendshipSince && (
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Friends {timeAgo(f.friendshipSince)}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" className="text-xs">
-                        <Link href={`/messages/${f.id}`}>Message</Link>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10 text-xs"
-                        onClick={() => removeFriend.mutate({ userId: f.id }, { onSuccess: invalidate })}
-                        disabled={removeFriend.isPending}
-                      >
-                        <UserMinus className="w-3.5 h-3.5 mr-1" />
-                        Remove
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        )}
+          {/* ── RIGHT PANEL: Friends + Testimonials ── */}
+          <div className="flex-1 min-w-0">
 
-        {/* ── Friend requests ── */}
-        {activeTab === "requests" && (
-          <div className="space-y-2">
-            {loadingRequests ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : requests.length === 0 ? (
-              <EmptyState
-                icon={<Inbox className="w-10 h-10 text-muted-foreground" />}
-                title="No pending requests"
-                description="When someone sends you a friend request, it will appear here."
-              />
-            ) : (
-              requests.map((r) => {
-                const name = [r.firstName, r.lastName].filter(Boolean).join(" ") || "Traveler";
-                return (
-                  <div
-                    key={r.id}
-                    className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card"
-                  >
-                    <Avatar url={r.profileImageUrl} name={name} />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate">{name}</p>
-                      {r.homeCountry && (
-                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                          <MapPin className="w-3 h-3" />
-                          {r.homeCountry}
-                        </p>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Sent a friend request {r.createdAt ? timeAgo(r.createdAt) : ""}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        className="text-xs"
-                        onClick={() => acceptRequest.mutate({ requesterId: r.id }, { onSuccess: invalidate })}
-                        disabled={acceptRequest.isPending}
-                      >
-                        <Check className="w-3.5 h-3.5 mr-1" />
-                        Accept
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs"
-                        onClick={() => declineRequest.mutate({ requesterId: r.id }, { onSuccess: invalidate })}
-                        disabled={declineRequest.isPending}
-                      >
-                        <X className="w-3.5 h-3.5 mr-1" />
-                        Decline
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        )}
-
-        {/* ── Search ── */}
-        {activeTab === "search" && (
-          <div className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                value={searchRaw}
-                onChange={(e) => setSearchRaw(e.target.value)}
-                placeholder="Search by name or email…"
-                className="pl-9"
-                autoFocus
-              />
-              {searchRaw && (
+            {/* Tab bar */}
+            <div className="flex items-center gap-1 border-b border-border mb-5">
+              {([
+                { key: "friends" as RightTab, label: "Friends", icon: Users, count: friends.length },
+                { key: "requests" as RightTab, label: "Requests", icon: Inbox, count: requests.length },
+                { key: "search" as RightTab, label: "Find People", icon: Search, count: null },
+              ]).map((tab) => (
                 <button
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => setSearchRaw("")}
+                  key={tab.key}
+                  onClick={() => setRightTab(tab.key)}
+                  className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                    rightTab === tab.key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
                 >
-                  <X className="w-4 h-4" />
+                  <tab.icon className="w-4 h-4" />
+                  {tab.label}
+                  {tab.count !== null && tab.count > 0 && (
+                    <Badge variant={rightTab === tab.key ? "default" : "secondary"} className="text-xs px-1.5 py-0 h-5">{tab.count}</Badge>
+                  )}
                 </button>
-              )}
+              ))}
             </div>
 
-            {searchQuery.trim().length < 2 ? (
-              <EmptyState
-                icon={<Search className="w-10 h-10 text-muted-foreground" />}
-                title="Find fellow travelers"
-                description="Type at least 2 characters to search by name or email."
-              />
-            ) : loadingSearch ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : searchResults.length === 0 ? (
-              <EmptyState
-                icon={<Users className="w-10 h-10 text-muted-foreground" />}
-                title="No results found"
-                description={`No users found matching "${searchQuery}". Try a different name.`}
-              />
-            ) : (
-              <div className="space-y-2">
-                {searchResults.map((u) => {
-                  const name = [u.firstName, u.lastName].filter(Boolean).join(" ") || "Traveler";
-                  const status = u.friendshipStatus;
-                  const iRequested = u.iRequested;
-
-                  let actionBtn: React.ReactNode;
-                  if (status === "accepted") {
-                    actionBtn = (
-                      <Button variant="outline" size="sm" className="text-xs" disabled>
-                        <UserCheck className="w-3.5 h-3.5 mr-1 text-emerald-500" />
-                        Friends
-                      </Button>
-                    );
-                  } else if (status === "pending" && iRequested) {
-                    actionBtn = (
-                      <Button variant="outline" size="sm" className="text-xs" disabled>
-                        <Clock className="w-3.5 h-3.5 mr-1" />
-                        Requested
-                      </Button>
-                    );
-                  } else if (status === "pending" && !iRequested) {
-                    actionBtn = (
-                      <Button
-                        size="sm"
-                        className="text-xs"
-                        onClick={() => sendRequest.mutate({ userId: u.id }, {
-                          onSuccess: () => {
-                            invalidate();
-                            queryClient.invalidateQueries({ queryKey: ["searchUsers"] });
-                          },
-                        })}
-                        disabled={sendRequest.isPending}
-                      >
-                        <Check className="w-3.5 h-3.5 mr-1" />
-                        Accept
-                      </Button>
-                    );
-                  } else {
-                    actionBtn = (
-                      <Button
-                        size="sm"
-                        className="text-xs"
-                        onClick={() => sendRequest.mutate({ userId: u.id }, { onSuccess: invalidate })}
-                        disabled={sendRequest.isPending}
-                      >
-                        <UserPlus className="w-3.5 h-3.5 mr-1" />
-                        Add Friend
-                      </Button>
-                    );
-                  }
-
-                  return (
-                    <div
-                      key={u.id}
-                      className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:bg-muted/40 transition-colors"
-                    >
-                      <Avatar url={u.profileImageUrl} name={name} />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate">{name}</p>
-                        {u.homeCountry && (
-                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                            <MapPin className="w-3 h-3" />
-                            {u.homeCountry}
-                          </p>
-                        )}
-                      </div>
-                      {actionBtn}
-                    </div>
-                  );
-                })}
+            {/* ── Friends list ── */}
+            {rightTab === "friends" && (
+              <div className="rounded-2xl border border-border bg-card p-2 space-y-0.5">
+                {loadingFriends ? (
+                  <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+                ) : friends.length === 0 ? (
+                  <div className="flex flex-col items-center gap-3 py-12 text-center">
+                    <Users className="w-10 h-10 text-muted-foreground opacity-40" />
+                    <p className="font-semibold">No friends yet</p>
+                    <p className="text-sm text-muted-foreground">Search for travelers and send them a request.</p>
+                    <Button size="sm" onClick={() => setRightTab("search")}><Search className="w-3.5 h-3.5 mr-1.5" />Find People</Button>
+                  </div>
+                ) : (
+                  friends.map(f => (
+                    <FriendRow
+                      key={f.id}
+                      {...f}
+                      onRemove={() => removeFriend.mutate({ userId: f.id }, { onSuccess: invalidate })}
+                      onMessage={() => navigate(`/messages/${f.id}`)}
+                    />
+                  ))
+                )}
               </div>
             )}
+
+            {/* ── Requests ── */}
+            {rightTab === "requests" && (
+              <div className="space-y-2">
+                {loadingRequests ? (
+                  <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+                ) : requests.length === 0 ? (
+                  <div className="flex flex-col items-center gap-3 py-12 text-center">
+                    <Inbox className="w-10 h-10 text-muted-foreground opacity-40" />
+                    <p className="font-semibold">No pending requests</p>
+                    <p className="text-sm text-muted-foreground">Friend requests will appear here.</p>
+                  </div>
+                ) : (
+                  requests.map(r => {
+                    const name = [r.firstName, r.lastName].filter(Boolean).join(" ") || "Traveler";
+                    return (
+                      <div key={r.id} className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card">
+                        <Avatar url={r.profileImageUrl} name={name} />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm">{name}</p>
+                          {r.homeCountry && <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><MapPin className="w-2.5 h-2.5" />{r.homeCountry}</p>}
+                          <p className="text-xs text-muted-foreground mt-0.5">{r.createdAt ? timeAgo(r.createdAt) : ""}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" className="text-xs" onClick={() => acceptRequest.mutate({ requesterId: r.id }, { onSuccess: invalidate })} disabled={acceptRequest.isPending}>
+                            <Check className="w-3.5 h-3.5 mr-1" />Accept
+                          </Button>
+                          <Button variant="outline" size="sm" className="text-xs" onClick={() => declineRequest.mutate({ requesterId: r.id }, { onSuccess: invalidate })} disabled={declineRequest.isPending}>
+                            <X className="w-3.5 h-3.5 mr-1" />Decline
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+
+            {/* ── Search ── */}
+            {rightTab === "search" && (
+              <div className="space-y-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input value={searchRaw} onChange={e => setSearchRaw(e.target.value)} placeholder="Search by name or email…" className="pl-9" autoFocus />
+                  {searchRaw && <button className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setSearchRaw("")}><X className="w-4 h-4" /></button>}
+                </div>
+
+                {searchQuery.trim().length < 2 ? (
+                  <div className="flex flex-col items-center gap-3 py-12 text-center">
+                    <Search className="w-10 h-10 text-muted-foreground opacity-40" />
+                    <p className="font-semibold">Find fellow travelers</p>
+                    <p className="text-sm text-muted-foreground">Type at least 2 characters to search.</p>
+                  </div>
+                ) : loadingSearch ? (
+                  <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+                ) : searchResults.length === 0 ? (
+                  <div className="flex flex-col items-center gap-2 py-10 text-center">
+                    <p className="font-semibold">No results for "{searchQuery}"</p>
+                    <p className="text-sm text-muted-foreground">Try a different name or email.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {searchResults.map(u => {
+                      const name = [u.firstName, u.lastName].filter(Boolean).join(" ") || "Traveler";
+                      const isFriend = u.friendshipStatus === "accepted";
+                      const isPending = u.friendshipStatus === "pending";
+                      return (
+                        <div key={u.id} className="rounded-xl border border-border bg-card p-4">
+                          <div className="flex items-center gap-3">
+                            <Avatar url={u.profileImageUrl} name={name} />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-sm">{name}</p>
+                              {u.homeCountry && <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><MapPin className="w-2.5 h-2.5" />{u.homeCountry}</p>}
+                            </div>
+                            {isFriend ? (
+                              <Button variant="outline" size="sm" className="text-xs" disabled><UserCheck className="w-3.5 h-3.5 mr-1 text-emerald-500" />Friends</Button>
+                            ) : isPending && u.iRequested ? (
+                              <Button variant="outline" size="sm" className="text-xs" disabled><Clock className="w-3.5 h-3.5 mr-1" />Requested</Button>
+                            ) : isPending && !u.iRequested ? (
+                              <Button size="sm" className="text-xs" onClick={() => sendRequest.mutate({ userId: u.id }, { onSuccess: invalidate })} disabled={sendRequest.isPending}>
+                                <Check className="w-3.5 h-3.5 mr-1" />Accept
+                              </Button>
+                            ) : (
+                              <Button size="sm" className="text-xs" onClick={() => sendRequest.mutate({ userId: u.id }, { onSuccess: invalidate })} disabled={sendRequest.isPending}>
+                                <UserPlus className="w-3.5 h-3.5 mr-1" />Add Friend
+                              </Button>
+                            )}
+                          </div>
+                          <WriteTestimonialInline targetId={u.id} targetName={name} isFriend={isFriend} />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Testimonials (shown under friends list) ── */}
+            {rightTab === "friends" && myId && (
+              <TestimonialsSection myId={myId} myName={myName} friendIds={friendIds} />
+            )}
           </div>
-        )}
+        </div>
       </div>
     </>
-  );
-}
-
-function EmptyState({
-  icon,
-  title,
-  description,
-  action,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  action?: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-      <div className="opacity-50">{icon}</div>
-      <div>
-        <p className="font-semibold">{title}</p>
-        <p className="text-sm text-muted-foreground mt-1 max-w-xs">{description}</p>
-      </div>
-      {action}
-    </div>
   );
 }

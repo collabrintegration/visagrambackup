@@ -12,6 +12,7 @@ import directMessagesRouter from "./direct-messages";
 import visaGuideRouter from "./visa-guide";
 import adminRouter from "./admin";
 import friendsRouter from "./friends";
+import testimonialsRouter from "./testimonials";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(directMessagesRouter);
 router.use(visaGuideRouter);
 router.use(adminRouter);
 router.use(friendsRouter);
+router.use(testimonialsRouter);
 
 export default router;

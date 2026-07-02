@@ -2197,6 +2197,80 @@ paths:
           description: Unauthorized
 
 
+  /api/testimonials/{userId}:
+    get:
+      operationId: listTestimonials
+      summary: Get testimonials written for a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of testimonials
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TestimonialItem"
+    post:
+      operationId: createTestimonial
+      summary: Write a testimonial for a friend
+      security:
+        - session: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+      responses:
+        "200":
+          description: Created testimonial
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestimonialItem"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Not friends
+
+  /api/testimonials/item/{id}:
+    delete:
+      operationId: deleteTestimonial
+      summary: Delete your own testimonial
+      security:
+        - session: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "401":
+          description: Unauthorized
+
 components:
   schemas:
     HealthStatus:
@@ -2309,6 +2383,32 @@ components:
           nullable: true
         createdAt:
           type: string
+
+
+    TestimonialItem:
+      type: object
+      required: [id, content, createdAt, authorId]
+      properties:
+        id:
+          type: integer
+        content:
+          type: string
+        createdAt:
+          type: string
+        authorId:
+          type: string
+        authorFirstName:
+          type: string
+          nullable: true
+        authorLastName:
+          type: string
+          nullable: true
+        authorImageUrl:
+          type: string
+          nullable: true
+        authorCountry:
+          type: string
+          nullable: true
 
     SiteStats:
       type: object

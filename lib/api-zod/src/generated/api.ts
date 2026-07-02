@@ -2068,3 +2068,58 @@ export const RemoveFriendResponse = zod.object({
 })
 
 
+/**
+ * @summary Get testimonials written for a user
+ */
+export const ListTestimonialsParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const ListTestimonialsResponseItem = zod.object({
+  "id": zod.number(),
+  "content": zod.string(),
+  "createdAt": zod.string(),
+  "authorId": zod.string(),
+  "authorFirstName": zod.string().nullish(),
+  "authorLastName": zod.string().nullish(),
+  "authorImageUrl": zod.string().nullish(),
+  "authorCountry": zod.string().nullish()
+})
+export const ListTestimonialsResponse = zod.array(ListTestimonialsResponseItem)
+
+
+/**
+ * @summary Write a testimonial for a friend
+ */
+export const CreateTestimonialParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const CreateTestimonialBody = zod.object({
+  "content": zod.string()
+})
+
+export const CreateTestimonialResponse = zod.object({
+  "id": zod.number(),
+  "content": zod.string(),
+  "createdAt": zod.string(),
+  "authorId": zod.string(),
+  "authorFirstName": zod.string().nullish(),
+  "authorLastName": zod.string().nullish(),
+  "authorImageUrl": zod.string().nullish(),
+  "authorCountry": zod.string().nullish()
+})
+
+
+/**
+ * @summary Delete your own testimonial
+ */
+export const DeleteTestimonialParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteTestimonialResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+

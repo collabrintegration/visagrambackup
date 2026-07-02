@@ -4,6 +4,7 @@ import React from "react";
 import { useHealthCheck, getHealthCheckQueryKey, useGetDmUnreadCount, getGetDmUnreadCountQueryKey } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { Button } from "@/components/ui/button";
+import GlobalSearch from "@/components/global-search";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location, navigate] = useLocation();
@@ -50,6 +51,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               className="opacity-90 group-hover:opacity-100 transition-opacity"
             />
           </Link>
+
+          {/* Global search */}
+          <GlobalSearch />
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">

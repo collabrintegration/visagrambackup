@@ -53,6 +53,17 @@ export interface FriendRequest {
   createdAt?: string;
 }
 
+export interface TestimonialItem {
+  id: number;
+  content: string;
+  createdAt: string;
+  authorId: string;
+  authorFirstName?: string | null;
+  authorLastName?: string | null;
+  authorImageUrl?: string | null;
+  authorCountry?: string | null;
+}
+
 export interface SiteStats {
   totalUsers: number;
   totalGroups: number;
@@ -1125,5 +1136,9 @@ export type DeclineFriendRequest200 = {
 
 export type RemoveFriend200 = {
   ok: boolean;
+};
+
+export type CreateTestimonialBody = {
+  content: string;
 };
 
