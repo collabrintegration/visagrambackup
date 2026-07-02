@@ -242,7 +242,8 @@ export const GetCurrentAuthUserResponse = zod.object({
   "email": zod.string().nullable(),
   "firstName": zod.string().nullable(),
   "lastName": zod.string().nullable(),
-  "profileImageUrl": zod.string().nullable()
+  "profileImageUrl": zod.string().nullable(),
+  "homeCountry": zod.string().nullish()
 }),zod.null()])
 })
 
@@ -491,6 +492,135 @@ export const DeleteTravelEntryParams = zod.object({
 
 export const DeleteTravelEntryResponse = zod.object({
   "ok": zod.boolean()
+})
+
+
+/**
+ * @summary Update the authenticated user's profile
+ */
+export const UpdateMyProfileBody = zod.object({
+  "homeCountry": zod.string().nullish()
+})
+
+export const UpdateMyProfileResponse = zod.object({
+  "id": zod.string(),
+  "email": zod.string().nullable(),
+  "firstName": zod.string().nullable(),
+  "lastName": zod.string().nullable(),
+  "profileImageUrl": zod.string().nullable(),
+  "homeCountry": zod.string().nullish()
+})
+
+
+/**
+ * @summary Get the authenticated user's Q&A activity
+ */
+export const GetMyActivityResponse = zod.object({
+  "questionsAsked": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "resolved": zod.boolean(),
+  "createdAt": zod.string(),
+  "answersCount": zod.number(),
+  "passportCode": zod.string().nullish(),
+  "countryCode": zod.string(),
+  "countryName": zod.string().nullish(),
+  "countryFlag": zod.string().nullish(),
+  "myAnswer": zod.string().nullish()
+})),
+  "questionsAnswered": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "resolved": zod.boolean(),
+  "createdAt": zod.string(),
+  "answersCount": zod.number(),
+  "passportCode": zod.string().nullish(),
+  "countryCode": zod.string(),
+  "countryName": zod.string().nullish(),
+  "countryFlag": zod.string().nullish(),
+  "myAnswer": zod.string().nullish()
+}))
+})
+
+
+/**
+ * @summary Get community visa processing reports for a country
+ */
+export const GetVisaReportsParams = zod.object({
+  "code": zod.coerce.string()
+})
+
+export const GetVisaReportsQueryParams = zod.object({
+  "passportCode": zod.coerce.string().optional()
+})
+
+export const GetVisaReportsResponse = zod.object({
+  "count": zod.number(),
+  "avgDays": zod.number().nullish(),
+  "approvedCount": zod.number().optional(),
+  "deniedCount": zod.number().optional(),
+  "pendingCount": zod.number().optional(),
+  "byPassport": zod.array(zod.object({
+  "passportCode": zod.string(),
+  "passportName": zod.string().nullish(),
+  "passportFlag": zod.string().nullish(),
+  "count": zod.number(),
+  "avgDays": zod.number().nullable(),
+  "approvedCount": zod.number().optional(),
+  "deniedCount": zod.number().optional()
+})),
+  "reports": zod.array(zod.object({
+  "id": zod.number(),
+  "passportCode": zod.string(),
+  "visaType": zod.string(),
+  "appliedAt": zod.string(),
+  "decidedAt": zod.string().nullish(),
+  "processingDays": zod.number().nullish(),
+  "result": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "user": zod.object({
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish()
+})
+}))
+})
+
+
+/**
+ * @summary Submit a visa application report
+ */
+export const SubmitVisaReportParams = zod.object({
+  "code": zod.coerce.string()
+})
+
+export const SubmitVisaReportBody = zod.object({
+  "passportCode": zod.string(),
+  "visaType": zod.string(),
+  "appliedAt": zod.string().describe('ISO date string (YYYY-MM-DD)'),
+  "decidedAt": zod.string().optional().describe('ISO date string when visa was decided'),
+  "result": zod.enum(['approved', 'denied', 'pending']),
+  "notes": zod.string().optional()
+})
+
+export const SubmitVisaReportResponse = zod.object({
+  "id": zod.number(),
+  "passportCode": zod.string(),
+  "visaType": zod.string(),
+  "appliedAt": zod.string(),
+  "decidedAt": zod.string().nullish(),
+  "processingDays": zod.number().nullish(),
+  "result": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "user": zod.object({
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish()
+})
 })
 
 

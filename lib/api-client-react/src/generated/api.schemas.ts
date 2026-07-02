@@ -23,6 +23,8 @@ export interface AuthUser {
   lastName: string | null;
   /** @nullable */
   profileImageUrl: string | null;
+  /** @nullable */
+  homeCountry?: string | null;
 }
 
 export interface AuthUserEnvelope {
@@ -336,6 +338,94 @@ export interface PassportRankEntry {
   total: number;
 }
 
+export interface UpdateProfileBody {
+  /** @nullable */
+  homeCountry?: string | null;
+}
+
+export interface ActivityQuestion {
+  id: number;
+  title: string;
+  body: string;
+  resolved: boolean;
+  createdAt: string;
+  answersCount: number;
+  /** @nullable */
+  passportCode?: string | null;
+  countryCode: string;
+  /** @nullable */
+  countryName?: string | null;
+  /** @nullable */
+  countryFlag?: string | null;
+  /** @nullable */
+  myAnswer?: string | null;
+}
+
+export interface UserActivity {
+  questionsAsked: ActivityQuestion[];
+  questionsAnswered: ActivityQuestion[];
+}
+
+export interface VisaReportItem {
+  id: number;
+  passportCode: string;
+  visaType: string;
+  appliedAt: string;
+  /** @nullable */
+  decidedAt?: string | null;
+  /** @nullable */
+  processingDays?: number | null;
+  result: string;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+  user: UserSnippet;
+}
+
+export interface VisaPassportStat {
+  passportCode: string;
+  /** @nullable */
+  passportName?: string | null;
+  /** @nullable */
+  passportFlag?: string | null;
+  count: number;
+  /** @nullable */
+  avgDays: number | null;
+  approvedCount?: number;
+  deniedCount?: number;
+}
+
+export interface VisaReportsStats {
+  count: number;
+  /** @nullable */
+  avgDays?: number | null;
+  approvedCount?: number;
+  deniedCount?: number;
+  pendingCount?: number;
+  byPassport: VisaPassportStat[];
+  reports: VisaReportItem[];
+}
+
+export type SubmitVisaReportBodyResult = typeof SubmitVisaReportBodyResult[keyof typeof SubmitVisaReportBodyResult];
+
+
+export const SubmitVisaReportBodyResult = {
+  approved: 'approved',
+  denied: 'denied',
+  pending: 'pending',
+} as const;
+
+export interface SubmitVisaReportBody {
+  passportCode: string;
+  visaType: string;
+  /** ISO date string (YYYY-MM-DD) */
+  appliedAt: string;
+  /** ISO date string when visa was decided */
+  decidedAt?: string;
+  result: SubmitVisaReportBodyResult;
+  notes?: string;
+}
+
 export type ListCountriesParams = {
 /**
  * Search by country name
@@ -419,5 +509,9 @@ order?: string;
 
 export type GetCommunityFeedParams = {
 limit?: number;
+};
+
+export type GetVisaReportsParams = {
+passportCode?: string;
 };
 

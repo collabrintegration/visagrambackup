@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { db, reviewsTable, questionsTable, answersTable, travelEntriesTable, usersTable, countriesTable } from "@workspace/db";
+import { db, reviewsTable, questionsTable, answersTable, travelEntriesTable, usersTable, countriesTable, visaReportsTable } from "@workspace/db";
 import { eq, and, desc, sql } from "drizzle-orm";
 
 const router: IRouter = Router();
@@ -100,7 +100,7 @@ router.get("/community/feed", async (req: Request, res: Response) => {
 
 // ── Reviews ────────────────────────────────────────────────────────────────
 router.get("/countries/:code/reviews", async (req: Request, res: Response) => {
-  const { code } = req.params;
+  const code = String(req.params.code);
 
   const rows = await db.select({
     id: reviewsTable.id,
@@ -149,7 +149,7 @@ router.post("/countries/:code/reviews", async (req: Request, res: Response) => {
     return;
   }
 
-  const { code } = req.params;
+  const code = String(req.params.code);
   const { overallRating, easeRating, welcomeRating, body } = req.body;
 
   if (!overallRating || !easeRating || !welcomeRating) {
@@ -183,7 +183,7 @@ router.post("/countries/:code/reviews", async (req: Request, res: Response) => {
 
 // ── Questions ──────────────────────────────────────────────────────────────
 router.get("/countries/:code/questions", async (req: Request, res: Response) => {
-  const { code } = req.params;
+  const code = String(req.params.code);
 
   const rows = await db.select({
     id: questionsTable.id,
@@ -222,7 +222,7 @@ router.post("/countries/:code/questions", async (req: Request, res: Response) =>
     return;
   }
 
-  const { code } = req.params;
+  const code = String(req.params.code);
   const { title, body, passportCode } = req.body;
 
   if (!title || !body) {
@@ -371,7 +371,7 @@ router.put("/travel-map/:code", async (req: Request, res: Response) => {
     return;
   }
 
-  const code = req.params.code.toUpperCase();
+  const code = String(req.params.code).toUpperCase();
   const { status, notes } = req.body;
 
   if (!["visited", "want_to_visit"].includes(status)) {
@@ -397,13 +397,135 @@ router.delete("/travel-map/:code", async (req: Request, res: Response) => {
     return;
   }
 
-  const code = req.params.code.toUpperCase();
+  const code = String(req.params.code).toUpperCase();
 
   await db.delete(travelEntriesTable).where(
     and(eq(travelEntriesTable.userId, req.user.id), eq(travelEntriesTable.countryCode, code))
   );
 
   res.json({ ok: true });
+});
+
+// ── Visa Reports ────────────────────────────────────────────────────────────
+router.get("/countries/:code/visa-reports", async (req: Request, res: Response) => {
+  const code = String(req.params.code).toUpperCase();
+  const passportFilter = req.query.passportCode ? String(req.query.passportCode).toUpperCase() : null;
+
+  const rows = await db.select({
+    id: visaReportsTable.id,
+    userId: visaReportsTable.userId,
+    passportCode: visaReportsTable.passportCode,
+    visaType: visaReportsTable.visaType,
+    appliedAt: visaReportsTable.appliedAt,
+    decidedAt: visaReportsTable.decidedAt,
+    processingDays: visaReportsTable.processingDays,
+    result: visaReportsTable.result,
+    notes: visaReportsTable.notes,
+    createdAt: visaReportsTable.createdAt,
+    firstName: usersTable.firstName,
+    lastName: usersTable.lastName,
+    profileImageUrl: usersTable.profileImageUrl,
+    passportName: countriesTable.name,
+    passportFlag: countriesTable.flagEmoji,
+  })
+    .from(visaReportsTable)
+    .leftJoin(usersTable, eq(visaReportsTable.userId, usersTable.id))
+    .leftJoin(countriesTable, eq(visaReportsTable.passportCode, countriesTable.code))
+    .where(
+      passportFilter
+        ? and(eq(visaReportsTable.countryCode, code), eq(visaReportsTable.passportCode, passportFilter))
+        : eq(visaReportsTable.countryCode, code)
+    )
+    .orderBy(desc(visaReportsTable.createdAt));
+
+  const approved = rows.filter((r) => r.result === "approved");
+  const denied = rows.filter((r) => r.result === "denied");
+  const pending = rows.filter((r) => r.result === "pending");
+  const withDays = rows.filter((r) => r.processingDays != null);
+  const avgDays = withDays.length
+    ? +(withDays.reduce((s, r) => s + (r.processingDays ?? 0), 0) / withDays.length).toFixed(1)
+    : null;
+
+  const passportMap = new Map<string, { count: number; days: number[]; approved: number; denied: number; name: string | null; flag: string | null }>();
+  for (const r of rows) {
+    const entry = passportMap.get(r.passportCode) ?? { count: 0, days: [], approved: 0, denied: 0, name: r.passportName ?? null, flag: r.passportFlag ?? null };
+    entry.count++;
+    if (r.processingDays != null) entry.days.push(r.processingDays);
+    if (r.result === "approved") entry.approved++;
+    if (r.result === "denied") entry.denied++;
+    passportMap.set(r.passportCode, entry);
+  }
+
+  const byPassport = [...passportMap.entries()]
+    .sort((a, b) => b[1].count - a[1].count)
+    .map(([passportCode, v]) => ({
+      passportCode,
+      passportName: v.name,
+      passportFlag: v.flag,
+      count: v.count,
+      avgDays: v.days.length ? +(v.days.reduce((s, d) => s + d, 0) / v.days.length).toFixed(1) : null,
+      approvedCount: v.approved,
+      deniedCount: v.denied,
+    }));
+
+  res.json({
+    count: rows.length,
+    avgDays,
+    approvedCount: approved.length,
+    deniedCount: denied.length,
+    pendingCount: pending.length,
+    byPassport,
+    reports: rows.map((r) => ({
+      id: r.id,
+      passportCode: r.passportCode,
+      visaType: r.visaType,
+      appliedAt: r.appliedAt,
+      decidedAt: r.decidedAt,
+      processingDays: r.processingDays,
+      result: r.result,
+      notes: r.notes,
+      createdAt: r.createdAt,
+      user: userSnippet(r),
+    })),
+  });
+});
+
+router.post("/countries/:code/visa-reports", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Login required" });
+    return;
+  }
+
+  const code = String(req.params.code).toUpperCase();
+  const { passportCode, visaType, appliedAt, decidedAt, result, notes } = req.body;
+
+  if (!passportCode || !visaType || !appliedAt || !result) {
+    res.status(400).json({ error: "passportCode, visaType, appliedAt, result are required" });
+    return;
+  }
+
+  const appliedDate = new Date(appliedAt);
+  const decidedDate = decidedAt ? new Date(decidedAt) : null;
+  const processingDays = decidedDate
+    ? Math.round((decidedDate.getTime() - appliedDate.getTime()) / (1000 * 60 * 60 * 24))
+    : null;
+
+  const [report] = await db
+    .insert(visaReportsTable)
+    .values({
+      userId: req.user.id,
+      countryCode: code,
+      passportCode: passportCode.toUpperCase(),
+      visaType,
+      appliedAt: appliedDate,
+      decidedAt: decidedDate ?? undefined,
+      processingDays: processingDays ?? undefined,
+      result,
+      notes: notes || null,
+    })
+    .returning();
+
+  res.status(201).json(report);
 });
 
 export default router;

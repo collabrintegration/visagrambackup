@@ -1,7 +1,8 @@
 import * as oidc from "openid-client";
 import { Router, type IRouter, type Request, type Response } from "express";
 import { GetCurrentAuthUserResponse } from "@workspace/api-zod";
-import { db, usersTable } from "@workspace/db";
+import { db, usersTable, questionsTable, answersTable, countriesTable } from "@workspace/db";
+import { eq, inArray, desc, sql } from "drizzle-orm";
 import {
   clearSession,
   getOidcConfig,
@@ -75,12 +76,95 @@ async function upsertUser(claims: Record<string, unknown>) {
   return user;
 }
 
-router.get("/auth/user", (req: Request, res: Response) => {
-  res.json(
-    GetCurrentAuthUserResponse.parse({
-      user: req.isAuthenticated() ? req.user : null,
-    }),
-  );
+router.get("/auth/user", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.json(GetCurrentAuthUserResponse.parse({ user: null }));
+    return;
+  }
+  const [dbUser] = await db.select().from(usersTable).where(eq(usersTable.id, req.user.id)).limit(1);
+  res.json(GetCurrentAuthUserResponse.parse({ user: dbUser ?? null }));
+});
+
+router.patch("/users/me", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Login required" });
+    return;
+  }
+  const { homeCountry } = req.body;
+  const [updated] = await db
+    .update(usersTable)
+    .set({ homeCountry: homeCountry ?? null, updatedAt: new Date() })
+    .where(eq(usersTable.id, req.user.id))
+    .returning();
+  res.json(updated);
+});
+
+router.get("/users/me/activity", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Login required" });
+    return;
+  }
+  const userId = req.user.id;
+
+  const [myQuestions, myAnswers] = await Promise.all([
+    db.select({
+      id: questionsTable.id,
+      title: questionsTable.title,
+      body: questionsTable.body,
+      resolved: questionsTable.resolved,
+      createdAt: questionsTable.createdAt,
+      passportCode: questionsTable.passportCode,
+      countryCode: questionsTable.countryCode,
+      countryName: countriesTable.name,
+      countryFlag: countriesTable.flagEmoji,
+      answersCount: sql<number>`(SELECT COUNT(*) FROM answers WHERE question_id = ${questionsTable.id})`,
+    })
+      .from(questionsTable)
+      .leftJoin(countriesTable, eq(questionsTable.countryCode, countriesTable.code))
+      .where(eq(questionsTable.userId, userId))
+      .orderBy(desc(questionsTable.createdAt)),
+
+    db.select({
+      questionId: answersTable.questionId,
+      answerBody: answersTable.body,
+      answeredAt: answersTable.createdAt,
+    })
+      .from(answersTable)
+      .where(eq(answersTable.userId, userId))
+      .orderBy(desc(answersTable.createdAt)),
+  ]);
+
+  let questionsAnswered: typeof myQuestions = [];
+  if (myAnswers.length > 0) {
+    const ids = [...new Set(myAnswers.map((a) => a.questionId))];
+    questionsAnswered = await db.select({
+      id: questionsTable.id,
+      title: questionsTable.title,
+      body: questionsTable.body,
+      resolved: questionsTable.resolved,
+      createdAt: questionsTable.createdAt,
+      passportCode: questionsTable.passportCode,
+      countryCode: questionsTable.countryCode,
+      countryName: countriesTable.name,
+      countryFlag: countriesTable.flagEmoji,
+      answersCount: sql<number>`(SELECT COUNT(*) FROM answers WHERE question_id = ${questionsTable.id})`,
+    })
+      .from(questionsTable)
+      .leftJoin(countriesTable, eq(questionsTable.countryCode, countriesTable.code))
+      .where(inArray(questionsTable.id, ids))
+      .orderBy(desc(questionsTable.createdAt));
+  }
+
+  const answerByQuestion = Object.fromEntries(myAnswers.map((a) => [a.questionId, a.answerBody]));
+
+  res.json({
+    questionsAsked: myQuestions.map((q) => ({ ...q, answersCount: Number(q.answersCount), myAnswer: null })),
+    questionsAnswered: questionsAnswered.map((q) => ({
+      ...q,
+      answersCount: Number(q.answersCount),
+      myAnswer: answerByQuestion[q.id] ?? null,
+    })),
+  });
 });
 
 router.get("/login", async (req: Request, res: Response) => {

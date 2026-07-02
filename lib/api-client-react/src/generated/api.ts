@@ -21,6 +21,7 @@ import type {
 
 import type {
   Answer,
+  AuthUser,
   AuthUserEnvelope,
   Country,
   CountryDetail,
@@ -30,6 +31,7 @@ import type {
   ErrorResponse,
   FeedItem,
   GetCommunityFeedParams,
+  GetVisaReportsParams,
   HealthStatus,
   ListCountriesParams,
   ListDestinationsByPassportParams,
@@ -42,10 +44,15 @@ import type {
   Review,
   ReviewsResponse,
   StatsOverview,
+  SubmitVisaReportBody,
   TravelEntry,
+  UpdateProfileBody,
   UpsertTravelEntryBody,
+  UserActivity,
   VisaDetail,
-  VisaListResponse
+  VisaListResponse,
+  VisaReportItem,
+  VisaReportsStats
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -1541,5 +1548,312 @@ export const useDeleteTravelEntry = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getDeleteTravelEntryMutationOptions(options));
+    }
+
+export const getUpdateMyProfileUrl = () => {
+
+
+
+
+  return `/api/users/me`
+}
+
+/**
+ * @summary Update the authenticated user's profile
+ */
+export const updateMyProfile = async (updateProfileBody: UpdateProfileBody, options?: RequestInit): Promise<AuthUser> => {
+
+  return customFetch<AuthUser>(getUpdateMyProfileUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateProfileBody)
+  }
+);}
+
+
+
+
+export const getUpdateMyProfileMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMyProfile>>, TError,{data: BodyType<UpdateProfileBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateMyProfile>>, TError,{data: BodyType<UpdateProfileBody>}, TContext> => {
+
+const mutationKey = ['updateMyProfile'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateMyProfile>>, {data: BodyType<UpdateProfileBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateMyProfile(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateMyProfileMutationResult = NonNullable<Awaited<ReturnType<typeof updateMyProfile>>>
+    export type UpdateMyProfileMutationBody = BodyType<UpdateProfileBody>
+    export type UpdateMyProfileMutationError = ErrorType<void>
+
+    /**
+ * @summary Update the authenticated user's profile
+ */
+export const useUpdateMyProfile = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMyProfile>>, TError,{data: BodyType<UpdateProfileBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateMyProfile>>,
+        TError,
+        {data: BodyType<UpdateProfileBody>},
+        TContext
+      > => {
+      return useMutation(getUpdateMyProfileMutationOptions(options));
+    }
+
+export const getGetMyActivityUrl = () => {
+
+
+
+
+  return `/api/users/me/activity`
+}
+
+/**
+ * @summary Get the authenticated user's Q&A activity
+ */
+export const getMyActivity = async ( options?: RequestInit): Promise<UserActivity> => {
+
+  return customFetch<UserActivity>(getGetMyActivityUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyActivityQueryKey = () => {
+    return [
+    `/api/users/me/activity`
+    ] as const;
+    }
+
+
+export const getGetMyActivityQueryOptions = <TData = Awaited<ReturnType<typeof getMyActivity>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyActivity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyActivityQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyActivity>>> = ({ signal }) => getMyActivity({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyActivity>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyActivityQueryResult = NonNullable<Awaited<ReturnType<typeof getMyActivity>>>
+export type GetMyActivityQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get the authenticated user's Q&A activity
+ */
+
+export function useGetMyActivity<TData = Awaited<ReturnType<typeof getMyActivity>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyActivity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyActivityQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetVisaReportsUrl = (code: string,
+    params?: GetVisaReportsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/countries/${code}/visa-reports?${stringifiedParams}` : `/api/countries/${code}/visa-reports`
+}
+
+/**
+ * @summary Get community visa processing reports for a country
+ */
+export const getVisaReports = async (code: string,
+    params?: GetVisaReportsParams, options?: RequestInit): Promise<VisaReportsStats> => {
+
+  return customFetch<VisaReportsStats>(getGetVisaReportsUrl(code,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetVisaReportsQueryKey = (code: string,
+    params?: GetVisaReportsParams,) => {
+    return [
+    `/api/countries/${code}/visa-reports`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetVisaReportsQueryOptions = <TData = Awaited<ReturnType<typeof getVisaReports>>, TError = ErrorType<unknown>>(code: string,
+    params?: GetVisaReportsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVisaReports>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetVisaReportsQueryKey(code,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getVisaReports>>> = ({ signal }) => getVisaReports(code,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: code !== null && code !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getVisaReports>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetVisaReportsQueryResult = NonNullable<Awaited<ReturnType<typeof getVisaReports>>>
+export type GetVisaReportsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get community visa processing reports for a country
+ */
+
+export function useGetVisaReports<TData = Awaited<ReturnType<typeof getVisaReports>>, TError = ErrorType<unknown>>(
+ code: string,
+    params?: GetVisaReportsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVisaReports>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetVisaReportsQueryOptions(code,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSubmitVisaReportUrl = (code: string,) => {
+
+
+
+
+  return `/api/countries/${code}/visa-reports`
+}
+
+/**
+ * @summary Submit a visa application report
+ */
+export const submitVisaReport = async (code: string,
+    submitVisaReportBody: SubmitVisaReportBody, options?: RequestInit): Promise<VisaReportItem> => {
+
+  return customFetch<VisaReportItem>(getSubmitVisaReportUrl(code),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(submitVisaReportBody)
+  }
+);}
+
+
+
+
+export const getSubmitVisaReportMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitVisaReport>>, TError,{code: string;data: BodyType<SubmitVisaReportBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitVisaReport>>, TError,{code: string;data: BodyType<SubmitVisaReportBody>}, TContext> => {
+
+const mutationKey = ['submitVisaReport'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitVisaReport>>, {code: string;data: BodyType<SubmitVisaReportBody>}> = (props) => {
+          const {code,data} = props ?? {};
+
+          return  submitVisaReport(code,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitVisaReportMutationResult = NonNullable<Awaited<ReturnType<typeof submitVisaReport>>>
+    export type SubmitVisaReportMutationBody = BodyType<SubmitVisaReportBody>
+    export type SubmitVisaReportMutationError = ErrorType<void>
+
+    /**
+ * @summary Submit a visa application report
+ */
+export const useSubmitVisaReport = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitVisaReport>>, TError,{code: string;data: BodyType<SubmitVisaReportBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof submitVisaReport>>,
+        TError,
+        {code: string;data: BodyType<SubmitVisaReportBody>},
+        TContext
+      > => {
+      return useMutation(getSubmitVisaReportMutationOptions(options));
     }
 

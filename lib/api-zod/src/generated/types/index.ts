@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './activityQuestion';
 export * from './answer';
 export * from './authUser';
 export * from './authUserEnvelope';
@@ -21,6 +22,7 @@ export * from './feedItem';
 export * from './feedItemData';
 export * from './feedItemType';
 export * from './getCommunityFeedParams';
+export * from './getVisaReportsParams';
 export * from './healthStatus';
 export * from './listCountriesParams';
 export * from './listDestinationsByPassportParams';
@@ -36,10 +38,17 @@ export * from './review';
 export * from './reviewsResponse';
 export * from './reviewsResponseAvgRatings';
 export * from './statsOverview';
+export * from './submitVisaReportBody';
+export * from './submitVisaReportBodyResult';
 export * from './travelEntry';
+export * from './updateProfileBody';
 export * from './upsertTravelEntryBody';
 export * from './upsertTravelEntryBodyStatus';
+export * from './userActivity';
 export * from './userSnippet';
 export * from './visaDetail';
 export * from './visaListResponse';
+export * from './visaPassportStat';
+export * from './visaReportItem';
+export * from './visaReportsStats';
 export * from './visaSummary';

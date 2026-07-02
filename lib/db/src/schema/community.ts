@@ -61,3 +61,21 @@ export type Answer = typeof answersTable.$inferSelect;
 export const insertTravelEntrySchema = createInsertSchema(travelEntriesTable).omit({ id: true, userId: true, createdAt: true });
 export type InsertTravelEntry = z.infer<typeof insertTravelEntrySchema>;
 export type TravelEntry = typeof travelEntriesTable.$inferSelect;
+
+export const visaReportsTable = pgTable("visa_reports", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  countryCode: text("country_code").notNull(),
+  passportCode: text("passport_code").notNull(),
+  visaType: text("visa_type").notNull(),
+  appliedAt: timestamp("applied_at", { withTimezone: true }).notNull(),
+  decidedAt: timestamp("decided_at", { withTimezone: true }),
+  processingDays: integer("processing_days"),
+  result: text("result").notNull().default("pending"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const insertVisaReportSchema = createInsertSchema(visaReportsTable).omit({ id: true, userId: true, createdAt: true, processingDays: true });
+export type InsertVisaReport = z.infer<typeof insertVisaReportSchema>;
+export type VisaReport = typeof visaReportsTable.$inferSelect;

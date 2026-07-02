@@ -18,6 +18,8 @@ tags:
     description: Authentication operations
   - name: community
     description: Community features
+  - name: users
+    description: User profile operations
 paths:
   /healthz:
     get:
@@ -509,6 +511,91 @@ paths:
         "401":
           description: Unauthorized
 
+  /users/me:
+    patch:
+      tags: [users]
+      operationId: updateMyProfile
+      summary: Update the authenticated user's profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileBody"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Unauthorized
+
+  /users/me/activity:
+    get:
+      tags: [users]
+      operationId: getMyActivity
+      summary: Get the authenticated user's Q&A activity
+      responses:
+        "200":
+          description: Activity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserActivity"
+        "401":
+          description: Unauthorized
+
+  /countries/{code}/visa-reports:
+    get:
+      tags: [community]
+      operationId: getVisaReports
+      summary: Get community visa processing reports for a country
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: passportCode
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Visa reports and stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisaReportsStats"
+    post:
+      tags: [community]
+      operationId: submitVisaReport
+      summary: Submit a visa application report
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitVisaReportBody"
+      responses:
+        "201":
+          description: Report submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisaReportItem"
+        "401":
+          description: Unauthorized
+
 components:
   schemas:
     HealthStatus:
@@ -539,6 +626,8 @@ components:
         lastName:
           type: ["string", "null"]
         profileImageUrl:
+          type: ["string", "null"]
+        homeCountry:
           type: ["string", "null"]
 
     AuthUserEnvelope:
@@ -1062,3 +1151,136 @@ components:
       required:
         - continent
         - countryCount
+
+    UpdateProfileBody:
+      type: object
+      properties:
+        homeCountry:
+          type: ["string", "null"]
+
+    UserActivity:
+      type: object
+      required: [questionsAsked, questionsAnswered]
+      properties:
+        questionsAsked:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityQuestion"
+        questionsAnswered:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityQuestion"
+
+    ActivityQuestion:
+      type: object
+      required: [id, title, body, resolved, createdAt, answersCount, countryCode]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        body:
+          type: string
+        resolved:
+          type: boolean
+        createdAt:
+          type: string
+        answersCount:
+          type: integer
+        passportCode:
+          type: ["string", "null"]
+        countryCode:
+          type: string
+        countryName:
+          type: ["string", "null"]
+        countryFlag:
+          type: ["string", "null"]
+        myAnswer:
+          type: ["string", "null"]
+
+    VisaReportItem:
+      type: object
+      required: [id, passportCode, visaType, appliedAt, result, createdAt, user]
+      properties:
+        id:
+          type: integer
+        passportCode:
+          type: string
+        visaType:
+          type: string
+        appliedAt:
+          type: string
+        decidedAt:
+          type: ["string", "null"]
+        processingDays:
+          type: ["integer", "null"]
+        result:
+          type: string
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserSnippet"
+
+    VisaPassportStat:
+      type: object
+      required: [passportCode, count, avgDays]
+      properties:
+        passportCode:
+          type: string
+        passportName:
+          type: ["string", "null"]
+        passportFlag:
+          type: ["string", "null"]
+        count:
+          type: integer
+        avgDays:
+          type: ["number", "null"]
+        approvedCount:
+          type: integer
+        deniedCount:
+          type: integer
+
+    VisaReportsStats:
+      type: object
+      required: [count, reports, byPassport]
+      properties:
+        count:
+          type: integer
+        avgDays:
+          type: ["number", "null"]
+        approvedCount:
+          type: integer
+        deniedCount:
+          type: integer
+        pendingCount:
+          type: integer
+        byPassport:
+          type: array
+          items:
+            $ref: "#/components/schemas/VisaPassportStat"
+        reports:
+          type: array
+          items:
+            $ref: "#/components/schemas/VisaReportItem"
+
+    SubmitVisaReportBody:
+      type: object
+      required: [passportCode, visaType, appliedAt, result]
+      properties:
+        passportCode:
+          type: string
+        visaType:
+          type: string
+        appliedAt:
+          type: string
+          description: ISO date string (YYYY-MM-DD)
+        decidedAt:
+          type: string
+          description: ISO date string when visa was decided
+        result:
+          type: string
+          enum: [approved, denied, pending]
+        notes:
+          type: string

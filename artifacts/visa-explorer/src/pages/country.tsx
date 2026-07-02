@@ -9,11 +9,13 @@ import {
   useGetQuestionAnswers, getGetQuestionAnswersQueryKey,
   usePostAnswer,
   useUpsertTravelEntry, useDeleteTravelEntry, useGetTravelMap, getGetTravelMapQueryKey,
+  useGetVisaReports, getGetVisaReportsQueryKey,
+  useSubmitVisaReport,
 } from "@workspace/api-client-react";
 import type { QuestionSummary } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useQueryClient } from "@tanstack/react-query";
-import { Globe, MapPin, Coins, Languages, ArrowLeft, Loader2, Camera, Clock, DollarSign, CalendarDays, RefreshCw, Repeat, ExternalLink, FileText, Phone, Car, Users, Star, MessageSquare, ChevronDown, ChevronUp, CheckCircle2, Heart, PlusCircle, Send } from "lucide-react";
+import { Globe, MapPin, Coins, Languages, ArrowLeft, Loader2, Camera, Clock, DollarSign, CalendarDays, RefreshCw, Repeat, ExternalLink, FileText, Phone, Car, Users, Star, MessageSquare, ChevronDown, ChevronUp, CheckCircle2, Heart, PlusCircle, Send, BarChart2, TrendingUp, Award, X } from "lucide-react";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -452,6 +454,9 @@ export default function CountryDetail() {
         {/* ── Q&A ── */}
         {code && <QASection code={code} countryName={country.name} />}
 
+        {/* ── Visa Processing Times ── */}
+        {code && <VisaReportsSection code={code} countryName={country.name} />}
+
       </div>
     </div>
   );
@@ -842,6 +847,260 @@ function QuestionItem({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/* ─────────── Visa Reports / Processing Times ─────────── */
+const RESULT_STYLE: Record<string, { label: string; cls: string }> = {
+  approved: { label: "Approved", cls: "bg-emerald-500/10 text-emerald-400" },
+  denied:   { label: "Denied",   cls: "bg-rose-500/10 text-rose-400" },
+  pending:  { label: "Pending",  cls: "bg-amber-500/10 text-amber-400" },
+};
+
+const VISA_TYPES = [
+  "Tourist", "Business", "Student", "Work", "Transit",
+  "Digital Nomad", "Retirement", "Investor", "Other",
+];
+
+function VisaReportsSection({ code, countryName }: { code: string; countryName: string }) {
+  const { isAuthenticated, login } = useAuth();
+  const queryClient = useQueryClient();
+  const [showForm, setShowForm] = useState(false);
+  const [passportCode, setPassportCode] = useState("");
+  const [visaType, setVisaType] = useState("Tourist");
+  const [appliedAt, setAppliedAt] = useState("");
+  const [decidedAt, setDecidedAt] = useState("");
+  const [result, setResult] = useState<"approved" | "denied" | "pending">("approved");
+  const [notes, setNotes] = useState("");
+
+  const { data: stats, isLoading } = useGetVisaReports(code, {}, {
+    query: { queryKey: getGetVisaReportsQueryKey(code, {}) },
+  });
+
+  const { mutate: submit, isPending: submitting } = useSubmitVisaReport({
+    mutation: {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: getGetVisaReportsQueryKey(code, {}) });
+        setShowForm(false);
+        setPassportCode(""); setAppliedAt(""); setDecidedAt(""); setNotes("");
+        setResult("approved"); setVisaType("Tourist");
+      },
+    },
+  });
+
+  const reports = stats?.reports ?? [];
+  const count = stats?.count ?? 0;
+
+  return (
+    <div className="bg-card border border-border rounded-2xl p-6 md:p-8 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <BarChart2 className="w-5 h-5 text-primary" /> Processing Times
+          </h2>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Community-reported visa application timelines for {countryName}
+          </p>
+        </div>
+        {isAuthenticated && !showForm ? (
+          <Button size="sm" onClick={() => setShowForm(true)}>
+            <PlusCircle className="w-4 h-4 mr-1.5" /> Share Report
+          </Button>
+        ) : !isAuthenticated ? (
+          <Button size="sm" variant="outline" onClick={login}>Sign in to share</Button>
+        ) : null}
+      </div>
+
+      {/* Stats strip */}
+      {count > 0 && stats && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="bg-muted/30 rounded-xl p-4 text-center">
+            <div className="text-2xl font-bold text-primary">{count}</div>
+            <div className="text-xs text-muted-foreground mt-1">Reports</div>
+          </div>
+          <div className="bg-muted/30 rounded-xl p-4 text-center">
+            <div className="text-2xl font-bold">{stats.avgDays != null ? `${stats.avgDays}d` : "—"}</div>
+            <div className="text-xs text-muted-foreground mt-1">Avg Processing</div>
+          </div>
+          <div className="bg-emerald-500/10 rounded-xl p-4 text-center">
+            <div className="text-2xl font-bold text-emerald-400">{stats.approvedCount ?? 0}</div>
+            <div className="text-xs text-muted-foreground mt-1">Approved</div>
+          </div>
+          <div className="bg-rose-500/10 rounded-xl p-4 text-center">
+            <div className="text-2xl font-bold text-rose-400">{stats.deniedCount ?? 0}</div>
+            <div className="text-xs text-muted-foreground mt-1">Denied</div>
+          </div>
+        </div>
+      )}
+
+      {/* By-passport breakdown */}
+      {(stats?.byPassport?.length ?? 0) > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
+            <TrendingUp className="w-4 h-4" /> By Passport
+          </h3>
+          <div className="space-y-2">
+            {(stats?.byPassport ?? []).map((p) => (
+              <div key={p.passportCode} className="flex items-center gap-3 p-3 bg-muted/20 rounded-xl">
+                <span className="text-lg">{p.passportFlag ?? "🌍"}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm truncate">{p.passportName ?? p.passportCode}</span>
+                    <Badge variant="secondary" className="text-xs border-none bg-primary/10 text-primary">{p.count} {p.count === 1 ? "report" : "reports"}</Badge>
+                  </div>
+                  <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
+                    {p.avgDays != null && <span><Clock className="w-3 h-3 inline mr-0.5" />{p.avgDays}d avg</span>}
+                    {(p.approvedCount ?? 0) > 0 && <span className="text-emerald-400">✓ {p.approvedCount} approved</span>}
+                    {(p.deniedCount ?? 0) > 0 && <span className="text-rose-400">✗ {p.deniedCount} denied</span>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Submit form */}
+      {showForm && (
+        <form
+          className="bg-muted/30 rounded-xl p-5 space-y-4 border border-border/60"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!passportCode || !appliedAt) return;
+            submit({
+              code,
+              data: {
+                passportCode: passportCode.toUpperCase(),
+                visaType,
+                appliedAt,
+                decidedAt: decidedAt || undefined,
+                result,
+                notes: notes || undefined,
+              },
+            });
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-sm">Share Your Visa Experience</h3>
+            <button type="button" onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-foreground">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Your Passport (code, e.g. NG)</label>
+              <input
+                value={passportCode}
+                onChange={(e) => setPassportCode(e.target.value.toUpperCase())}
+                placeholder="US, IN, NG…"
+                maxLength={2}
+                required
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 uppercase"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Visa Type</label>
+              <select
+                value={visaType}
+                onChange={(e) => setVisaType(e.target.value)}
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+              >
+                {VISA_TYPES.map((t) => <option key={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Applied On</label>
+              <input
+                type="date"
+                value={appliedAt}
+                onChange={(e) => setAppliedAt(e.target.value)}
+                required
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Decided On (optional)</label>
+              <input
+                type="date"
+                value={decidedAt}
+                onChange={(e) => setDecidedAt(e.target.value)}
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Result</label>
+            <div className="flex gap-2">
+              {(["approved", "denied", "pending"] as const).map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setResult(r)}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${result === r ? RESULT_STYLE[r].cls + " ring-1 ring-current" : "bg-muted/30 text-muted-foreground hover:bg-muted/50"}`}
+                >
+                  {RESULT_STYLE[r].label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Any tips or context (e.g. which consulate, documents requested)..."
+            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm resize-none h-20 focus:outline-none focus:ring-1 focus:ring-primary/50"
+          />
+          <div className="flex gap-2">
+            <Button type="submit" size="sm" disabled={submitting || !passportCode || !appliedAt}>
+              {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Award className="w-4 h-4 mr-1.5" />}
+              Submit Report
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setShowForm(false)}>Cancel</Button>
+          </div>
+        </form>
+      )}
+
+      {/* Reports list */}
+      {isLoading ? (
+        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+      ) : reports.length === 0 && !showForm ? (
+        <div className="text-center py-8 text-muted-foreground">
+          <BarChart2 className="w-8 h-8 mx-auto mb-2 text-muted" />
+          <p className="text-sm">No reports yet. Share your visa experience to help others!</p>
+        </div>
+      ) : reports.length > 0 ? (
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <CalendarDays className="w-4 h-4" /> Recent Reports
+          </h3>
+          {reports.slice(0, 8).map((r) => {
+            const rs = RESULT_STYLE[r.result] ?? RESULT_STYLE.pending;
+            return (
+              <div key={r.id} className="flex items-start gap-3 p-4 bg-muted/20 rounded-xl">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <span className="font-medium text-sm">{r.visaType} Visa</span>
+                    <Badge variant="secondary" className={`text-xs border-none ${rs.cls}`}>{rs.label}</Badge>
+                    {r.processingDays != null && (
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="w-3 h-3" /> {r.processingDays} days
+                      </span>
+                    )}
+                    <span className="text-xs text-muted-foreground">· 🛂 {r.passportCode}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Applied: {new Date(r.appliedAt).toLocaleDateString()}
+                    {r.decidedAt && ` · Decided: ${new Date(r.decidedAt).toLocaleDateString()}`}
+                    {r.user?.firstName && ` · By ${r.user.firstName}`}
+                  </div>
+                  {r.notes && <p className="text-sm text-muted-foreground mt-1.5 line-clamp-2">{r.notes}</p>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }
