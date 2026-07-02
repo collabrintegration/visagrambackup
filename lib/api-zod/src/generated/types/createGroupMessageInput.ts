@@ -7,5 +7,6 @@
  */
 
 export interface CreateGroupMessageInput {
-  content: string;
+  content?: string;
+  gifUrl?: string | null;
 }

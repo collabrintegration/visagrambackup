@@ -110,8 +110,8 @@ function ReplyThread({ answerId, isAuthenticated, login }: { answerId: number; i
           <div className="flex gap-2">
             <Button
               size="sm"
-              disabled={isPending || !body.trim()}
-              onClick={() => postReply({ id: answerId, data: { body: body.trim(), gifUrl: gifUrl || undefined } })}
+              disabled={isPending || (!body.trim() && !gifUrl)}
+              onClick={() => postReply({ id: answerId, data: { body: body.trim() || " ", gifUrl: gifUrl || undefined } })}
             >
               {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Send className="w-3.5 h-3.5 mr-1" />}
               Reply
@@ -349,8 +349,8 @@ export default function QuestionDetailPage() {
               <GifPicker value={answerGif} onChange={setAnswerGif} />
               <div className="flex justify-end">
                 <Button
-                  disabled={isPosting || !answerBody.trim()}
-                  onClick={() => postAnswer({ id: questionId, data: { body: answerBody.trim(), gifUrl: answerGif || undefined } })}
+                  disabled={isPosting || (!answerBody.trim() && !answerGif)}
+                  onClick={() => postAnswer({ id: questionId, data: { body: answerBody.trim() || " ", gifUrl: answerGif || undefined } })}
                 >
                   {isPosting ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Send className="w-4 h-4 mr-1.5" />}
                   Post Answer

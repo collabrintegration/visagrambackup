@@ -14,5 +14,6 @@ export interface GroupMessage {
   lastName?: string | null;
   profileImageUrl?: string | null;
   content: string;
+  gifUrl?: string | null;
   createdAt: Date;
 }

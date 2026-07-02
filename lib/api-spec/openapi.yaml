@@ -2414,6 +2414,9 @@ components:
           nullable: true
         content:
           type: string
+        gifUrl:
+          type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -2445,10 +2448,12 @@ components:
 
     CreateGroupMessageInput:
       type: object
-      required: [content]
       properties:
         content:
           type: string
+        gifUrl:
+          type: string
+          nullable: true
 
     VisaApplication:
       type: object

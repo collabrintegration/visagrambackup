@@ -577,6 +577,7 @@ export interface GroupMessage {
   lastName?: string | null;
   profileImageUrl?: string | null;
   content: string;
+  gifUrl?: string | null;
   createdAt: string;
 }
 
@@ -647,7 +648,8 @@ export interface UpdateGroupInput {
 }
 
 export interface CreateGroupMessageInput {
-  content: string;
+  content?: string;
+  gifUrl?: string | null;
 }
 
 export type VisaApplicationVisaType = typeof VisaApplicationVisaType[keyof typeof VisaApplicationVisaType];

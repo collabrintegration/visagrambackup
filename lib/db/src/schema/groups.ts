@@ -26,7 +26,8 @@ export const groupMessagesTable = pgTable("group_messages", {
   id: serial("id").primaryKey(),
   groupId: integer("group_id").notNull().references(() => groupsTable.id, { onDelete: "cascade" }),
   userId: text("user_id").notNull(),
-  content: text("content").notNull(),
+  content: text("content").notNull().default(""),
+  gifUrl: text("gif_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

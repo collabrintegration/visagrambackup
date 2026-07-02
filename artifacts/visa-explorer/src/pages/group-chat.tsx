@@ -21,10 +21,11 @@ import { useAuth } from "@workspace/replit-auth-web";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, Send, Loader2, Users, Crown, Trash2, UserMinus, Settings,
-  X, Lock, Globe, LogIn, UserPlus, Shield,
+  X, Lock, Globe, LogIn, UserPlus, Shield, ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { GifPicker, GifPreview } from "@/components/gif-picker";
 
 function timeStr(dateStr: string): string {
   const d = new Date(dateStr);
@@ -52,6 +53,8 @@ export default function GroupChat() {
   const userId = (user as { id?: string })?.id ?? "";
 
   const [message, setMessage] = useState("");
+  const [gifUrl, setGifUrl] = useState("");
+  const [showGifPicker, setShowGifPicker] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [editName, setEditName] = useState("");
@@ -99,6 +102,8 @@ export default function GroupChat() {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: messagesKey });
         setMessage("");
+        setGifUrl("");
+        setShowGifPicker(false);
         inputRef.current?.focus();
       },
     },
@@ -149,8 +154,8 @@ export default function GroupChat() {
   }, [showSettings, group]);
 
   const handleSend = () => {
-    if (!message.trim() || isSending) return;
-    sendMessage({ id: groupId, data: { content: message.trim() } });
+    if ((!message.trim() && !gifUrl) || isSending) return;
+    sendMessage({ id: groupId, data: { content: message.trim() || undefined, gifUrl: gifUrl || undefined } });
   };
 
   if (groupLoading || authLoading) {
@@ -288,23 +293,49 @@ export default function GroupChat() {
               </div>
 
               {/* Input */}
-              <div className="border-t border-border/60 bg-card/50 px-4 py-3 flex items-center gap-2">
-                <input
-                  ref={inputRef}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                  placeholder="Type a message…"
-                  className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
-                />
-                <Button
-                  size="sm"
-                  onClick={handleSend}
-                  disabled={!message.trim() || isSending}
-                  className="h-9 w-9 p-0"
-                >
-                  {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                </Button>
+              <div className="border-t border-border/60 bg-card/50 px-3 py-3 space-y-2">
+                {gifUrl && (
+                  <div className="flex items-start gap-2 pl-1">
+                    <GifPreview url={gifUrl} />
+                    <button
+                      onClick={() => setGifUrl("")}
+                      className="mt-1 p-1 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+                {showGifPicker && (
+                  <div className="px-1">
+                    <GifPicker value={gifUrl} onChange={(url) => { setGifUrl(url); setShowGifPicker(false); }} />
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowGifPicker((v) => !v)}
+                    title="Add GIF"
+                    className={`p-2 rounded-lg transition-colors shrink-0 ${showGifPicker ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
+                  >
+                    <ImageIcon className="w-4 h-4" />
+                  </button>
+                  <input
+                    ref={inputRef}
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                    placeholder="Type a message…"
+                    className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleSend}
+                    disabled={(!message.trim() && !gifUrl) || isSending}
+                    className="h-9 w-9 p-0 shrink-0"
+                  >
+                    {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  </Button>
+                </div>
               </div>
             </>
           )}
@@ -507,7 +538,8 @@ function MessageBubble({
                 : "bg-card border border-border rounded-tl-sm"
             }`}
           >
-            {msg.content}
+            {msg.content && <span>{msg.content}</span>}
+            {msg.gifUrl && <GifPreview url={msg.gifUrl} />}
           </div>
           {canDelete && hover && (
             <button

@@ -42,11 +42,11 @@ export const CURATED_GIFS = [
 
 export function GifPreview({ url }: { url: string }) {
   return (
-    <div className="mt-3 rounded-xl overflow-hidden max-w-sm">
+    <div className="mt-2 rounded-lg overflow-hidden inline-block max-w-[160px]">
       <img
         src={url}
         alt="GIF"
-        className="w-full max-h-64 object-contain bg-black/20"
+        className="w-full max-h-[100px] object-contain bg-black/20"
         loading="lazy"
       />
     </div>

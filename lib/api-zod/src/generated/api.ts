@@ -1017,6 +1017,7 @@ export const ListGroupsResponseItem = zod.object({
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
   "content": zod.string(),
+  "gifUrl": zod.string().nullish(),
   "createdAt": zod.coerce.date()
 }).nullish(),
   "createdAt": zod.coerce.date()
@@ -1053,6 +1054,7 @@ export const CreateGroupResponse = zod.object({
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
   "content": zod.string(),
+  "gifUrl": zod.string().nullish(),
   "createdAt": zod.coerce.date()
 }).nullish(),
   "createdAt": zod.coerce.date()
@@ -1085,6 +1087,7 @@ export const GetGroupResponse = zod.object({
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
   "content": zod.string(),
+  "gifUrl": zod.string().nullish(),
   "createdAt": zod.coerce.date()
 }).nullish(),
   "createdAt": zod.coerce.date()
@@ -1124,6 +1127,7 @@ export const UpdateGroupResponse = zod.object({
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
   "content": zod.string(),
+  "gifUrl": zod.string().nullish(),
   "createdAt": zod.coerce.date()
 }).nullish(),
   "createdAt": zod.coerce.date()
@@ -1347,6 +1351,7 @@ export const ListGroupMessagesResponseItem = zod.object({
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
   "content": zod.string(),
+  "gifUrl": zod.string().nullish(),
   "createdAt": zod.coerce.date()
 })
 export const ListGroupMessagesResponse = zod.array(ListGroupMessagesResponseItem)
@@ -1360,7 +1365,8 @@ export const CreateGroupMessageParams = zod.object({
 })
 
 export const CreateGroupMessageBody = zod.object({
-  "content": zod.string()
+  "content": zod.string().optional(),
+  "gifUrl": zod.string().nullish()
 })
 
 export const CreateGroupMessageResponse = zod.object({
@@ -1371,6 +1377,7 @@ export const CreateGroupMessageResponse = zod.object({
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
   "content": zod.string(),
+  "gifUrl": zod.string().nullish(),
   "createdAt": zod.coerce.date()
 })
 

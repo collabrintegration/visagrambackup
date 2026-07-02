@@ -412,6 +412,7 @@ router.get("/groups/:id/messages", async (req: Request, res: Response) => {
       groupId: groupMessagesTable.groupId,
       userId: groupMessagesTable.userId,
       content: groupMessagesTable.content,
+      gifUrl: groupMessagesTable.gifUrl,
       createdAt: groupMessagesTable.createdAt,
       firstName: usersTable.firstName,
       lastName: usersTable.lastName,
@@ -437,12 +438,12 @@ router.post("/groups/:id/messages", async (req: Request, res: Response) => {
 
   if (!(await isMemberOf(groupId, userId))) { res.status(403).json({ error: "Not a member" }); return; }
 
-  const { content } = req.body as { content?: string };
-  if (!content?.trim()) { res.status(400).json({ error: "content is required" }); return; }
+  const { content, gifUrl } = req.body as { content?: string; gifUrl?: string };
+  if (!content?.trim() && !gifUrl) { res.status(400).json({ error: "content or gifUrl is required" }); return; }
 
   const [message] = await db
     .insert(groupMessagesTable)
-    .values({ groupId, userId, content: content.trim() })
+    .values({ groupId, userId, content: content?.trim() ?? "", gifUrl: gifUrl ?? null })
     .returning();
 
   const user = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
