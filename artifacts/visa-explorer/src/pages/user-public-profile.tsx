@@ -15,7 +15,7 @@ import { useAuth } from "@workspace/replit-auth-web";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   MapPin, Globe, Loader2, Camera, Users, UserPlus,
-  Check, MessageCircle, ChevronLeft, Star, Image as ImageIcon,
+  Check, MessageCircle, ChevronLeft, Star,
   CheckCircle2, Heart, User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,32 +25,23 @@ import { useState } from "react";
 function Avatar({ url, name, size = 80 }: { url?: string | null; name: string; size?: number }) {
   if (url) {
     return (
-      <img
-        src={url}
-        alt={name}
-        style={{ width: size, height: size }}
-        className="rounded-full object-cover ring-4 ring-border"
-      />
+      <img src={url} alt={name} style={{ width: size, height: size }}
+        className="rounded-full object-cover ring-4 ring-border" />
     );
   }
   return (
-    <div
-      style={{ width: size, height: size, fontSize: size * 0.35 }}
-      className="rounded-full bg-gradient-to-br from-primary/80 to-pink-500/80 flex items-center justify-center text-white font-bold ring-4 ring-border"
-    >
+    <div style={{ width: size, height: size, fontSize: size * 0.35 }}
+      className="rounded-full bg-gradient-to-br from-primary/80 to-pink-500/80 flex items-center justify-center text-white font-bold ring-4 ring-border">
       {name.charAt(0).toUpperCase()}
     </div>
   );
 }
-
-type Tab = "friends" | "photos" | "testimonials";
 
 export default function UserPublicProfilePage() {
   const { id: userId } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const { isAuthenticated, user } = useAuth();
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<Tab>("friends");
   const [lightboxPhoto, setLightboxPhoto] = useState<{ objectPath: string; caption?: string | null; countryCode?: string | null } | null>(null);
 
   const myId = (user as { id?: string })?.id ?? "";
@@ -158,11 +149,8 @@ export default function UserPublicProfilePage() {
 
           {/* Profile card */}
           <div className="rounded-2xl border border-border bg-card overflow-hidden">
-            {/* Cover gradient */}
             <div className="h-20 bg-gradient-to-br from-primary/40 via-purple-500/30 to-pink-500/40" />
-
             <div className="px-5 pb-5 -mt-10">
-              {/* Avatar + friend count */}
               <div className="flex items-end justify-between">
                 <div className="w-20 h-20 shrink-0">
                   <Avatar url={p.profileImageUrl} name={fullName} size={80} />
@@ -175,15 +163,11 @@ export default function UserPublicProfilePage() {
                 </div>
               </div>
 
-              {/* Name + username */}
               <div className="mt-3">
                 <h2 className="text-xl font-bold leading-tight">{fullName}</h2>
-                {p.username && (
-                  <p className="text-xs text-muted-foreground mt-0.5">@{p.username}</p>
-                )}
+                {p.username && <p className="text-xs text-muted-foreground mt-0.5">@{p.username}</p>}
               </div>
 
-              {/* Info rows */}
               <div className="mt-2 space-y-1">
                 {p.location && (
                   <div className="flex items-center gap-2">
@@ -197,26 +181,14 @@ export default function UserPublicProfilePage() {
                     <span className="text-xs text-muted-foreground">From {p.homeCountry}</span>
                   </div>
                 )}
-                {p.age && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Age {p.age}</span>
-                  </div>
-                )}
-                {p.sex && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">{p.sex}</span>
-                  </div>
-                )}
+                {p.age && <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Age {p.age}</span></div>}
+                {p.sex && <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">{p.sex}</span></div>}
               </div>
 
-              {/* Bio */}
               {p.bio && (
-                <p className="mt-3 text-sm text-muted-foreground leading-relaxed border-t border-border/60 pt-3">
-                  {p.bio}
-                </p>
+                <p className="mt-3 text-sm text-muted-foreground leading-relaxed border-t border-border/60 pt-3">{p.bio}</p>
               )}
 
-              {/* Actions */}
               {!isOwnProfile && isAuthenticated && (
                 <div className="mt-4 pt-3 border-t border-border/60 flex flex-col gap-2">
                   <FriendButton />
@@ -237,7 +209,7 @@ export default function UserPublicProfilePage() {
             </div>
           </div>
 
-          {/* Travel stats */}
+          {/* Travel map */}
           {((p.visitedCount ?? 0) > 0 || (p.wantToVisitCount ?? 0) > 0) && (
             <div className="rounded-2xl border border-border bg-card p-4">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Travel Map</h3>
@@ -262,7 +234,7 @@ export default function UserPublicProfilePage() {
             </div>
           )}
 
-          {/* Stats summary */}
+          {/* Stats */}
           <div className="rounded-2xl border border-border bg-card p-4">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Stats</h3>
             <div className="grid grid-cols-2 gap-3 text-center">
@@ -286,168 +258,155 @@ export default function UserPublicProfilePage() {
           </div>
         </aside>
 
-        {/* ── RIGHT PANEL ── */}
-        <div className="flex-1 min-w-0">
+        {/* ── RIGHT PANEL — stacked sections ── */}
+        <div className="flex-1 min-w-0 space-y-6">
 
-          {/* Tab bar */}
-          <div className="flex items-center gap-1 border-b border-border mb-5">
-            {([
-              { key: "friends" as Tab, label: "Friends", icon: Users, count: userFriends.length },
-              { key: "photos" as Tab, label: "Photos", icon: ImageIcon, count: photos.length },
-              { key: "testimonials" as Tab, label: "Testimonials", icon: Star, count: testimonials.length },
-            ]).map((t) => (
-              <button
-                key={t.key}
-                onClick={() => setTab(t.key)}
-                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                  tab === t.key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <t.icon className="w-4 h-4" />
-                {t.label}
-                {t.count > 0 && (
-                  <Badge variant={tab === t.key ? "default" : "secondary"} className="text-xs px-1.5 py-0 h-5">
-                    {t.count}
-                  </Badge>
-                )}
-              </button>
-            ))}
+          {/* ── Friends ── */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="w-4 h-4 text-muted-foreground" />
+              <h3 className="font-semibold text-sm">Friends</h3>
+              {userFriends.length > 0 && (
+                <Badge variant="secondary" className="text-xs">{userFriends.length}</Badge>
+              )}
+            </div>
+
+            {friendsLoading ? (
+              <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+            ) : userFriends.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border p-6 text-center">
+                <Users className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-40" />
+                <p className="text-sm text-muted-foreground">No friends yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {userFriends.map((friend) => {
+                  const friendName = [friend.firstName, friend.lastName].filter(Boolean).join(" ") || "Traveler";
+                  return (
+                    <Link key={friend.id} href={`/user/${friend.id}`}>
+                      <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/40 transition-colors group cursor-pointer">
+                        {friend.profileImageUrl ? (
+                          <img src={friend.profileImageUrl} alt={friendName} className="w-10 h-10 rounded-full object-cover shrink-0 ring-2 ring-border" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-pink-500 flex items-center justify-center shrink-0">
+                            <span className="text-sm font-bold text-white">{friendName.charAt(0).toUpperCase()}</span>
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold truncate">{friendName}</p>
+                          {friend.homeCountry && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                              <MapPin className="w-2.5 h-2.5" />{friend.homeCountry}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {/* Friends tab */}
-          {tab === "friends" && (
-            <div>
-              {friendsLoading ? (
-                <div className="flex justify-center py-16">
-                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                </div>
-              ) : userFriends.length === 0 ? (
-                <div className="flex flex-col items-center gap-3 py-16 text-center">
-                  <Users className="w-10 h-10 text-muted-foreground opacity-40" />
-                  <p className="font-semibold">No friends yet</p>
-                  <p className="text-sm text-muted-foreground">
-                    {p.firstName ?? "This traveler"} hasn't connected with anyone yet.
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  {userFriends.map((friend) => {
-                    const friendName = [friend.firstName, friend.lastName].filter(Boolean).join(" ") || "Traveler";
-                    return (
-                      <Link key={friend.id} href={`/user/${friend.id}`}>
-                        <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:border-primary/40 transition-colors cursor-pointer">
-                          {friend.profileImageUrl ? (
-                            <img src={friend.profileImageUrl} alt={friendName} className="w-10 h-10 rounded-full object-cover shrink-0" />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/80 to-pink-500/80 flex items-center justify-center shrink-0">
-                              <span className="text-sm font-bold text-white">{friendName.charAt(0).toUpperCase()}</span>
-                            </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold truncate">{friendName}</p>
-                            {friend.homeCountry && (
-                              <p className="text-xs text-muted-foreground truncate">{friend.homeCountry}</p>
-                            )}
-                          </div>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
+          {/* ── Photos ── */}
+          <div className="bg-card border border-border rounded-2xl p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Camera className="w-4 h-4 text-primary" />
+              <h3 className="font-semibold text-sm">Photos</h3>
+              {photos.length > 0 && (
+                <span className="text-xs font-normal text-muted-foreground">({photos.length})</span>
               )}
             </div>
-          )}
 
-          {/* Photos tab */}
-          {tab === "photos" && (
-            <div>
-              {photosLoading ? (
-                <div className="flex justify-center py-16">
-                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                </div>
-              ) : photos.length === 0 ? (
-                <div className="flex flex-col items-center gap-3 py-16 text-center">
-                  <Camera className="w-10 h-10 text-muted-foreground opacity-40" />
-                  <p className="font-semibold">No photos yet</p>
-                  <p className="text-sm text-muted-foreground">
-                    {isOwnProfile ? "Share your travel moments." : `${p.firstName ?? "This traveler"} hasn't shared any photos yet.`}
-                  </p>
-                </div>
-              ) : (
-                <div className="columns-2 sm:columns-3 lg:columns-4 gap-2 space-y-2">
-                  {photos.map((photo) => (
-                    <div
-                      key={photo.id}
-                      className="relative group break-inside-avoid rounded-xl overflow-hidden cursor-pointer border border-border hover:border-primary/40 transition-all"
-                      onClick={() => setLightboxPhoto(photo)}
-                    >
-                      <img
-                        src={`/api/storage${photo.objectPath}`}
-                        alt={photo.caption ?? "Photo"}
-                        className="w-full object-cover"
-                        loading="lazy"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                      {(photo.caption || photo.countryCode) && (
-                        <div className="absolute bottom-0 left-0 right-0 p-2 translate-y-1 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all">
-                          {photo.caption && <p className="text-xs text-white/90 line-clamp-1">{photo.caption}</p>}
-                          {photo.countryCode && <p className="text-[10px] text-white/60 mt-0.5">{photo.countryCode}</p>}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Testimonials tab */}
-          {tab === "testimonials" && (
-            <div>
-              {testimonialsLoading ? (
-                <div className="flex justify-center py-16"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
-              ) : testimonials.length === 0 ? (
-                <div className="flex flex-col items-center gap-3 py-16 text-center">
-                  <Star className="w-10 h-10 text-muted-foreground opacity-40" />
-                  <p className="font-semibold">No testimonials yet</p>
-                  <p className="text-sm text-muted-foreground">
-                    {isOwnProfile
-                      ? "Friends can leave you testimonials on your profile."
-                      : `${p.firstName ?? "This traveler"} hasn't received any testimonials yet.`}
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {testimonials.map((t) => {
-                    const authorName = [t.authorFirstName, t.authorLastName].filter(Boolean).join(" ") || "Traveler";
-                    return (
-                      <div key={t.id} className="bg-card border border-border rounded-2xl p-5">
-                        <div className="flex items-center gap-3 mb-3">
-                          {t.authorImageUrl ? (
-                            <img src={t.authorImageUrl} alt={authorName} className="w-9 h-9 rounded-full object-cover" />
-                          ) : (
-                            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                              <User className="w-4 h-4 text-primary" />
-                            </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <Link href={`/user/${t.authorId}`}>
-                              <span className="text-sm font-semibold hover:text-primary transition-colors cursor-pointer">{authorName}</span>
-                            </Link>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(t.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
-                            </p>
-                          </div>
-                          <Star className="w-4 h-4 text-yellow-400 shrink-0" />
-                        </div>
-                        <p className="text-sm leading-relaxed text-foreground/90">{t.content}</p>
+            {photosLoading ? (
+              <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+            ) : photos.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 border border-dashed border-border rounded-xl">
+                <Camera className="w-8 h-8 text-muted-foreground/30 mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  {isOwnProfile ? "No photos yet — share your travel moments." : `${p.firstName ?? "This traveler"} hasn't shared any photos yet.`}
+                </p>
+              </div>
+            ) : (
+              <div className="columns-2 sm:columns-3 md:columns-4 gap-2 space-y-2">
+                {photos.map((photo) => (
+                  <div
+                    key={photo.id}
+                    className="relative group break-inside-avoid rounded-xl overflow-hidden cursor-pointer border border-border hover:border-primary/40 transition-all"
+                    onClick={() => setLightboxPhoto(photo)}
+                  >
+                    <img
+                      src={`/api/storage${photo.objectPath}`}
+                      alt={photo.caption ?? "Photo"}
+                      className="w-full object-cover"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    {(photo.caption || photo.countryCode) && (
+                      <div className="absolute bottom-0 left-0 right-0 p-2 translate-y-1 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all">
+                        {photo.caption && <p className="text-xs text-white/90 line-clamp-1">{photo.caption}</p>}
+                        {photo.countryCode && <p className="text-[10px] text-white/60 mt-0.5">{photo.countryCode}</p>}
                       </div>
-                    );
-                  })}
-                </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ── Testimonials ── */}
+          <div className="mt-2">
+            <div className="flex items-center gap-2 mb-3">
+              <Star className="w-4 h-4 text-yellow-400" />
+              <h3 className="font-semibold text-sm">Testimonials</h3>
+              {testimonials.length > 0 && (
+                <Badge variant="secondary" className="text-xs">{testimonials.length}</Badge>
               )}
             </div>
-          )}
+
+            {testimonialsLoading ? (
+              <div className="flex justify-center py-6"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div>
+            ) : testimonials.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border p-6 text-center">
+                <Star className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-40" />
+                <p className="text-sm text-muted-foreground">
+                  {isOwnProfile
+                    ? "Your friends can write kind words about you here."
+                    : `${p.firstName ?? "This traveler"} hasn't received any testimonials yet.`}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {testimonials.map((t) => {
+                  const authorName = [t.authorFirstName, t.authorLastName].filter(Boolean).join(" ") || "Traveler";
+                  return (
+                    <div key={t.id} className="rounded-xl border border-border bg-muted/20 p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        {t.authorImageUrl ? (
+                          <img src={t.authorImageUrl} alt={authorName} className="w-9 h-9 rounded-full object-cover ring-2 ring-border" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <User className="w-4 h-4 text-primary" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <Link href={`/user/${t.authorId}`}>
+                            <span className="text-sm font-semibold hover:text-primary transition-colors cursor-pointer">{authorName}</span>
+                          </Link>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(t.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                          </p>
+                        </div>
+                        <Star className="w-4 h-4 text-yellow-400 shrink-0" />
+                      </div>
+                      <p className="text-sm leading-relaxed text-foreground/90">{t.content}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
         </div>
       </div>
 
