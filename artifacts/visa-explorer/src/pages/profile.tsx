@@ -351,6 +351,8 @@ export default function Profile() {
   const [editingCountry, setEditingCountry] = useState(false);
   const [localHomeCountry, setLocalHomeCountry] = useState<string | null>(null);
   const [savingError, setSavingError] = useState<string | null>(null);
+  const [showAddCountry, setShowAddCountry] = useState(false);
+  const [addCountryCode, setAddCountryCode] = useState<string | null>(null);
   const [showAskModal, setShowAskModal] = useState(false);
   const [askCountry, setAskCountry] = useState<string | null>(null);
   const [askTitle, setAskTitle] = useState("");
@@ -384,6 +386,16 @@ export default function Profile() {
         setShowNewCase(false);
         setCaseSubject("");
         setCaseBody("");
+      },
+    },
+  });
+
+  const { mutate: upsertEntry, isPending: isUpserting } = useUpsertTravelEntry({
+    mutation: {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: getGetTravelMapQueryKey() });
+        setShowAddCountry(false);
+        setAddCountryCode(null);
       },
     },
   });
@@ -580,29 +592,80 @@ export default function Profile() {
         {/* ── Travel Map Tab ──────────────────────────────────────────── */}
         {activeTab === "travel" && (
           <>
-            <div className="flex gap-2 mb-6">
-              {(["visited", "want_to_visit"] as TravelStatus[]).map((s) => {
-                const c = STATUS_CONFIG[s];
-                const count = s === "visited" ? visited.length : wantToVisit.length;
-                return (
-                  <button
-                    key={s}
-                    onClick={() => setTravelFilter(s)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                      travelFilter === s
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card border border-border text-muted-foreground hover:border-primary/40"
-                    }`}
-                  >
-                    <c.icon className="w-3.5 h-3.5" />
-                    {c.label}
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${travelFilter === s ? "bg-white/20" : "bg-muted"}`}>
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <div className="flex gap-2">
+                {(["visited", "want_to_visit"] as TravelStatus[]).map((s) => {
+                  const c = STATUS_CONFIG[s];
+                  const count = s === "visited" ? visited.length : wantToVisit.length;
+                  return (
+                    <button
+                      key={s}
+                      onClick={() => setTravelFilter(s)}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                        travelFilter === s
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-card border border-border text-muted-foreground hover:border-primary/40"
+                      }`}
+                    >
+                      <c.icon className="w-3.5 h-3.5" />
+                      {c.label}
+                      <span className={`text-xs px-1.5 py-0.5 rounded-full ${travelFilter === s ? "bg-white/20" : "bg-muted"}`}>
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => { setShowAddCountry((v) => !v); setAddCountryCode(null); }}
+              >
+                <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
+                Add Country
+              </Button>
             </div>
+
+            {showAddCountry && (
+              <div className="mb-6 bg-card border border-border rounded-2xl p-4">
+                <p className="text-sm font-medium mb-3">Which country do you want to add?</p>
+                <CountryCombobox
+                  value={addCountryCode}
+                  onChange={setAddCountryCode}
+                  placeholder="Search a country…"
+                />
+                {addCountryCode && (
+                  <div className="flex gap-2 mt-3">
+                    <Button
+                      size="sm"
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white border-none"
+                      disabled={isUpserting}
+                      onClick={() => upsertEntry({ code: addCountryCode, data: { status: "visited" } })}
+                    >
+                      {isUpserting ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />}
+                      Mark as Visited
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                      disabled={isUpserting}
+                      onClick={() => upsertEntry({ code: addCountryCode, data: { status: "want_to_visit" } })}
+                    >
+                      {isUpserting ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Heart className="w-3.5 h-3.5 mr-1.5 text-primary" />}
+                      Want to Visit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => { setShowAddCountry(false); setAddCountryCode(null); }}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {(authLoading || mapLoading) ? (
               <div className="flex justify-center py-20">
@@ -614,13 +677,16 @@ export default function Profile() {
                 <h3 className="text-lg font-semibold mb-2">
                   {travelFilter === "visited" ? "No visited countries yet" : "No countries saved yet"}
                 </h3>
-                <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+                <p className="text-muted-foreground mb-4 max-w-sm mx-auto">
                   {travelFilter === "visited"
-                    ? "Go to any country page and mark it as visited."
+                    ? "Mark countries you've already been to."
                     : "Save countries you'd like to explore someday."}
                 </p>
-                <Button variant="outline" asChild>
-                  <Link href="/explore"><Globe className="w-4 h-4 mr-2" /> Browse Countries</Link>
+                <Button
+                  size="sm"
+                  onClick={() => { setShowAddCountry(true); setAddCountryCode(null); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                >
+                  <PlusCircle className="w-3.5 h-3.5 mr-1.5" /> Add a Country
                 </Button>
               </div>
             ) : (
