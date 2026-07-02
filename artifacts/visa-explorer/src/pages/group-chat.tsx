@@ -145,7 +145,7 @@ export default function GroupChat() {
     mutation: {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: getListGroupsQueryKey() });
-        window.location.href = "/groups";
+        window.location.href = "/community";
       },
     },
   });
@@ -234,8 +234,8 @@ export default function GroupChat() {
     return (
       <div className="flex flex-col items-center justify-center h-screen gap-4">
         <p className="text-muted-foreground">Group not found</p>
-        <Link href="/groups">
-          <Button variant="outline">Back to Groups</Button>
+        <Link href="/community">
+          <Button variant="outline">Back to Community</Button>
         </Link>
       </div>
     );
@@ -249,7 +249,7 @@ export default function GroupChat() {
     <div className="flex flex-col h-[calc(100vh-64px)]">
       {/* Header */}
       <div className="border-b border-border/60 bg-card/50 backdrop-blur px-4 py-3 flex items-center gap-3">
-        <Link href="/groups">
+        <Link href="/community">
           <button className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </button>
