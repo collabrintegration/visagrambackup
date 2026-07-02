@@ -3,5 +3,7 @@ type ModuleMap = Record<string, () => Promise<Record<string, unknown>>>;
 export const modules: ModuleMap = {
   "./components/mockups/visafy-themes/EmeraldNight.tsx": () => import("../components/mockups/visafy-themes/EmeraldNight.tsx"),
   "./components/mockups/visafy-themes/MidnightRose.tsx": () => import("../components/mockups/visafy-themes/MidnightRose.tsx"),
-  "./components/mockups/visafy-themes/SolarAmber.tsx": () => import("../components/mockups/visafy-themes/SolarAmber.tsx")
+  "./components/mockups/visafy-themes/SolarAmber.tsx": () => import("../components/mockups/visafy-themes/SolarAmber.tsx"),
+  "./components/mockups/visagram-redesign/HomeScreen.tsx": () => import("../components/mockups/visagram-redesign/HomeScreen.tsx"),
+  "./components/mockups/visagram-redesign/LoginScreen.tsx": () => import("../components/mockups/visagram-redesign/LoginScreen.tsx")
 };
