@@ -43,6 +43,7 @@ import type {
   CreateSubgroupInput,
   CreateSupportCaseBody,
   CreateVisaApplicationInput,
+  CreateVisaGuideEntryInput,
   DmConversation,
   DmMessage,
   DmUnreadCount,
@@ -61,6 +62,7 @@ import type {
   ListCountriesParams,
   ListDestinationsByPassportParams,
   ListGroupMessagesParams,
+  ListVisaGuideEntriesParams,
   ListVisasParams,
   OkResponse,
   PassportDestinationsResponse,
@@ -85,6 +87,7 @@ import type {
   UserActivity,
   VisaApplication,
   VisaDetail,
+  VisaGuideEntry,
   VisaListResponse,
   VisaReportItem,
   VisaReportsStats,
@@ -4594,6 +4597,301 @@ export function useGetVisaTrackerAnalytics<TData = Awaited<ReturnType<typeof get
 
 
 
+
+export const getListVisaGuideEntriesUrl = (params?: ListVisaGuideEntriesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/visa-guide?${stringifiedParams}` : `/api/visa-guide`
+}
+
+/**
+ * @summary List visa guide entries for a country + category
+ */
+export const listVisaGuideEntries = async (params?: ListVisaGuideEntriesParams, options?: RequestInit): Promise<VisaGuideEntry[]> => {
+
+  return customFetch<VisaGuideEntry[]>(getListVisaGuideEntriesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListVisaGuideEntriesQueryKey = (params?: ListVisaGuideEntriesParams,) => {
+    return [
+    `/api/visa-guide`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListVisaGuideEntriesQueryOptions = <TData = Awaited<ReturnType<typeof listVisaGuideEntries>>, TError = ErrorType<unknown>>(params?: ListVisaGuideEntriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listVisaGuideEntries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListVisaGuideEntriesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listVisaGuideEntries>>> = ({ signal }) => listVisaGuideEntries(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listVisaGuideEntries>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListVisaGuideEntriesQueryResult = NonNullable<Awaited<ReturnType<typeof listVisaGuideEntries>>>
+export type ListVisaGuideEntriesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List visa guide entries for a country + category
+ */
+
+export function useListVisaGuideEntries<TData = Awaited<ReturnType<typeof listVisaGuideEntries>>, TError = ErrorType<unknown>>(
+ params?: ListVisaGuideEntriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listVisaGuideEntries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListVisaGuideEntriesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateVisaGuideEntryUrl = () => {
+
+
+
+
+  return `/api/visa-guide`
+}
+
+/**
+ * @summary Create a visa guide entry
+ */
+export const createVisaGuideEntry = async (createVisaGuideEntryInput: CreateVisaGuideEntryInput, options?: RequestInit): Promise<VisaGuideEntry> => {
+
+  return customFetch<VisaGuideEntry>(getCreateVisaGuideEntryUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createVisaGuideEntryInput)
+  }
+);}
+
+
+
+
+export const getCreateVisaGuideEntryMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createVisaGuideEntry>>, TError,{data: BodyType<CreateVisaGuideEntryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createVisaGuideEntry>>, TError,{data: BodyType<CreateVisaGuideEntryInput>}, TContext> => {
+
+const mutationKey = ['createVisaGuideEntry'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createVisaGuideEntry>>, {data: BodyType<CreateVisaGuideEntryInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createVisaGuideEntry(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateVisaGuideEntryMutationResult = NonNullable<Awaited<ReturnType<typeof createVisaGuideEntry>>>
+    export type CreateVisaGuideEntryMutationBody = BodyType<CreateVisaGuideEntryInput>
+    export type CreateVisaGuideEntryMutationError = ErrorType<void>
+
+    /**
+ * @summary Create a visa guide entry
+ */
+export const useCreateVisaGuideEntry = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createVisaGuideEntry>>, TError,{data: BodyType<CreateVisaGuideEntryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createVisaGuideEntry>>,
+        TError,
+        {data: BodyType<CreateVisaGuideEntryInput>},
+        TContext
+      > => {
+      return useMutation(getCreateVisaGuideEntryMutationOptions(options));
+    }
+
+export const getUpdateVisaGuideEntryUrl = (id: number,) => {
+
+
+
+
+  return `/api/visa-guide/${id}`
+}
+
+/**
+ * @summary Update a visa guide entry
+ */
+export const updateVisaGuideEntry = async (id: number,
+    createVisaGuideEntryInput: CreateVisaGuideEntryInput, options?: RequestInit): Promise<VisaGuideEntry> => {
+
+  return customFetch<VisaGuideEntry>(getUpdateVisaGuideEntryUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createVisaGuideEntryInput)
+  }
+);}
+
+
+
+
+export const getUpdateVisaGuideEntryMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateVisaGuideEntry>>, TError,{id: number;data: BodyType<CreateVisaGuideEntryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateVisaGuideEntry>>, TError,{id: number;data: BodyType<CreateVisaGuideEntryInput>}, TContext> => {
+
+const mutationKey = ['updateVisaGuideEntry'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateVisaGuideEntry>>, {id: number;data: BodyType<CreateVisaGuideEntryInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateVisaGuideEntry(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateVisaGuideEntryMutationResult = NonNullable<Awaited<ReturnType<typeof updateVisaGuideEntry>>>
+    export type UpdateVisaGuideEntryMutationBody = BodyType<CreateVisaGuideEntryInput>
+    export type UpdateVisaGuideEntryMutationError = ErrorType<void>
+
+    /**
+ * @summary Update a visa guide entry
+ */
+export const useUpdateVisaGuideEntry = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateVisaGuideEntry>>, TError,{id: number;data: BodyType<CreateVisaGuideEntryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateVisaGuideEntry>>,
+        TError,
+        {id: number;data: BodyType<CreateVisaGuideEntryInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateVisaGuideEntryMutationOptions(options));
+    }
+
+export const getDeleteVisaGuideEntryUrl = (id: number,) => {
+
+
+
+
+  return `/api/visa-guide/${id}`
+}
+
+/**
+ * @summary Delete a visa guide entry
+ */
+export const deleteVisaGuideEntry = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteVisaGuideEntryUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteVisaGuideEntryMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteVisaGuideEntry>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteVisaGuideEntry>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteVisaGuideEntry'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteVisaGuideEntry>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteVisaGuideEntry(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteVisaGuideEntryMutationResult = NonNullable<Awaited<ReturnType<typeof deleteVisaGuideEntry>>>
+
+    export type DeleteVisaGuideEntryMutationError = ErrorType<void>
+
+    /**
+ * @summary Delete a visa guide entry
+ */
+export const useDeleteVisaGuideEntry = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteVisaGuideEntry>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteVisaGuideEntry>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteVisaGuideEntryMutationOptions(options));
+    }
 
 export const getListVisaApplicationsUrl = () => {
 

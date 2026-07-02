@@ -710,6 +710,38 @@ export interface SendDmInput {
   gifUrl?: string | null;
 }
 
+export interface VisaGuideEntry {
+  id: number;
+  userId: string;
+  countryCode: string;
+  countryName: string;
+  category: string;
+  visaRequired: boolean;
+  processingTime?: string | null;
+  officialFee?: string | null;
+  maxStay?: string | null;
+  requirements?: string | null;
+  applicationUrl?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  firstName?: string | null;
+  lastName?: string | null;
+}
+
+export interface CreateVisaGuideEntryInput {
+  countryCode: string;
+  countryName: string;
+  category: string;
+  visaRequired?: boolean;
+  processingTime?: string;
+  officialFee?: string;
+  maxStay?: string;
+  requirements?: string;
+  applicationUrl?: string;
+  notes?: string;
+}
+
 export type VisaApplicationVisaType = typeof VisaApplicationVisaType[keyof typeof VisaApplicationVisaType];
 
 
@@ -942,6 +974,11 @@ export const JoinGroup200Status = {
 export type JoinGroup200 = {
   ok: boolean;
   status: JoinGroup200Status;
+};
+
+export type ListVisaGuideEntriesParams = {
+countryCode?: string;
+category?: string;
 };
 
 export type SetGroupMemberRoleBodyRole = typeof SetGroupMemberRoleBodyRole[keyof typeof SetGroupMemberRoleBodyRole];

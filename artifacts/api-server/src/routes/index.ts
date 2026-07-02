@@ -9,6 +9,7 @@ import anthropicRouter from "./anthropic";
 import groupsRouter from "./groups";
 import visaTrackerRouter from "./visa-tracker";
 import directMessagesRouter from "./direct-messages";
+import visaGuideRouter from "./visa-guide";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(anthropicRouter);
 router.use(groupsRouter);
 router.use(visaTrackerRouter);
 router.use(directMessagesRouter);
+router.use(visaGuideRouter);
 
 export default router;

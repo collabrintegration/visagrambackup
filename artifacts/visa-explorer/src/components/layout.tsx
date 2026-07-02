@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Compass, BookOpen, Map as MapIcon, Users, User, LogIn, LogOut, Loader2, Globe, ClipboardList, MessageSquare } from "lucide-react";
+import { Compass, BookOpen, Map as MapIcon, Users, User, LogIn, LogOut, Loader2, Globe, ClipboardList, MessageSquare, LayoutDashboard } from "lucide-react";
 import React from "react";
 import { useHealthCheck, getHealthCheckQueryKey, useGetDmUnreadCount, getGetDmUnreadCountQueryKey } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
@@ -29,6 +29,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { href: "/community", label: "Community", icon: Users },
     { href: "/groups", label: "Groups", icon: Globe },
     { href: "/tracker", label: "Tracker", icon: ClipboardList },
+    { href: "/visa-guide", label: "Visa Guide", icon: LayoutDashboard },
     { href: "/messages", label: "Messages", icon: MessageSquare, badge: totalBadge },
   ];
 

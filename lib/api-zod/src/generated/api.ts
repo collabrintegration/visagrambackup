@@ -1402,6 +1402,121 @@ export const GetVisaTrackerAnalyticsResponse = zod.object({
 
 
 /**
+ * @summary List visa guide entries for a country + category
+ */
+export const ListVisaGuideEntriesQueryParams = zod.object({
+  "countryCode": zod.coerce.string().optional(),
+  "category": zod.coerce.string().optional()
+})
+
+export const ListVisaGuideEntriesResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "countryCode": zod.string(),
+  "countryName": zod.string(),
+  "category": zod.string(),
+  "visaRequired": zod.boolean(),
+  "processingTime": zod.string().nullish(),
+  "officialFee": zod.string().nullish(),
+  "maxStay": zod.string().nullish(),
+  "requirements": zod.string().nullish(),
+  "applicationUrl": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish()
+})
+export const ListVisaGuideEntriesResponse = zod.array(ListVisaGuideEntriesResponseItem)
+
+
+/**
+ * @summary Create a visa guide entry
+ */
+export const CreateVisaGuideEntryBody = zod.object({
+  "countryCode": zod.string(),
+  "countryName": zod.string(),
+  "category": zod.string(),
+  "visaRequired": zod.boolean().optional(),
+  "processingTime": zod.string().optional(),
+  "officialFee": zod.string().optional(),
+  "maxStay": zod.string().optional(),
+  "requirements": zod.string().optional(),
+  "applicationUrl": zod.string().optional(),
+  "notes": zod.string().optional()
+})
+
+export const CreateVisaGuideEntryResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "countryCode": zod.string(),
+  "countryName": zod.string(),
+  "category": zod.string(),
+  "visaRequired": zod.boolean(),
+  "processingTime": zod.string().nullish(),
+  "officialFee": zod.string().nullish(),
+  "maxStay": zod.string().nullish(),
+  "requirements": zod.string().nullish(),
+  "applicationUrl": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish()
+})
+
+
+/**
+ * @summary Update a visa guide entry
+ */
+export const UpdateVisaGuideEntryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateVisaGuideEntryBody = zod.object({
+  "countryCode": zod.string(),
+  "countryName": zod.string(),
+  "category": zod.string(),
+  "visaRequired": zod.boolean().optional(),
+  "processingTime": zod.string().optional(),
+  "officialFee": zod.string().optional(),
+  "maxStay": zod.string().optional(),
+  "requirements": zod.string().optional(),
+  "applicationUrl": zod.string().optional(),
+  "notes": zod.string().optional()
+})
+
+export const UpdateVisaGuideEntryResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "countryCode": zod.string(),
+  "countryName": zod.string(),
+  "category": zod.string(),
+  "visaRequired": zod.boolean(),
+  "processingTime": zod.string().nullish(),
+  "officialFee": zod.string().nullish(),
+  "maxStay": zod.string().nullish(),
+  "requirements": zod.string().nullish(),
+  "applicationUrl": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish()
+})
+
+
+/**
+ * @summary Delete a visa guide entry
+ */
+export const DeleteVisaGuideEntryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteVisaGuideEntryResponse = zod.void()
+
+
+/**
  * @summary List all community visa applications
  */
 export const ListVisaApplicationsResponseItem = zod.object({

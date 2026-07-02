@@ -1349,6 +1349,91 @@ paths:
               schema:
                 $ref: "#/components/schemas/VisaTrackerAnalytics"
 
+  /visa-guide:
+    get:
+      operationId: listVisaGuideEntries
+      tags: [tracker]
+      summary: List visa guide entries for a country + category
+      parameters:
+        - in: query
+          name: countryCode
+          schema:
+            type: string
+        - in: query
+          name: category
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of visa guide entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VisaGuideEntry"
+    post:
+      operationId: createVisaGuideEntry
+      tags: [tracker]
+      summary: Create a visa guide entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVisaGuideEntryInput"
+      responses:
+        "201":
+          description: Created entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisaGuideEntry"
+        "401":
+          description: Unauthorized
+
+  /visa-guide/{id}:
+    patch:
+      operationId: updateVisaGuideEntry
+      tags: [tracker]
+      summary: Update a visa guide entry
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVisaGuideEntryInput"
+      responses:
+        "200":
+          description: Updated entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisaGuideEntry"
+        "403":
+          description: Forbidden
+    delete:
+      operationId: deleteVisaGuideEntry
+      tags: [tracker]
+      summary: Delete a visa guide entry
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          description: Forbidden
+
   /visa-tracker:
     get:
       operationId: listVisaApplications
@@ -3006,6 +3091,76 @@ components:
         gifUrl:
           type: string
           nullable: true
+
+    VisaGuideEntry:
+      type: object
+      required: [id, userId, countryCode, countryName, category, visaRequired, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        countryCode:
+          type: string
+        countryName:
+          type: string
+        category:
+          type: string
+        visaRequired:
+          type: boolean
+        processingTime:
+          type: string
+          nullable: true
+        officialFee:
+          type: string
+          nullable: true
+        maxStay:
+          type: string
+          nullable: true
+        requirements:
+          type: string
+          nullable: true
+        applicationUrl:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+
+    CreateVisaGuideEntryInput:
+      type: object
+      required: [countryCode, countryName, category]
+      properties:
+        countryCode:
+          type: string
+        countryName:
+          type: string
+        category:
+          type: string
+        visaRequired:
+          type: boolean
+        processingTime:
+          type: string
+        officialFee:
+          type: string
+        maxStay:
+          type: string
+        requirements:
+          type: string
+        applicationUrl:
+          type: string
+        notes:
+          type: string
 
     VisaApplication:
       type: object
