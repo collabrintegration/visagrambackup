@@ -15,6 +15,7 @@ import {
   useApproveGroupJoinRequest,
   useRejectGroupJoinRequest,
   useGetAdminSiteStats,
+  useGetDmUnreadCount,
   getGetTravelMapQueryKey,
   getGetMyActivityQueryKey,
   getGetCurrentAuthUserQueryKey,
@@ -23,7 +24,9 @@ import {
   getListGroupsQueryKey,
   getListGroupJoinRequestsQueryKey,
   getGetAdminSiteStatsQueryKey,
+  getGetDmUnreadCountQueryKey,
 } from "@workspace/api-client-react";
+import DmProfileTab from "@/components/dm-profile-tab";
 import type { ActivityQuestion, Group, GroupJoinRequest } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useQueryClient } from "@tanstack/react-query";
@@ -31,7 +34,7 @@ import {
   Map, CheckCircle2, Heart, LogIn, Loader2, Trash2, Globe,
   User, MessageSquare, BookOpen, ChevronDown, ShieldAlert,
   PlusCircle, X, Clock, RefreshCw, XCircle, Bell, PenLine, Save,
-  Users, Crown, Lock, UserCheck, UserX, ChevronRight, BarChart2,
+  Users, Crown, Lock, UserCheck, UserX, ChevronRight, BarChart2, Inbox,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -53,7 +56,7 @@ const STATUS_CONFIG = {
 } as const;
 
 type TravelStatus = keyof typeof STATUS_CONFIG;
-type ProfileTab = "travel" | "activity" | "cases" | "groups" | "admin";
+type ProfileTab = "travel" | "activity" | "cases" | "groups" | "messages" | "admin";
 type ActivitySubTab = "asked" | "answered" | "following";
 
 const CASE_STATUS: Record<string, { label: string; cls: string; icon: typeof Clock }> = {
@@ -382,6 +385,11 @@ export default function Profile() {
     query: { queryKey: getGetAdminSiteStatsQueryKey(), enabled: isAuthenticated && isSuperAdmin && activeTab === "admin" },
   });
 
+  const { data: dmUnread } = useGetDmUnreadCount({
+    query: { queryKey: getGetDmUnreadCountQueryKey(), enabled: isAuthenticated, refetchInterval: 15000 },
+  });
+  const dmBadge = (dmUnread?.unreadMessages ?? 0) + (dmUnread?.pendingRequests ?? 0);
+
   const [showNewCase, setShowNewCase] = useState(false);
   const [caseSubject, setCaseSubject] = useState("");
   const [caseBody, setCaseBody] = useState("");
@@ -576,27 +584,36 @@ export default function Profile() {
               { id: "activity" as const, label: "My Q&A", icon: BookOpen },
               { id: "cases" as const, label: "Support Cases", icon: ShieldAlert },
               { id: "groups" as const, label: "My Groups", icon: Users },
+              { id: "messages" as const, label: "Messages", icon: MessageSquare, badge: dmBadge },
               ...(isSuperAdmin ? [{ id: "admin" as const, label: "Site Stats", icon: BarChart2 }] : []),
-            ].map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id)}
-                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === id
-                    ? "border-primary text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                {label}
-                {id === "admin" && (
-                  <span className="ml-1.5 inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase bg-gradient-to-r from-amber-500/30 via-primary/30 to-violet-500/30 border border-amber-400/30 text-amber-300 shadow-[0_0_8px_rgba(251,191,36,0.25)]">
-                    <Crown className="w-2.5 h-2.5 shrink-0" />
-                    Super
-                  </span>
-                )}
-              </button>
-            ))}
+            ].map(({ id, label, icon: Icon, ...rest }) => {
+              const badge = (rest as { badge?: number }).badge;
+              return (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id)}
+                  className={`relative flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === id
+                      ? "border-primary text-foreground"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {label}
+                  {!!badge && badge > 0 && (
+                    <span className="min-w-[17px] h-[17px] bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                      {badge > 99 ? "99+" : badge}
+                    </span>
+                  )}
+                  {id === "admin" && (
+                    <span className="ml-1 inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase bg-gradient-to-r from-amber-500/30 via-primary/30 to-violet-500/30 border border-amber-400/30 text-amber-300 shadow-[0_0_8px_rgba(251,191,36,0.25)]">
+                      <Crown className="w-2.5 h-2.5 shrink-0" />
+                      Super
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -936,6 +953,11 @@ export default function Profile() {
               </div>
             )}
           </div>
+        )}
+
+        {/* ── Messages Tab ────────────────────────────────────────────── */}
+        {activeTab === "messages" && (
+          <DmProfileTab myId={(user as { id?: string })?.id ?? ""} />
         )}
 
         {/* ── Admin / Site Stats Tab ──────────────────────────────────── */}

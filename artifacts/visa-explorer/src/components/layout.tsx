@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Compass, BookOpen, Map as MapIcon, Users, User, LogIn, LogOut, Loader2, Globe, ClipboardList, MessageSquare } from "lucide-react";
+import { Compass, BookOpen, Map as MapIcon, Users, User, LogIn, LogOut, Loader2, Globe, ClipboardList } from "lucide-react";
 import React from "react";
 import { useHealthCheck, getHealthCheckQueryKey, useGetDmUnreadCount, getGetDmUnreadCountQueryKey } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
@@ -29,7 +29,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { href: "/community", label: "Community", icon: Users },
     { href: "/groups", label: "Groups", icon: Globe },
     { href: "/tracker", label: "Tracker", icon: ClipboardList },
-    { href: "/messages", label: "Messages", icon: MessageSquare, badge: totalBadge },
   ];
 
   return (
@@ -66,11 +65,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 >
                   <Icon className="w-4 h-4" />
                   {link.label}
-                  {!!link.badge && link.badge > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 min-w-[17px] h-[17px] bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
-                      {link.badge > 99 ? "99+" : link.badge}
-                    </span>
-                  )}
                 </Link>
               );
             })}
@@ -84,7 +78,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <>
                 <Link
                   href="/profile"
-                  className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  className={`relative hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                     location.startsWith("/profile")
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -92,6 +86,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 >
                   <User className="w-4 h-4" />
                   {user?.firstName ?? "Profile"}
+                  {totalBadge > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[17px] h-[17px] bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                      {totalBadge > 99 ? "99+" : totalBadge}
+                    </span>
+                  )}
                 </Link>
                 <Button
                   variant="ghost"
@@ -128,11 +127,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 >
                   <Icon className="w-3.5 h-3.5" />
                   {link.label}
-                  {link.badge && link.badge > 0 && (
-                    <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] bg-primary text-primary-foreground text-[9px] font-bold rounded-full flex items-center justify-center px-0.5">
-                      {link.badge > 9 ? "9+" : link.badge}
-                    </span>
-                  )}
                 </Link>
               );
             })}
