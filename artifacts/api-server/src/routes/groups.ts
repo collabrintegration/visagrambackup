@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { db, groupsTable, groupMembersTable, groupMessagesTable, groupJoinRequestsTable, usersTable } from "@workspace/db";
-import { eq, and, desc, lt, count } from "drizzle-orm";
+import { eq, and, desc, lt, count, sql } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -125,13 +125,14 @@ router.post("/groups", async (req: Request, res: Response) => {
 
   if (!name?.trim()) { res.status(400).json({ error: "name is required" }); return; }
 
-  const [{ adminCount }] = await db
-    .select({ adminCount: count() })
+  const [existing] = await db
+    .select({ id: groupsTable.id })
     .from(groupsTable)
-    .where(eq(groupsTable.adminId, userId));
+    .where(sql`lower(${groupsTable.name}) = lower(${name.trim()})`)
+    .limit(1);
 
-  if (adminCount >= 5) {
-    res.status(403).json({ error: "You can only be admin of up to 5 groups." });
+  if (existing) {
+    res.status(409).json({ error: "A group with this name already exists. Please choose a different name." });
     return;
   }
 
