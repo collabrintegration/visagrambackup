@@ -12,17 +12,27 @@ import {
   useCreateTestimonial,
   useDeleteTestimonial,
   useGetCurrentAuthUser,
+  useListGroups,
+  useListGroupJoinRequests,
+  useApproveGroupJoinRequest,
+  useRejectGroupJoinRequest,
+  useGetDmUnreadCount,
   getListFriendsQueryKey,
   getListFriendRequestsQueryKey,
   getListTestimonialsQueryKey,
   getSearchUsersQueryKey,
+  getListGroupsQueryKey,
+  getListGroupJoinRequestsQueryKey,
+  getGetDmUnreadCountQueryKey,
 } from "@workspace/api-client-react";
+import type { Group, GroupJoinRequest } from "@workspace/api-client-react";
+import DmProfileTab from "@/components/dm-profile-tab";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   UserPlus, UserCheck, UserMinus, Search, Users, Inbox,
   Clock, MapPin, LogIn, X, Check, Loader2, Star, Trash2,
-  Calendar, Globe, ChevronRight, MessageSquare,
+  Globe, ChevronRight, MessageSquare, Crown, Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -118,8 +128,6 @@ function ProfilePanel({ friendCount }: { friendCount: number }) {
         {[
           { href: "/profile", label: "Edit Profile" },
           { href: "/tracker", label: "My Visa Tracker" },
-          { href: "/messages", label: "Direct Messages" },
-          { href: "/groups", label: "My Groups" },
         ].map((l) => (
           <Link key={l.href} href={l.href}
             className="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -135,7 +143,7 @@ function ProfilePanel({ friendCount }: { friendCount: number }) {
 
 // ── Right Panel: Friends List ─────────────────────────────────────────────────
 
-type RightTab = "friends" | "requests" | "search";
+type RightTab = "friends" | "requests" | "search" | "groups" | "messages";
 
 function FriendRow({ id, firstName, lastName, profileImageUrl, homeCountry, friendshipSince, onRemove, onMessage }: {
   id: string; firstName?: string | null; lastName?: string | null;
@@ -300,6 +308,164 @@ function WriteTestimonialInline({ targetId, targetName, isFriend }: { targetId: 
   );
 }
 
+// ── Groups tab components ─────────────────────────────────────────────────────
+
+function AdminGroupPanel({ group }: { group: Group }) {
+  const qc = useQueryClient();
+  const { data: requests = [], isLoading } = useListGroupJoinRequests(group.id, {
+    query: { queryKey: getListGroupJoinRequestsQueryKey(group.id) },
+  });
+
+  const invalidate = () => {
+    void qc.invalidateQueries({ queryKey: getListGroupJoinRequestsQueryKey(group.id) });
+    void qc.invalidateQueries({ queryKey: getListGroupsQueryKey() });
+  };
+
+  const { mutate: approve, isPending: approving } = useApproveGroupJoinRequest({ mutation: { onSuccess: invalidate } });
+  const { mutate: reject, isPending: rejecting } = useRejectGroupJoinRequest({ mutation: { onSuccess: invalidate } });
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-4">
+      <div className="flex items-center gap-3">
+        <span className="text-2xl">{group.emoji}</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h4 className="font-semibold text-sm truncate">{group.name}</h4>
+            <Badge className="text-[10px] px-1.5 py-0 bg-amber-500/15 text-amber-400 border-amber-500/20">
+              <Crown className="w-2.5 h-2.5 mr-1" />Admin
+            </Badge>
+            {group.isPrivate && (
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                <Lock className="w-2.5 h-2.5 mr-1" />Private
+              </Badge>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5">{group.memberCount} member{group.memberCount !== 1 ? "s" : ""}</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {group.isPrivate && (
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Users className="w-3.5 h-3.5" />Join Requests
+              {!isLoading && requests.length > 0 && (
+                <span className="bg-primary text-primary-foreground text-[10px] rounded-full px-1.5 py-0.5 font-bold">{requests.length}</span>
+              )}
+              <ChevronRight className={`w-3.5 h-3.5 transition-transform ${expanded ? "rotate-90" : ""}`} />
+            </button>
+          )}
+          <Link href={`/groups/${group.id}`}>
+            <Button size="sm" className="h-7 text-xs"><MessageSquare className="w-3 h-3 mr-1" /> Open Chat</Button>
+          </Link>
+        </div>
+      </div>
+      {expanded && group.isPrivate && (
+        <div className="mt-4 border-t border-border pt-3 space-y-2">
+          {isLoading ? (
+            <div className="flex justify-center py-3"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div>
+          ) : requests.length === 0 ? (
+            <p className="text-xs text-muted-foreground text-center py-3">No pending join requests</p>
+          ) : (
+            (requests as GroupJoinRequest[]).map((r) => (
+              <div key={r.id} className="flex items-center gap-3 bg-muted/30 rounded-lg px-3 py-2.5">
+                <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-xs font-semibold text-primary">
+                  {r.firstName?.[0]?.toUpperCase() ?? "T"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium truncate">{[r.firstName, r.lastName].filter(Boolean).join(" ") || "Traveler"}</p>
+                  <p className="text-[10px] text-muted-foreground">{timeAgo(r.createdAt ?? "")}</p>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Button size="sm" className="h-6 text-[11px] px-2 bg-emerald-600 hover:bg-emerald-700" disabled={approving || rejecting}
+                    onClick={() => approve({ id: group.id, userId: r.userId })}>
+                    <UserCheck className="w-3 h-3 mr-1" /> Approve
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-6 text-[11px] px-2 text-destructive border-destructive/40 hover:bg-destructive/10"
+                    disabled={approving || rejecting} onClick={() => reject({ id: group.id, userId: r.userId })}>
+                    <X className="w-3 h-3 mr-1" /> Reject
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FriendsGroupsTab() {
+  const { data: groups = [], isLoading } = useListGroups({
+    query: { queryKey: getListGroupsQueryKey(), enabled: true },
+  });
+
+  const myGroups = groups.filter((g) => g.isMember && !g.isAdmin);
+  const adminGroups = groups.filter((g) => g.isAdmin);
+
+  if (isLoading) {
+    return <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
+  }
+
+  if (myGroups.length === 0 && adminGroups.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-14 text-center">
+        <Users className="w-10 h-10 text-muted-foreground opacity-40" />
+        <p className="font-semibold">No groups yet</p>
+        <p className="text-sm text-muted-foreground">Join or create travel groups to connect with fellow travelers.</p>
+        <Link href="/groups"><Button size="sm"><Users className="w-3.5 h-3.5 mr-1.5" />Browse Groups</Button></Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      {adminGroups.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <Crown className="w-4 h-4 text-amber-400" />
+            <h3 className="font-semibold text-sm">Groups I Admin</h3>
+            <span className="text-xs text-muted-foreground">({adminGroups.length})</span>
+          </div>
+          <div className="space-y-2">{adminGroups.map((g) => <AdminGroupPanel key={g.id} group={g} />)}</div>
+        </div>
+      )}
+      {myGroups.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <Users className="w-4 h-4 text-primary" />
+            <h3 className="font-semibold text-sm">Groups I'm In</h3>
+            <span className="text-xs text-muted-foreground">({myGroups.length})</span>
+          </div>
+          <div className="space-y-2">
+            {myGroups.map((g) => (
+              <div key={g.id} className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
+                <span className="text-2xl">{g.emoji}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-semibold text-sm truncate">{g.name}</h4>
+                    {g.isPrivate && (
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0"><Lock className="w-2.5 h-2.5 mr-1" />Private</Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">{g.memberCount} member{g.memberCount !== 1 ? "s" : ""}</p>
+                </div>
+                <Link href={`/groups/${g.id}`}>
+                  <Button size="sm" className="h-7 text-xs shrink-0"><MessageSquare className="w-3 h-3 mr-1" /> Open Chat</Button>
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      <Link href="/groups">
+        <Button variant="outline" size="sm"><Users className="w-4 h-4 mr-2" /> Browse All Groups</Button>
+      </Link>
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function FriendsPage() {
@@ -310,6 +476,11 @@ export default function FriendsPage() {
   const [rightTab, setRightTab] = useState<RightTab>("friends");
   const [searchRaw, setSearchRaw] = useState("");
   const searchQuery = useDebounce(searchRaw, 300);
+
+  const { data: dmUnread } = useGetDmUnreadCount({
+    query: { queryKey: getGetDmUnreadCountQueryKey(), enabled: isAuthenticated, refetchInterval: 15000 },
+  });
+  const dmBadge = (dmUnread?.unreadMessages ?? 0) + (dmUnread?.pendingRequests ?? 0);
 
   const { data: friends = [], isLoading: loadingFriends } = useListFriends({ query: { queryKey: getListFriendsQueryKey(), enabled: isAuthenticated } });
   const { data: requests = [], isLoading: loadingRequests } = useListFriendRequests({ query: { queryKey: getListFriendRequestsQueryKey(), enabled: isAuthenticated } });
@@ -369,6 +540,8 @@ export default function FriendsPage() {
               {([
                 { key: "friends" as RightTab, label: "Friends", icon: Users, count: friends.length },
                 { key: "requests" as RightTab, label: "Requests", icon: Inbox, count: requests.length },
+                { key: "messages" as RightTab, label: "Messages", icon: MessageSquare, count: dmBadge > 0 ? dmBadge : null },
+                { key: "groups" as RightTab, label: "My Groups", icon: Users, count: null },
                 { key: "search" as RightTab, label: "Find People", icon: Search, count: null },
               ]).map((tab) => (
                 <button
@@ -506,6 +679,16 @@ export default function FriendsPage() {
                   </div>
                 )}
               </div>
+            )}
+
+            {/* ── Messages ── */}
+            {rightTab === "messages" && (
+              <DmProfileTab myId={myId} />
+            )}
+
+            {/* ── My Groups ── */}
+            {rightTab === "groups" && (
+              <FriendsGroupsTab />
             )}
 
             {/* ── Testimonials (shown under friends list) ── */}
