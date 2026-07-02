@@ -63,9 +63,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             />
           </Link>
 
-          {/* Global search */}
-          <GlobalSearch />
-
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
             {links.map((link) => {
@@ -95,6 +92,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               );
             })}
           </nav>
+
+          {/* Global search */}
+          <GlobalSearch />
 
           {/* Auth section */}
           <div className="flex items-center gap-2 shrink-0">
