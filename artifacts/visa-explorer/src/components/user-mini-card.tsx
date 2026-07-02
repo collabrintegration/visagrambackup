@@ -1,8 +1,16 @@
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
-import { Send, MessageSquare, X, Loader2 } from "lucide-react";
-import { useSendDm } from "@workspace/api-client-react";
+import { Send, MessageSquare, X, Loader2, UserPlus, UserCheck, Clock } from "lucide-react";
+import {
+  useSendDm,
+  useSendFriendRequest,
+  useListFriends,
+  useListFriendRequests,
+  getListFriendsQueryKey,
+  getListFriendRequestsQueryKey,
+} from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Props {
   userId: string;
@@ -31,16 +39,32 @@ export default function UserMiniCard({
   const { user, isAuthenticated, login } = useAuth();
   const myId = (user as { id?: string })?.id ?? "";
   const isSelf = !!myId && myId === userId;
+  const queryClient = useQueryClient();
 
   const [open, setOpen] = useState(false);
   const [composing, setComposing] = useState(false);
   const [text, setText] = useState("");
   const [sent, setSent] = useState(false);
+  const [requestSent, setRequestSent] = useState(false);
   const [, navigate] = useLocation();
   const cardRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
 
-  const { mutate: sendDm, isPending } = useSendDm({
+  // Derive friendship status from cached query data (no extra network request)
+  const { data: friends = [] } = useListFriends({
+    query: { queryKey: getListFriendsQueryKey(), enabled: isAuthenticated },
+  });
+  const { data: requests = [] } = useListFriendRequests({
+    query: { queryKey: getListFriendRequestsQueryKey(), enabled: isAuthenticated },
+  });
+
+  const isFriend = friends.some((f) => f.id === userId);
+  // Pending: either I sent them a request (check via requests where addresseeId would be them)
+  // or they sent me one (check in requests list)
+  const incomingRequest = requests.find((r) => r.id === userId);
+  const isPendingIncoming = !!incomingRequest;
+
+  const { mutate: sendDm, isPending: dmPending } = useSendDm({
     mutation: {
       onSuccess: () => {
         setSent(true);
@@ -51,6 +75,16 @@ export default function UserMiniCard({
           setText("");
           navigate(`/messages`);
         }, 900);
+      },
+    },
+  });
+
+  const { mutate: sendFriendRequest, isPending: frPending } = useSendFriendRequest({
+    mutation: {
+      onSuccess: () => {
+        setRequestSent(true);
+        void queryClient.invalidateQueries({ queryKey: getListFriendsQueryKey() });
+        void queryClient.invalidateQueries({ queryKey: getListFriendRequestsQueryKey() });
       },
     },
   });
@@ -74,7 +108,7 @@ export default function UserMiniCard({
   }, [composing]);
 
   function handleSend() {
-    if (!text.trim() || isPending) return;
+    if (!text.trim() || dmPending) return;
     sendDm({ userId, data: { content: text.trim() } });
   }
 
@@ -134,17 +168,50 @@ export default function UserMiniCard({
               <span className="text-sm font-medium">Message sent! ✓</span>
             </div>
           ) : !composing ? (
-            <button
-              type="button"
-              onClick={() => {
-                if (!isAuthenticated) { login(); return; }
-                setComposing(true);
-              }}
-              className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground text-sm font-medium py-2 rounded-xl hover:bg-primary/90 transition-colors"
-            >
-              <MessageSquare className="w-4 h-4" />
-              Send Message
-            </button>
+            <div className="space-y-2">
+              {/* Friend action */}
+              {isAuthenticated && (
+                isFriend ? (
+                  <div className="w-full flex items-center justify-center gap-2 bg-emerald-500/10 text-emerald-400 text-sm font-medium py-2 rounded-xl border border-emerald-500/20">
+                    <UserCheck className="w-4 h-4" />
+                    Already Friends
+                  </div>
+                ) : requestSent ? (
+                  <div className="w-full flex items-center justify-center gap-2 bg-muted text-muted-foreground text-sm font-medium py-2 rounded-xl">
+                    <Clock className="w-4 h-4" />
+                    Request Sent
+                  </div>
+                ) : isPendingIncoming ? (
+                  <div className="w-full flex items-center justify-center gap-2 bg-muted text-muted-foreground text-sm font-medium py-2 rounded-xl">
+                    <Clock className="w-4 h-4" />
+                    Request Pending
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={frPending}
+                    onClick={() => sendFriendRequest({ userId })}
+                    className="w-full flex items-center justify-center gap-2 bg-primary/10 border border-primary/30 text-primary text-sm font-medium py-2 rounded-xl hover:bg-primary/20 transition-colors disabled:opacity-50"
+                  >
+                    {frPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+                    Add Friend
+                  </button>
+                )
+              )}
+
+              {/* Message action */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isAuthenticated) { login(); return; }
+                  setComposing(true);
+                }}
+                className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground text-sm font-medium py-2 rounded-xl hover:bg-primary/90 transition-colors"
+              >
+                <MessageSquare className="w-4 h-4" />
+                Send Message
+              </button>
+            </div>
           ) : (
             <div className="space-y-2">
               <textarea
@@ -170,10 +237,10 @@ export default function UserMiniCard({
                 <button
                   type="button"
                   onClick={handleSend}
-                  disabled={!text.trim() || isPending}
+                  disabled={!text.trim() || dmPending}
                   className="flex-1 flex items-center justify-center gap-1.5 text-xs bg-primary text-primary-foreground py-1.5 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 font-medium"
                 >
-                  {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                  {dmPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                   Send
                 </button>
               </div>
