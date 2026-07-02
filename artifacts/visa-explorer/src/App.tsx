@@ -20,7 +20,6 @@ import GroupsPage from "@/pages/groups";
 import GroupChatPage from "@/pages/group-chat";
 import TrackerPage from "@/pages/tracker";
 import MessagesPage from "@/pages/messages";
-import VisaGuidePage from "@/pages/visa-guide";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,7 +49,7 @@ function Router() {
         <Route path="/groups" component={GroupsPage} />
         <Route path="/groups/:id" component={GroupChatPage} />
         <Route path="/tracker" component={TrackerPage} />
-        <Route path="/visa-guide" component={VisaGuidePage} />
+        <Route path="/visa-guide" component={() => { window.location.replace("/tracker"); return null; }} />
         <Route path="/messages" component={MessagesPage} />
         <Route path="/messages/:userId" component={MessagesPage} />
         <Route component={NotFound} />

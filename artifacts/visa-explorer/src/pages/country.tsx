@@ -11,11 +11,15 @@ import {
   useUpsertTravelEntry, useDeleteTravelEntry, useGetTravelMap, getGetTravelMapQueryKey,
   useGetVisaReports, getGetVisaReportsQueryKey,
   useSubmitVisaReport,
+  useListVisaGuideEntries, useCreateVisaGuideEntry, useUpdateVisaGuideEntry, useDeleteVisaGuideEntry,
+  getListVisaGuideEntriesQueryKey,
+  useListVisaApplications, useCreateVisaApplication, useUpdateVisaApplication, useDeleteVisaApplication,
+  getListVisaApplicationsQueryKey,
 } from "@workspace/api-client-react";
-import type { QuestionSummary } from "@workspace/api-client-react";
+import type { QuestionSummary, VisaGuideEntry, VisaApplication } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useQueryClient } from "@tanstack/react-query";
-import { Globe, MapPin, Coins, Languages, ArrowLeft, Loader2, Camera, Clock, DollarSign, CalendarDays, RefreshCw, Repeat, ExternalLink, FileText, Phone, Car, Users, Star, MessageSquare, ChevronDown, ChevronUp, CheckCircle2, Heart, PlusCircle, Send, BarChart2, TrendingUp, Award, X, Trash2 } from "lucide-react";
+import { Globe, MapPin, Coins, Languages, ArrowLeft, Loader2, Camera, Clock, DollarSign, CalendarDays, RefreshCw, Repeat, ExternalLink, FileText, Phone, Car, Users, Star, MessageSquare, ChevronDown, ChevronUp, CheckCircle2, Heart, PlusCircle, Send, BarChart2, TrendingUp, Award, X, Trash2, Plus, Pencil, Check, AlertCircle, MinusCircle, Link as LinkIcon } from "lucide-react";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -459,6 +463,9 @@ export default function CountryDetail() {
 
         {/* ── Q&A ── */}
         {code && <QASection code={code} countryName={country.name} />}
+
+        {/* ── Visa Tracker & Community Guide ── */}
+        {code && <CountryTrackerSection code={code} countryName={country.name} />}
 
         {/* ── Visa Processing Times ── */}
         {code && <VisaReportsSection code={code} countryName={country.name} />}
@@ -1165,6 +1172,381 @@ function VisaReportsSection({ code, countryName }: { code: string; countryName: 
           })}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+/* ─────────── Visa Tracker & Community Guide section ─────────── */
+const TRACKER_CATS = [
+  { value: "travel",      label: "Travel",      emoji: "✈️",  desc: "Tourist, visitor & transit visas" },
+  { value: "work",        label: "Work",         emoji: "💼",  desc: "Work permits & employment visas" },
+  { value: "pr",          label: "PR",           emoji: "🏠",  desc: "Permanent residency applications" },
+  { value: "citizenship", label: "Citizenship",  emoji: "🛂",  desc: "Naturalisation & citizenship" },
+  { value: "partner",     label: "Partner",      emoji: "💑",  desc: "Spouse, partner & family visas" },
+] as const;
+
+type TrackerCat = typeof TRACKER_CATS[number]["value"];
+
+const APP_STATUS = {
+  applied:   { label: "Applied",    icon: Clock,        cls: "bg-blue-500/15 text-blue-400 border-blue-500/30" },
+  in_review: { label: "In Review",  icon: AlertCircle,  cls: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
+  approved:  { label: "Approved",   icon: CheckCircle2, cls: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
+  rejected:  { label: "Rejected",   icon: X,            cls: "bg-destructive/15 text-destructive border-destructive/30" },
+  withdrawn: { label: "Withdrawn",  icon: MinusCircle,  cls: "bg-muted text-muted-foreground border-border" },
+} as const;
+
+type AppStatusKey = keyof typeof APP_STATUS;
+
+function appFmt(s: string | null | undefined) {
+  if (!s) return "—";
+  return new Date(s).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+
+function appInitials(a: { firstName?: string | null; lastName?: string | null }) {
+  return [(a.firstName ?? "")[0], (a.lastName ?? "")[0]].filter(Boolean).join("").toUpperCase() || "?";
+}
+function appName(a: { firstName?: string | null; lastName?: string | null }) {
+  return [a.firstName, a.lastName].filter(Boolean).join(" ") || "Traveler";
+}
+
+const GUIDE_EMPTY = { visaRequired: true, processingTime: "", officialFee: "", maxStay: "", requirements: "", applicationUrl: "", notes: "" };
+
+function CountryTrackerSection({ code, countryName }: { code: string; countryName: string }) {
+  const { user, isAuthenticated, login } = useAuth();
+  const userId = (user as { id?: string })?.id ?? "";
+  const qc = useQueryClient();
+  const [activeTab, setActiveTab] = useState<TrackerCat>("travel");
+
+  /* — Guide state — */
+  const [showGuideModal, setShowGuideModal] = useState(false);
+  const [editingGuide, setEditingGuide] = useState<VisaGuideEntry | null>(null);
+  const [gForm, setGForm] = useState({ ...GUIDE_EMPTY });
+
+  /* — Case state — */
+  const [showCaseModal, setShowCaseModal] = useState(false);
+  const [cPassport, setCPassport] = useState<string | null>(null);
+  const [cDate, setCDate] = useState(new Date().toISOString().split("T")[0]);
+  const [cStatus, setCStatus] = useState<AppStatusKey>("applied");
+  const [cComment, setCComment] = useState("");
+  const [cEditStatus, setCEditStatus] = useState<Record<number, boolean>>({});
+
+  /* — Guide queries — */
+  const guideKey = getListVisaGuideEntriesQueryKey({ countryCode: code, category: activeTab });
+  const { data: guideEntries = [], isLoading: guideLoading } = useListVisaGuideEntries(
+    { countryCode: code, category: activeTab },
+    { query: { queryKey: guideKey } }
+  );
+  const invalidateGuide = () => void qc.invalidateQueries({ queryKey: guideKey });
+
+  const { mutate: createGuide, isPending: creatingGuide } = useCreateVisaGuideEntry({ mutation: { onSuccess: () => { invalidateGuide(); closeGuide(); } } });
+  const { mutate: updateGuide, isPending: updatingGuide } = useUpdateVisaGuideEntry({ mutation: { onSuccess: () => { invalidateGuide(); closeGuide(); } } });
+  const { mutate: deleteGuide } = useDeleteVisaGuideEntry({ mutation: { onSuccess: invalidateGuide } });
+
+  /* — Case queries — */
+  const appKey = getListVisaApplicationsQueryKey();
+  const { data: allApps = [], isLoading: appsLoading } = useListVisaApplications({ query: { queryKey: appKey } });
+  const apps = allApps.filter((a) => a.countryCode === code && a.visaType === activeTab);
+  const invalidateApps = () => void qc.invalidateQueries({ queryKey: appKey });
+
+  const { mutate: createApp, isPending: creatingApp } = useCreateVisaApplication({ mutation: { onSuccess: () => { invalidateApps(); closeCase(); } } });
+  const { mutate: updateApp } = useUpdateVisaApplication({ mutation: { onSuccess: invalidateApps } });
+  const { mutate: deleteApp } = useDeleteVisaApplication({ mutation: { onSuccess: invalidateApps } });
+
+  function openGuideCreate() { setEditingGuide(null); setGForm({ ...GUIDE_EMPTY }); setShowGuideModal(true); }
+  function openGuideEdit(e: VisaGuideEntry) { setEditingGuide(e); setGForm({ visaRequired: e.visaRequired, processingTime: e.processingTime ?? "", officialFee: e.officialFee ?? "", maxStay: e.maxStay ?? "", requirements: e.requirements ?? "", applicationUrl: e.applicationUrl ?? "", notes: e.notes ?? "" }); setShowGuideModal(true); }
+  function closeGuide() { setShowGuideModal(false); setEditingGuide(null); setGForm({ ...GUIDE_EMPTY }); }
+  function submitGuide() {
+    const data = { countryCode: code, countryName, category: activeTab, visaRequired: gForm.visaRequired, processingTime: gForm.processingTime || undefined, officialFee: gForm.officialFee || undefined, maxStay: gForm.maxStay || undefined, requirements: gForm.requirements || undefined, applicationUrl: gForm.applicationUrl || undefined, notes: gForm.notes || undefined };
+    editingGuide ? updateGuide({ id: editingGuide.id, data }) : createGuide({ data });
+  }
+
+  function openCase() { if (!isAuthenticated) { login(); return; } setCPassport(null); setCDate(new Date().toISOString().split("T")[0]); setCStatus("applied"); setCComment(""); setShowCaseModal(true); }
+  function closeCase() { setShowCaseModal(false); }
+  function submitCase() {
+    const cat = TRACKER_CATS.find((c) => c.value === activeTab)!;
+    createApp({ data: { countryCode: code, countryName, passportCode: cPassport ?? undefined, visaType: activeTab as "travel" | "work" | "pr" | "citizenship" | "partner", applicationDate: cDate, status: cStatus, comment: cComment || undefined } });
+  }
+
+  const cat = TRACKER_CATS.find((c) => c.value === activeTab)!;
+
+  return (
+    <div className="bg-card border border-border rounded-2xl overflow-hidden">
+      {/* Header */}
+      <div className="px-6 py-5 border-b border-border/60">
+        <h2 className="text-xl font-bold flex items-center gap-2 mb-4">
+          <TrendingUp className="w-5 h-5 text-primary" /> Visa Tracker & Community Guide
+        </h2>
+        {/* Category tabs */}
+        <div className="flex gap-1 bg-muted/40 rounded-xl p-1 overflow-x-auto">
+          {TRACKER_CATS.map((c) => (
+            <button key={c.value} onClick={() => setActiveTab(c.value)}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${activeTab === c.value ? "bg-card shadow text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              <span>{c.emoji}</span>{c.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="p-6 space-y-8">
+        {/* ── Guide Entries ── */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-semibold flex items-center gap-1.5"><FileText className="w-4 h-4 text-primary" /> Community Info</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">{cat.emoji} {cat.desc}</p>
+            </div>
+            {isAuthenticated ? (
+              <Button size="sm" onClick={openGuideCreate} className="gap-1.5"><Plus className="w-3.5 h-3.5" /> Add Info</Button>
+            ) : (
+              <Button size="sm" variant="outline" onClick={login} className="gap-1.5">Sign in to contribute</Button>
+            )}
+          </div>
+
+          {guideLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+          ) : guideEntries.length === 0 ? (
+            <div className="flex flex-col items-center py-10 gap-3 border border-dashed border-border/60 rounded-xl text-center">
+              <span className="text-3xl">{cat.emoji}</span>
+              <div>
+                <p className="text-sm font-medium">No {cat.label} visa info yet for {countryName}</p>
+                <p className="text-xs text-muted-foreground">Be the first to share community knowledge.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2">
+              {guideEntries.map((e) => (
+                <div key={e.id} className="bg-background border border-border/60 rounded-xl p-4">
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
+                        {((e.firstName ?? "")[0] || "?").toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold">{[e.firstName, e.lastName].filter(Boolean).join(" ") || "Community"}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Badge variant="secondary" className={`text-[10px] px-2 py-0.5 ${e.visaRequired ? "bg-amber-500/15 text-amber-400" : "bg-emerald-500/15 text-emerald-400"}`}>
+                        {e.visaRequired ? "Visa Required" : "Visa Free"}
+                      </Badge>
+                      {e.userId === userId && (
+                        <div className="flex gap-0.5 ml-1">
+                          <button onClick={() => openGuideEdit(e)} className="p-1 rounded text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"><Pencil className="w-3 h-3" /></button>
+                          <button onClick={() => { if (confirm("Delete?")) deleteGuide({ id: e.id }); }} className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"><Trash2 className="w-3 h-3" /></button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    {e.processingTime && <div className="bg-muted/50 rounded-lg px-2.5 py-1.5"><div className="text-[10px] text-muted-foreground flex items-center gap-1"><Clock className="w-2.5 h-2.5" />Processing</div><p className="text-xs font-semibold">{e.processingTime}</p></div>}
+                    {e.officialFee && <div className="bg-muted/50 rounded-lg px-2.5 py-1.5"><div className="text-[10px] text-muted-foreground flex items-center gap-1"><DollarSign className="w-2.5 h-2.5" />Fee</div><p className="text-xs font-semibold">{e.officialFee}</p></div>}
+                    {e.maxStay && <div className="bg-muted/50 rounded-lg px-2.5 py-1.5"><div className="text-[10px] text-muted-foreground flex items-center gap-1"><CalendarDays className="w-2.5 h-2.5" />Max Stay</div><p className="text-xs font-semibold">{e.maxStay}</p></div>}
+                  </div>
+                  {e.requirements && <p className="text-xs text-muted-foreground leading-relaxed mb-2">{e.requirements}</p>}
+                  {e.notes && <p className="text-xs text-muted-foreground bg-muted/30 rounded-lg px-2.5 py-1.5">{e.notes}</p>}
+                  {e.applicationUrl && <a href={e.applicationUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-2"><ExternalLink className="w-3 h-3" />Official portal</a>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Application Cases ── */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-semibold flex items-center gap-1.5"><TrendingUp className="w-4 h-4 text-primary" /> Application Timeline</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">{apps.length} communit{apps.length === 1 ? "y case" : "y cases"} shared for {countryName} {cat.label}</p>
+            </div>
+            <Button size="sm" onClick={openCase} className="gap-1.5"><Plus className="w-3.5 h-3.5" /> Add My Case</Button>
+          </div>
+
+          {appsLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+          ) : apps.length === 0 ? (
+            <div className="flex flex-col items-center py-10 gap-3 border border-dashed border-border/60 rounded-xl text-center">
+              <TrendingUp className="w-8 h-8 text-muted" />
+              <div>
+                <p className="text-sm font-medium">No cases yet</p>
+                <p className="text-xs text-muted-foreground">Share your {cat.label} visa application to help others.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-border/60">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-card/40">
+                    {["Applicant", "Nationality", "Applied", "Days", "Status", "Notes", ""].map((h) => (
+                      <th key={h} className="text-left px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {apps.map((app) => {
+                    const isOwn = app.userId === userId;
+                    const sc = APP_STATUS[app.status as AppStatusKey] ?? APP_STATUS.applied;
+                    const ScIcon = sc.icon;
+                    return (
+                      <tr key={app.id} className={`hover:bg-muted/20 transition-colors ${isOwn ? "bg-primary/[0.03]" : ""}`}>
+                        <td className="px-3 py-2.5 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            {app.profileImageUrl ? (
+                              <img src={app.profileImageUrl} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">{appInitials(app)}</div>
+                            )}
+                            <span className="text-xs font-medium">{appName(app)}{isOwn && <span className="text-[10px] text-primary ml-1">(you)</span>}</span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-2.5 whitespace-nowrap">
+                          {app.passportCode ? (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              {app.passportFlag && <span>{app.passportFlag}</span>}
+                              {app.passportName ?? app.passportCode}
+                            </span>
+                          ) : <span className="text-xs text-muted-foreground/40">—</span>}
+                        </td>
+                        <td className="px-3 py-2.5 whitespace-nowrap">
+                          <span className="text-xs text-muted-foreground">{appFmt(app.applicationDate)}</span>
+                        </td>
+                        <td className="px-3 py-2.5 whitespace-nowrap">
+                          {(app as VisaApplication & { processingDays?: number | null }).processingDays != null ? (
+                            <span className="text-xs font-medium text-amber-400">{(app as VisaApplication & { processingDays?: number | null }).processingDays}d</span>
+                          ) : <span className="text-xs text-muted-foreground/40">—</span>}
+                        </td>
+                        <td className="px-3 py-2.5 whitespace-nowrap">
+                          {isOwn && cEditStatus[app.id] ? (
+                            <div className="flex flex-col gap-1 w-28">
+                              {(Object.keys(APP_STATUS) as AppStatusKey[]).map((s) => (
+                                <button key={s} onClick={() => { updateApp({ id: app.id, data: { status: s } }); setCEditStatus((p) => ({ ...p, [app.id]: false })); }}
+                                  className={`text-left text-[11px] px-2 py-1 rounded-lg flex items-center gap-1.5 hover:bg-muted transition-colors ${app.status === s ? "font-semibold text-primary" : ""}`}>
+                                  {s === app.status && <Check className="w-2.5 h-2.5" />}{APP_STATUS[s].label}
+                                </button>
+                              ))}
+                            </div>
+                          ) : (
+                            <button onClick={() => isOwn && setCEditStatus((p) => ({ ...p, [app.id]: true }))}
+                              className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border font-medium ${isOwn ? "cursor-pointer hover:opacity-80" : "cursor-default"} ${sc.cls}`}>
+                              <ScIcon className="w-2.5 h-2.5" />{sc.label}
+                            </button>
+                          )}
+                        </td>
+                        <td className="px-3 py-2.5 max-w-[160px]">
+                          <span className="text-xs text-muted-foreground truncate block">{app.comment || "—"}</span>
+                        </td>
+                        <td className="px-3 py-2.5 text-right whitespace-nowrap">
+                          {isOwn && <button onClick={() => { if (confirm("Remove?")) deleteApp({ id: app.id }); }} className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Guide Modal ── */}
+      {showGuideModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) closeGuide(); }}>
+          <div className="bg-card border border-border rounded-2xl w-full max-w-md shadow-2xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+              <h3 className="font-semibold">{editingGuide ? "Edit Info" : `Add ${cat.emoji} ${cat.label} Visa Info`}</h3>
+              <button onClick={closeGuide} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="p-5 space-y-4 overflow-y-auto flex-1">
+              <div className="flex items-center justify-between p-3 bg-muted/40 rounded-xl">
+                <div><p className="text-sm font-medium">Visa Required</p><p className="text-xs text-muted-foreground">Is a visa needed?</p></div>
+                <button type="button" onClick={() => setGForm((f) => ({ ...f, visaRequired: !f.visaRequired }))}
+                  className={`w-11 h-6 rounded-full transition-colors relative ${gForm.visaRequired ? "bg-primary" : "bg-muted border border-border"}`}>
+                  <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${gForm.visaRequired ? "translate-x-5" : "translate-x-0.5"}`} />
+                </button>
+              </div>
+              {([
+                { key: "processingTime", icon: <Clock className="w-3.5 h-3.5" />, label: "Processing Time", ph: "e.g. 2–4 weeks" },
+                { key: "officialFee", icon: <DollarSign className="w-3.5 h-3.5" />, label: "Official Fee", ph: "e.g. $160 USD" },
+                ...(activeTab === "travel" ? [{ key: "maxStay", icon: <CalendarDays className="w-3.5 h-3.5" />, label: "Max Stay", ph: "e.g. 90 days" }] : []),
+                { key: "applicationUrl", icon: <LinkIcon className="w-3.5 h-3.5" />, label: "Official URL", ph: "https://..." },
+              ] as { key: keyof typeof gForm; icon: React.ReactNode; label: string; ph: string }[]).map(({ key, icon, label, ph }) => (
+                <div key={key}>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1.5">{icon} {label}</label>
+                  <input value={gForm[key] as string} onChange={(e) => setGForm((f) => ({ ...f, [key]: e.target.value }))} placeholder={ph}
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50" maxLength={200} />
+                </div>
+              ))}
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" /> Key Requirements</label>
+                <textarea value={gForm.requirements} onChange={(e) => setGForm((f) => ({ ...f, requirements: e.target.value }))} placeholder="e.g. Valid passport, bank statements, return ticket…"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm resize-none h-20 focus:outline-none focus:ring-1 focus:ring-primary/50" maxLength={800} />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1.5"><MessageSquare className="w-3.5 h-3.5" /> Notes / Tips</label>
+                <textarea value={gForm.notes} onChange={(e) => setGForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Anything else travelers should know…"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm resize-none h-16 focus:outline-none focus:ring-1 focus:ring-primary/50" maxLength={600} />
+              </div>
+            </div>
+            <div className="flex gap-2 px-5 pb-5 shrink-0">
+              <Button className="flex-1" disabled={creatingGuide || updatingGuide} onClick={submitGuide}>
+                {(creatingGuide || updatingGuide) ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Check className="w-4 h-4 mr-1.5" />}
+                {editingGuide ? "Save Changes" : "Add Info"}
+              </Button>
+              <Button variant="ghost" onClick={closeGuide}>Cancel</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Case Modal ── */}
+      {showCaseModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) closeCase(); }}>
+          <div className="bg-card border border-border rounded-2xl w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <h3 className="font-semibold">Add {cat.emoji} {cat.label} Application — {countryName}</h3>
+              <button onClick={closeCase} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Your Nationality (passport)</label>
+                <select value={cPassport ?? ""} onChange={(e) => setCPassport(e.target.value || null)}
+                  className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50">
+                  <option value="">Select passport country…</option>
+                </select>
+                <p className="text-xs text-muted-foreground mt-1">Leave blank if you prefer not to share</p>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Applied Date *</label>
+                <input type="date" value={cDate} onChange={(e) => setCDate(e.target.value)}
+                  className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Current Status *</label>
+                <div className="flex flex-wrap gap-2">
+                  {(Object.entries(APP_STATUS) as [AppStatusKey, typeof APP_STATUS[AppStatusKey]][]).map(([val, c]) => (
+                    <button key={val} onClick={() => setCStatus(val)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${cStatus === val ? "bg-primary text-primary-foreground" : "bg-background border border-border hover:border-primary/30"}`}>
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Notes (optional)</label>
+                <textarea value={cComment} onChange={(e) => setCComment(e.target.value)} placeholder="Stream, office, any helpful details…"
+                  rows={2} maxLength={300}
+                  className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              </div>
+            </div>
+            <div className="flex gap-2 px-5 pb-5">
+              <Button variant="outline" onClick={closeCase} className="flex-1">Cancel</Button>
+              <Button onClick={submitCase} disabled={!cDate || creatingApp} className="flex-1">
+                {creatingApp ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}Submit
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
