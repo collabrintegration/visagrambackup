@@ -26,6 +26,8 @@ tags:
     description: Support cases
   - name: groups
     description: Travel groups with group chat
+  - name: tracker
+    description: Community visa application tracker
 paths:
   /anthropic/conversations:
     get:
@@ -1062,6 +1064,90 @@ paths:
                 required: [ok, status]
         "401":
           description: Unauthorized
+        "404":
+          description: Not found
+
+  /visa-tracker:
+    get:
+      operationId: listVisaApplications
+      tags: [tracker]
+      summary: List all community visa applications
+      responses:
+        "200":
+          description: List of visa applications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VisaApplication"
+    post:
+      operationId: createVisaApplication
+      tags: [tracker]
+      summary: Create a visa application entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVisaApplicationInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisaApplication"
+        "401":
+          description: Unauthorized
+
+  /visa-tracker/{id}:
+    patch:
+      operationId: updateVisaApplication
+      tags: [tracker]
+      summary: Update own visa application (status auto-fills grantedDate)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateVisaApplicationInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisaApplication"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteVisaApplication
+      tags: [tracker]
+      summary: Delete own visa application
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
         "404":
           description: Not found
 
@@ -2363,3 +2449,78 @@ components:
       properties:
         content:
           type: string
+
+    VisaApplication:
+      type: object
+      required: [id, userId, countryCode, countryName, visaType, applicationDate, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        profileImageUrl:
+          type: string
+          nullable: true
+        countryCode:
+          type: string
+        countryName:
+          type: string
+        visaType:
+          type: string
+          enum: [travel, work, study, pr, citizenship]
+        applicationDate:
+          type: string
+        status:
+          type: string
+          enum: [applied, in_review, approved, rejected, withdrawn]
+        grantedDate:
+          type: string
+          nullable: true
+        comment:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateVisaApplicationInput:
+      type: object
+      required: [countryCode, countryName, visaType, applicationDate]
+      properties:
+        countryCode:
+          type: string
+        countryName:
+          type: string
+        visaType:
+          type: string
+          enum: [travel, work, study, pr, citizenship]
+        applicationDate:
+          type: string
+        status:
+          type: string
+          enum: [applied, in_review, approved, rejected, withdrawn]
+        comment:
+          type: string
+          nullable: true
+
+    UpdateVisaApplicationInput:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [applied, in_review, approved, rejected, withdrawn]
+        grantedDate:
+          type: string
+          nullable: true
+        comment:
+          type: string
+          nullable: true

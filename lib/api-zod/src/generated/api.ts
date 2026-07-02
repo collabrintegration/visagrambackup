@@ -1154,6 +1154,99 @@ export const JoinGroupResponse = zod.object({
 
 
 /**
+ * @summary List all community visa applications
+ */
+export const ListVisaApplicationsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "countryCode": zod.string(),
+  "countryName": zod.string(),
+  "visaType": zod.enum(['travel', 'work', 'study', 'pr', 'citizenship']),
+  "applicationDate": zod.string(),
+  "status": zod.enum(['applied', 'in_review', 'approved', 'rejected', 'withdrawn']),
+  "grantedDate": zod.string().nullish(),
+  "comment": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListVisaApplicationsResponse = zod.array(ListVisaApplicationsResponseItem)
+
+
+/**
+ * @summary Create a visa application entry
+ */
+export const CreateVisaApplicationBody = zod.object({
+  "countryCode": zod.string(),
+  "countryName": zod.string(),
+  "visaType": zod.enum(['travel', 'work', 'study', 'pr', 'citizenship']),
+  "applicationDate": zod.string(),
+  "status": zod.enum(['applied', 'in_review', 'approved', 'rejected', 'withdrawn']).optional(),
+  "comment": zod.string().nullish()
+})
+
+export const CreateVisaApplicationResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "countryCode": zod.string(),
+  "countryName": zod.string(),
+  "visaType": zod.enum(['travel', 'work', 'study', 'pr', 'citizenship']),
+  "applicationDate": zod.string(),
+  "status": zod.enum(['applied', 'in_review', 'approved', 'rejected', 'withdrawn']),
+  "grantedDate": zod.string().nullish(),
+  "comment": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update own visa application (status auto-fills grantedDate)
+ */
+export const UpdateVisaApplicationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateVisaApplicationBody = zod.object({
+  "status": zod.enum(['applied', 'in_review', 'approved', 'rejected', 'withdrawn']).optional(),
+  "grantedDate": zod.string().nullish(),
+  "comment": zod.string().nullish()
+})
+
+export const UpdateVisaApplicationResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "countryCode": zod.string(),
+  "countryName": zod.string(),
+  "visaType": zod.enum(['travel', 'work', 'study', 'pr', 'citizenship']),
+  "applicationDate": zod.string(),
+  "status": zod.enum(['applied', 'in_review', 'approved', 'rejected', 'withdrawn']),
+  "grantedDate": zod.string().nullish(),
+  "comment": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete own visa application
+ */
+export const DeleteVisaApplicationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteVisaApplicationResponse = zod.void()
+
+
+/**
  * @summary List pending join requests (admin only)
  */
 export const ListGroupJoinRequestsParams = zod.object({

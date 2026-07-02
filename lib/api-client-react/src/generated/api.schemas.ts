@@ -650,6 +650,93 @@ export interface CreateGroupMessageInput {
   content: string;
 }
 
+export type VisaApplicationVisaType = typeof VisaApplicationVisaType[keyof typeof VisaApplicationVisaType];
+
+
+export const VisaApplicationVisaType = {
+  travel: 'travel',
+  work: 'work',
+  study: 'study',
+  pr: 'pr',
+  citizenship: 'citizenship',
+} as const;
+
+export type VisaApplicationStatus = typeof VisaApplicationStatus[keyof typeof VisaApplicationStatus];
+
+
+export const VisaApplicationStatus = {
+  applied: 'applied',
+  in_review: 'in_review',
+  approved: 'approved',
+  rejected: 'rejected',
+  withdrawn: 'withdrawn',
+} as const;
+
+export interface VisaApplication {
+  id: number;
+  userId: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  profileImageUrl?: string | null;
+  countryCode: string;
+  countryName: string;
+  visaType: VisaApplicationVisaType;
+  applicationDate: string;
+  status: VisaApplicationStatus;
+  grantedDate?: string | null;
+  comment?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateVisaApplicationInputVisaType = typeof CreateVisaApplicationInputVisaType[keyof typeof CreateVisaApplicationInputVisaType];
+
+
+export const CreateVisaApplicationInputVisaType = {
+  travel: 'travel',
+  work: 'work',
+  study: 'study',
+  pr: 'pr',
+  citizenship: 'citizenship',
+} as const;
+
+export type CreateVisaApplicationInputStatus = typeof CreateVisaApplicationInputStatus[keyof typeof CreateVisaApplicationInputStatus];
+
+
+export const CreateVisaApplicationInputStatus = {
+  applied: 'applied',
+  in_review: 'in_review',
+  approved: 'approved',
+  rejected: 'rejected',
+  withdrawn: 'withdrawn',
+} as const;
+
+export interface CreateVisaApplicationInput {
+  countryCode: string;
+  countryName: string;
+  visaType: CreateVisaApplicationInputVisaType;
+  applicationDate: string;
+  status?: CreateVisaApplicationInputStatus;
+  comment?: string | null;
+}
+
+export type UpdateVisaApplicationInputStatus = typeof UpdateVisaApplicationInputStatus[keyof typeof UpdateVisaApplicationInputStatus];
+
+
+export const UpdateVisaApplicationInputStatus = {
+  applied: 'applied',
+  in_review: 'in_review',
+  approved: 'approved',
+  rejected: 'rejected',
+  withdrawn: 'withdrawn',
+} as const;
+
+export interface UpdateVisaApplicationInput {
+  status?: UpdateVisaApplicationInputStatus;
+  grantedDate?: string | null;
+  comment?: string | null;
+}
+
 export type ListCountriesParams = {
 /**
  * Search by country name

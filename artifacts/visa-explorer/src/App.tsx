@@ -18,6 +18,7 @@ import QuestionDetailPage from "@/pages/question-detail";
 import SignIn from "@/pages/sign-in";
 import GroupsPage from "@/pages/groups";
 import GroupChatPage from "@/pages/group-chat";
+import TrackerPage from "@/pages/tracker";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,6 +47,7 @@ function Router() {
         <Route path="/sign-in" component={SignIn} />
         <Route path="/groups" component={GroupsPage} />
         <Route path="/groups/:id" component={GroupChatPage} />
+        <Route path="/tracker" component={TrackerPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
