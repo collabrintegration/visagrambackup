@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/visagram-app/"
+title = "Visagram Mobile"
+version = "1.0.0"
+id = "artifacts/visagram-app"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/visagram-app/" ]
+localPort = 22446
+
+[services.development]
+run = "pnpm --filter @workspace/visagram-app run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/visagram-app", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/visagram-app", "run", "serve" ]
+
+[services.env]
+PORT = "22446"
+BASE_PATH = "/visagram-app/"
