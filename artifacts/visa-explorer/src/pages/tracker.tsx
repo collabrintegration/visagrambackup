@@ -44,6 +44,9 @@ const POPULAR_COUNTRIES = [
   { code: "PT", name: "Portugal",       flag: "🇵🇹" },
 ];
 
+// First 7 popular countries are always pinned as default tabs
+const PINNED_CODES = POPULAR_COUNTRIES.slice(0, 7).map((c) => c.code);
+
 const STATUS_CONFIG = {
   applied:    { label: "Applied",    icon: Clock,        cls: "bg-blue-500/15 text-blue-400 border-blue-500/30" },
   in_review:  { label: "In Review",  icon: AlertCircle,  cls: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
@@ -521,27 +524,55 @@ export default function TrackerPage() {
     });
   }
 
-  // Build dynamic country list from actual data
-  const countriesInData = useMemo(() => {
-    const countMap = new Map<string, { code: string; name: string; flag: string | null; count: number }>();
+  // Build entry-count map from actual data
+  const entryCountMap = useMemo(() => {
+    const m = new Map<string, number>();
     for (const a of apps) {
       const key = a.countryCode.toUpperCase();
-      const existing = countMap.get(key);
-      if (existing) { existing.count++; }
-      else { countMap.set(key, { code: key, name: a.countryName, flag: null, count: 1 }); }
+      m.set(key, (m.get(key) ?? 0) + 1);
     }
-    // Merge flag from POPULAR_COUNTRIES lookup
-    return [...countMap.values()]
-      .map((c) => ({ ...c, flag: POPULAR_COUNTRIES.find((p) => p.code === c.code)?.flag ?? "🏳" }))
-      .sort((a, b) => b.count - a.count);
+    return m;
   }, [apps]);
 
-  // Filtered by search
-  const visibleCountryTabs = useMemo(() => {
+  type TabCountry = { code: string; name: string; flag: string; count: number; pinned: boolean };
+
+  // Default tabs: pinned 7 popular + any data countries not already pinned
+  const defaultCountryTabs = useMemo<TabCountry[]>(() => {
+    const pinnedTabs: TabCountry[] = POPULAR_COUNTRIES.slice(0, 7).map((p) => ({
+      code: p.code, name: p.name, flag: p.flag,
+      count: entryCountMap.get(p.code) ?? 0,
+      pinned: true,
+    }));
+    const extraTabs: TabCountry[] = [];
+    for (const a of apps) {
+      const key = a.countryCode.toUpperCase();
+      if (!PINNED_CODES.includes(key) && !extraTabs.find((e) => e.code === key)) {
+        extraTabs.push({
+          code: key, name: a.countryName,
+          flag: POPULAR_COUNTRIES.find((p) => p.code === key)?.flag ?? "🏳",
+          count: entryCountMap.get(key) ?? 0,
+          pinned: false,
+        });
+      }
+    }
+    extraTabs.sort((a, b) => b.count - a.count);
+    return [...pinnedTabs, ...extraTabs];
+  }, [apps, entryCountMap]);
+
+  // Filtered by search — searches full countries list from DB
+  const visibleCountryTabs = useMemo<TabCountry[]>(() => {
     const q = countrySearch.toLowerCase().trim();
-    if (!q) return countriesInData;
-    return countriesInData.filter((c) => c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q));
-  }, [countriesInData, countrySearch]);
+    if (!q) return defaultCountryTabs;
+    return (countries as Array<{ code: string; name: string }>)
+      .filter((c) => c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q))
+      .map((c) => ({
+        code: c.code.toUpperCase(),
+        name: c.name,
+        flag: POPULAR_COUNTRIES.find((p) => p.code === c.code.toUpperCase())?.flag ?? "🏳",
+        count: entryCountMap.get(c.code.toUpperCase()) ?? 0,
+        pinned: PINNED_CODES.includes(c.code.toUpperCase()),
+      }));
+  }, [countrySearch, defaultCountryTabs, countries, entryCountMap]);
 
   // Filter apps by selected country
   const filteredByCountry = useMemo(
@@ -557,7 +588,8 @@ export default function TrackerPage() {
     [filteredByCountry]
   );
 
-  const selectedCountryInfo = POPULAR_COUNTRIES.find((c) => c.code === selectedCountry);
+  const selectedCountryInfo = defaultCountryTabs.find((c) => c.code === selectedCountry)
+    ?? visibleCountryTabs.find((c) => c.code === selectedCountry);
   const totalCases = filteredByCountry.length;
 
   return (
@@ -653,14 +685,20 @@ export default function TrackerPage() {
               >
                 🌍 All <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${selectedCountry === "all" ? "bg-white/20" : "bg-muted"}`}>{apps.length}</span>
               </button>
-              {visibleCountryTabs.map((c) => (
-                <button key={c.code} onClick={() => setSelectedCountry(c.code)}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all shrink-0 ${selectedCountry === c.code ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"}`}
-                >
-                  {c.flag} {c.name}
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${selectedCountry === c.code ? "bg-white/20" : "bg-muted"}`}>{c.count}</span>
-                </button>
-              ))}
+              {visibleCountryTabs.map((c) => {
+                const isActive = selectedCountry === c.code;
+                const hasData = c.count > 0;
+                return (
+                  <button key={c.code} onClick={() => setSelectedCountry(c.code)}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all shrink-0 ${isActive ? "bg-primary text-primary-foreground" : `bg-card border border-border hover:border-primary/30 hover:text-foreground ${hasData ? "text-muted-foreground" : "text-muted-foreground/50"}`}`}
+                  >
+                    {c.flag} {c.name}
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center ${isActive ? "bg-white/20" : hasData ? "bg-muted" : "bg-muted/40 text-muted-foreground/40"}`}>
+                      {c.count}
+                    </span>
+                  </button>
+                );
+              })}
               {visibleCountryTabs.length === 0 && countrySearch && (
                 <span className="text-sm text-muted-foreground px-2">No countries match "{countrySearch}"</span>
               )}
