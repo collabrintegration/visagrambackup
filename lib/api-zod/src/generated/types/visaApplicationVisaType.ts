@@ -12,7 +12,7 @@ export type VisaApplicationVisaType = typeof VisaApplicationVisaType[keyof typeo
 export const VisaApplicationVisaType = {
   travel: 'travel',
   work: 'work',
-  study: 'study',
   pr: 'pr',
   citizenship: 'citizenship',
+  partner: 'partner',
 } as const;

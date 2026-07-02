@@ -12,7 +12,7 @@ export type CreateVisaApplicationInputVisaType = typeof CreateVisaApplicationInp
 export const CreateVisaApplicationInputVisaType = {
   travel: 'travel',
   work: 'work',
-  study: 'study',
   pr: 'pr',
   citizenship: 'citizenship',
+  partner: 'partner',
 } as const;

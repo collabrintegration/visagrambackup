@@ -3237,7 +3237,7 @@ components:
           nullable: true
         visaType:
           type: string
-          enum: [travel, work, study, pr, citizenship]
+          enum: [travel, work, pr, citizenship, partner]
         applicationDate:
           type: string
         status:
@@ -3272,7 +3272,7 @@ components:
           nullable: true
         visaType:
           type: string
-          enum: [travel, work, study, pr, citizenship]
+          enum: [travel, work, pr, citizenship, partner]
         applicationDate:
           type: string
         status:

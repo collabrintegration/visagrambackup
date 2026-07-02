@@ -749,9 +749,9 @@ export type VisaApplicationVisaType = typeof VisaApplicationVisaType[keyof typeo
 export const VisaApplicationVisaType = {
   travel: 'travel',
   work: 'work',
-  study: 'study',
   pr: 'pr',
   citizenship: 'citizenship',
+  partner: 'partner',
 } as const;
 
 export type VisaApplicationStatus = typeof VisaApplicationStatus[keyof typeof VisaApplicationStatus];
@@ -792,9 +792,9 @@ export type CreateVisaApplicationInputVisaType = typeof CreateVisaApplicationInp
 export const CreateVisaApplicationInputVisaType = {
   travel: 'travel',
   work: 'work',
-  study: 'study',
   pr: 'pr',
   citizenship: 'citizenship',
+  partner: 'partner',
 } as const;
 
 export type CreateVisaApplicationInputStatus = typeof CreateVisaApplicationInputStatus[keyof typeof CreateVisaApplicationInputStatus];

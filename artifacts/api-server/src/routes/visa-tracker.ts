@@ -129,7 +129,7 @@ router.get("/visa-tracker/analytics", async (req, res) => {
       avgDays: c.days.length ? +(c.days.reduce((s, d) => s + d, 0) / c.days.length).toFixed(1) : null,
     }));
 
-  const byVisaType = ["travel", "work", "study", "pr", "citizenship"].map((vt) => {
+  const byVisaType = ["travel", "work", "pr", "citizenship", "partner"].map((vt) => {
     const rows = all.filter((a) => a.visaType === vt);
     const appr = rows.filter((a) => a.status === "approved");
     const days = rows.filter((a) => a.grantedDate).map((a) => computeProcessingDays(a.applicationDate, a.grantedDate, a.status)).filter((d): d is number => d != null);
