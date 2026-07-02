@@ -20,6 +20,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AddSupportCommentBody,
   Answer,
   AuthUser,
   AuthUserEnvelope,
@@ -28,6 +29,7 @@ import type {
   CreateAnswerBody,
   CreateQuestionBody,
   CreateReviewBody,
+  CreateSupportCaseBody,
   ErrorResponse,
   FeedItem,
   GetCommunityFeedParams,
@@ -45,6 +47,8 @@ import type {
   ReviewsResponse,
   StatsOverview,
   SubmitVisaReportBody,
+  SupportCase,
+  SupportCaseComment,
   TravelEntry,
   UpdateProfileBody,
   UpsertTravelEntryBody,
@@ -1855,5 +1859,300 @@ export const useSubmitVisaReport = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getSubmitVisaReportMutationOptions(options));
+    }
+
+export const getGetMyCasesUrl = () => {
+
+
+
+
+  return `/api/support/cases`
+}
+
+/**
+ * @summary List the authenticated user's support cases
+ */
+export const getMyCases = async ( options?: RequestInit): Promise<SupportCase[]> => {
+
+  return customFetch<SupportCase[]>(getGetMyCasesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyCasesQueryKey = () => {
+    return [
+    `/api/support/cases`
+    ] as const;
+    }
+
+
+export const getGetMyCasesQueryOptions = <TData = Awaited<ReturnType<typeof getMyCases>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyCases>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyCasesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyCases>>> = ({ signal }) => getMyCases({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyCases>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyCasesQueryResult = NonNullable<Awaited<ReturnType<typeof getMyCases>>>
+export type GetMyCasesQueryError = ErrorType<void>
+
+
+/**
+ * @summary List the authenticated user's support cases
+ */
+
+export function useGetMyCases<TData = Awaited<ReturnType<typeof getMyCases>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyCases>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyCasesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateSupportCaseUrl = () => {
+
+
+
+
+  return `/api/support/cases`
+}
+
+/**
+ * @summary Raise a new support case
+ */
+export const createSupportCase = async (createSupportCaseBody: CreateSupportCaseBody, options?: RequestInit): Promise<SupportCase> => {
+
+  return customFetch<SupportCase>(getCreateSupportCaseUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createSupportCaseBody)
+  }
+);}
+
+
+
+
+export const getCreateSupportCaseMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSupportCase>>, TError,{data: BodyType<CreateSupportCaseBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSupportCase>>, TError,{data: BodyType<CreateSupportCaseBody>}, TContext> => {
+
+const mutationKey = ['createSupportCase'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSupportCase>>, {data: BodyType<CreateSupportCaseBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSupportCase(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSupportCaseMutationResult = NonNullable<Awaited<ReturnType<typeof createSupportCase>>>
+    export type CreateSupportCaseMutationBody = BodyType<CreateSupportCaseBody>
+    export type CreateSupportCaseMutationError = ErrorType<void>
+
+    /**
+ * @summary Raise a new support case
+ */
+export const useCreateSupportCase = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSupportCase>>, TError,{data: BodyType<CreateSupportCaseBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSupportCase>>,
+        TError,
+        {data: BodyType<CreateSupportCaseBody>},
+        TContext
+      > => {
+      return useMutation(getCreateSupportCaseMutationOptions(options));
+    }
+
+export const getGetSupportCaseUrl = (id: number,) => {
+
+
+
+
+  return `/api/support/cases/${id}`
+}
+
+/**
+ * @summary Get a support case with its comments
+ */
+export const getSupportCase = async (id: number, options?: RequestInit): Promise<SupportCase> => {
+
+  return customFetch<SupportCase>(getGetSupportCaseUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSupportCaseQueryKey = (id: number,) => {
+    return [
+    `/api/support/cases/${id}`
+    ] as const;
+    }
+
+
+export const getGetSupportCaseQueryOptions = <TData = Awaited<ReturnType<typeof getSupportCase>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSupportCase>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSupportCaseQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSupportCase>>> = ({ signal }) => getSupportCase(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSupportCase>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSupportCaseQueryResult = NonNullable<Awaited<ReturnType<typeof getSupportCase>>>
+export type GetSupportCaseQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get a support case with its comments
+ */
+
+export function useGetSupportCase<TData = Awaited<ReturnType<typeof getSupportCase>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSupportCase>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSupportCaseQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAddSupportCommentUrl = (id: number,) => {
+
+
+
+
+  return `/api/support/cases/${id}/comments`
+}
+
+/**
+ * @summary Add a comment to a support case (admin can also update status)
+ */
+export const addSupportComment = async (id: number,
+    addSupportCommentBody: AddSupportCommentBody, options?: RequestInit): Promise<SupportCaseComment> => {
+
+  return customFetch<SupportCaseComment>(getAddSupportCommentUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(addSupportCommentBody)
+  }
+);}
+
+
+
+
+export const getAddSupportCommentMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addSupportComment>>, TError,{id: number;data: BodyType<AddSupportCommentBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addSupportComment>>, TError,{id: number;data: BodyType<AddSupportCommentBody>}, TContext> => {
+
+const mutationKey = ['addSupportComment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addSupportComment>>, {id: number;data: BodyType<AddSupportCommentBody>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  addSupportComment(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddSupportCommentMutationResult = NonNullable<Awaited<ReturnType<typeof addSupportComment>>>
+    export type AddSupportCommentMutationBody = BodyType<AddSupportCommentBody>
+    export type AddSupportCommentMutationError = ErrorType<void>
+
+    /**
+ * @summary Add a comment to a support case (admin can also update status)
+ */
+export const useAddSupportComment = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addSupportComment>>, TError,{id: number;data: BodyType<AddSupportCommentBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addSupportComment>>,
+        TError,
+        {id: number;data: BodyType<AddSupportCommentBody>},
+        TContext
+      > => {
+      return useMutation(getAddSupportCommentMutationOptions(options));
     }
 

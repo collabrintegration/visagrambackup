@@ -624,3 +624,101 @@ export const SubmitVisaReportResponse = zod.object({
 })
 
 
+/**
+ * @summary List the authenticated user's support cases
+ */
+export const GetMyCasesResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "subject": zod.string(),
+  "body": zod.string(),
+  "status": zod.enum(['open', 'in_progress', 'resolved', 'closed']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "comments": zod.array(zod.object({
+  "id": zod.number(),
+  "caseId": zod.number(),
+  "userId": zod.string(),
+  "body": zod.string(),
+  "isAdmin": zod.boolean(),
+  "createdAt": zod.string()
+})).optional()
+})
+export const GetMyCasesResponse = zod.array(GetMyCasesResponseItem)
+
+
+/**
+ * @summary Raise a new support case
+ */
+export const CreateSupportCaseBody = zod.object({
+  "subject": zod.string(),
+  "body": zod.string()
+})
+
+export const CreateSupportCaseResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "subject": zod.string(),
+  "body": zod.string(),
+  "status": zod.enum(['open', 'in_progress', 'resolved', 'closed']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "comments": zod.array(zod.object({
+  "id": zod.number(),
+  "caseId": zod.number(),
+  "userId": zod.string(),
+  "body": zod.string(),
+  "isAdmin": zod.boolean(),
+  "createdAt": zod.string()
+})).optional()
+})
+
+
+/**
+ * @summary Get a support case with its comments
+ */
+export const GetSupportCaseParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetSupportCaseResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "subject": zod.string(),
+  "body": zod.string(),
+  "status": zod.enum(['open', 'in_progress', 'resolved', 'closed']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "comments": zod.array(zod.object({
+  "id": zod.number(),
+  "caseId": zod.number(),
+  "userId": zod.string(),
+  "body": zod.string(),
+  "isAdmin": zod.boolean(),
+  "createdAt": zod.string()
+})).optional()
+})
+
+
+/**
+ * @summary Add a comment to a support case (admin can also update status)
+ */
+export const AddSupportCommentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AddSupportCommentBody = zod.object({
+  "body": zod.string(),
+  "status": zod.enum(['open', 'in_progress', 'resolved', 'closed']).optional()
+})
+
+export const AddSupportCommentResponse = zod.object({
+  "id": zod.number(),
+  "caseId": zod.number(),
+  "userId": zod.string(),
+  "body": zod.string(),
+  "isAdmin": zod.boolean(),
+  "createdAt": zod.string()
+})
+
+

@@ -6,16 +6,20 @@ import {
   useDeleteTravelEntry,
   useGetMyActivity,
   useUpdateMyProfile,
+  useGetMyCases,
+  useCreateSupportCase,
   getGetTravelMapQueryKey,
   getGetMyActivityQueryKey,
   getGetCurrentAuthUserQueryKey,
+  getGetMyCasesQueryKey,
 } from "@workspace/api-client-react";
 import type { ActivityQuestion } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Map, CheckCircle2, Heart, LogIn, Loader2, Trash2, Globe,
-  User, MessageSquare, BookOpen, ChevronDown,
+  User, MessageSquare, BookOpen, ChevronDown, ShieldAlert,
+  PlusCircle, X, Clock, RefreshCw, XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,8 +41,15 @@ const STATUS_CONFIG = {
 } as const;
 
 type TravelStatus = keyof typeof STATUS_CONFIG;
-type ProfileTab = "travel" | "activity";
+type ProfileTab = "travel" | "activity" | "cases";
 type ActivitySubTab = "asked" | "answered";
+
+const CASE_STATUS: Record<string, { label: string; cls: string; icon: typeof Clock }> = {
+  open:        { label: "Open",        cls: "bg-blue-500/10 text-blue-400",       icon: ShieldAlert },
+  in_progress: { label: "In Progress", cls: "bg-amber-500/10 text-amber-400",    icon: RefreshCw },
+  resolved:    { label: "Resolved",    cls: "bg-emerald-500/10 text-emerald-400", icon: CheckCircle2 },
+  closed:      { label: "Closed",      cls: "bg-zinc-500/10 text-zinc-400",       icon: XCircle },
+};
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -103,6 +114,25 @@ export default function Profile() {
 
   const { data: activity, isLoading: activityLoading } = useGetMyActivity({
     query: { queryKey: getGetMyActivityQueryKey(), enabled: isAuthenticated && activeTab === "activity" },
+  });
+
+  const { data: cases = [], isLoading: casesLoading } = useGetMyCases({
+    query: { queryKey: getGetMyCasesQueryKey(), enabled: isAuthenticated && activeTab === "cases" },
+  });
+
+  const [showNewCase, setShowNewCase] = useState(false);
+  const [caseSubject, setCaseSubject] = useState("");
+  const [caseBody, setCaseBody] = useState("");
+
+  const { mutate: createCase, isPending: creatingCase } = useCreateSupportCase({
+    mutation: {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: getGetMyCasesQueryKey() });
+        setShowNewCase(false);
+        setCaseSubject("");
+        setCaseBody("");
+      },
+    },
   });
 
   const { mutate: deleteEntry, isPending: isDeleting } = useDeleteTravelEntry({
@@ -235,6 +265,7 @@ export default function Profile() {
             {[
               { id: "travel" as const, label: "Travel Map", icon: Map },
               { id: "activity" as const, label: "My Q&A", icon: BookOpen },
+              { id: "cases" as const, label: "Support Cases", icon: ShieldAlert },
             ].map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
@@ -394,6 +425,105 @@ export default function Profile() {
               );
             })()}
           </>
+        )}
+
+        {/* ── Support Cases Tab ────────────────────────────────────────── */}
+        {activeTab === "cases" && (
+          <div className="max-w-2xl">
+            {/* New case form */}
+            {showNewCase ? (
+              <div className="bg-card border border-border rounded-2xl p-6 mb-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold">Raise a Support Case</h3>
+                  <button onClick={() => setShowNewCase(false)} className="text-muted-foreground hover:text-foreground">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Subject</label>
+                  <input
+                    value={caseSubject}
+                    onChange={(e) => setCaseSubject(e.target.value)}
+                    placeholder="Brief summary of your issue"
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Details</label>
+                  <textarea
+                    value={caseBody}
+                    onChange={(e) => setCaseBody(e.target.value)}
+                    placeholder="Describe your issue in detail — what happened, what you expected, your passport/destination if relevant..."
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm resize-none h-32 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    disabled={creatingCase || !caseSubject.trim() || !caseBody.trim()}
+                    onClick={() => createCase({ data: { subject: caseSubject.trim(), body: caseBody.trim() } })}
+                  >
+                    {creatingCase ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <ShieldAlert className="w-4 h-4 mr-1.5" />}
+                    Submit Case
+                  </Button>
+                  <Button variant="ghost" onClick={() => setShowNewCase(false)}>Cancel</Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="font-semibold">Your Support Cases</h3>
+                  <p className="text-sm text-muted-foreground mt-0.5">Track your queries with the Visafy team</p>
+                </div>
+                <Button size="sm" onClick={() => setShowNewCase(true)}>
+                  <PlusCircle className="w-4 h-4 mr-1.5" /> New Case
+                </Button>
+              </div>
+            )}
+
+            {/* Cases list */}
+            {casesLoading ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : cases.length === 0 && !showNewCase ? (
+              <div className="text-center py-20">
+                <ShieldAlert className="w-12 h-12 mx-auto text-muted mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No support cases yet</h3>
+                <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+                  Have a visa question, report a data issue, or need help? Raise a case and we'll get back to you.
+                </p>
+                <Button onClick={() => setShowNewCase(true)}>
+                  <PlusCircle className="w-4 h-4 mr-1.5" /> Raise a Case
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {cases.map((c) => {
+                  const sm = CASE_STATUS[c.status] ?? CASE_STATUS.open;
+                  const StatusIcon = sm.icon;
+                  return (
+                    <Link key={c.id} href={`/support/cases/${c.id}`}>
+                      <div className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-all cursor-pointer">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm truncate">{c.subject}</p>
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{c.body}</p>
+                          </div>
+                          <Badge variant="secondary" className={`flex items-center gap-1 border-none text-xs shrink-0 ${sm.cls}`}>
+                            <StatusIcon className="w-3 h-3" />
+                            {sm.label}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-3">
+                          Case #{c.id} · {timeAgo(c.updatedAt)}
+                        </p>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

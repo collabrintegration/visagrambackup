@@ -79,3 +79,26 @@ export const visaReportsTable = pgTable("visa_reports", {
 export const insertVisaReportSchema = createInsertSchema(visaReportsTable).omit({ id: true, userId: true, createdAt: true, processingDays: true });
 export type InsertVisaReport = z.infer<typeof insertVisaReportSchema>;
 export type VisaReport = typeof visaReportsTable.$inferSelect;
+
+// ── Support Cases ────────────────────────────────────────────────────────────
+export const supportCasesTable = pgTable("support_cases", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  status: text("status").notNull().default("open"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const supportCaseCommentsTable = pgTable("support_case_comments", {
+  id: serial("id").primaryKey(),
+  caseId: integer("case_id").notNull().references(() => supportCasesTable.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull(),
+  body: text("body").notNull(),
+  isAdmin: boolean("is_admin").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type SupportCase = typeof supportCasesTable.$inferSelect;
+export type SupportCaseComment = typeof supportCaseCommentsTable.$inferSelect;

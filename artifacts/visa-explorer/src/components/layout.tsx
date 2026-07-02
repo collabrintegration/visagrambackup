@@ -139,6 +139,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <p className="text-xs text-muted-foreground mt-0.5">Navigate the world with precision.</p>
             </div>
           </div>
+          <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
+            <div className="flex gap-4 text-sm">
+              <a href="mailto:collabrintegration@gmail.com" className="hover:text-foreground transition-colors">Contact Us</a>
+              <span>·</span>
+              <a href="mailto:collabrintegration@gmail.com" className="hover:text-foreground transition-colors">Advertising &amp; Partnerships</a>
+            </div>
+            <div className="text-xs text-muted-foreground/60">collabrintegration@gmail.com</div>
+          </div>
           <div className="flex flex-col items-center md:items-end gap-1 text-sm text-muted-foreground">
             <div>&copy; {new Date().getFullYear()} Visafy. Data is for informational purposes only.</div>
             {health && (

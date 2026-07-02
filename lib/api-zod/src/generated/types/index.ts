@@ -7,6 +7,8 @@
  */
 
 export * from './activityQuestion';
+export * from './addSupportCommentBody';
+export * from './addSupportCommentBodyStatus';
 export * from './answer';
 export * from './authUser';
 export * from './authUserEnvelope';
@@ -16,6 +18,7 @@ export * from './countryDetail';
 export * from './createAnswerBody';
 export * from './createQuestionBody';
 export * from './createReviewBody';
+export * from './createSupportCaseBody';
 export * from './destinationStat';
 export * from './errorResponse';
 export * from './feedItem';
@@ -40,6 +43,9 @@ export * from './reviewsResponseAvgRatings';
 export * from './statsOverview';
 export * from './submitVisaReportBody';
 export * from './submitVisaReportBodyResult';
+export * from './supportCase';
+export * from './supportCaseComment';
+export * from './supportCaseStatus';
 export * from './travelEntry';
 export * from './updateProfileBody';
 export * from './upsertTravelEntryBody';

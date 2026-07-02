@@ -12,6 +12,7 @@ import PassportPower from "@/pages/passport";
 import VisaDetail from "@/pages/visa";
 import Community from "@/pages/community";
 import ProfilePage from "@/pages/profile";
+import SupportCasePage from "@/pages/support-case";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,6 +36,7 @@ function Router() {
         <Route path="/visa/:id" component={VisaDetail} />
         <Route path="/community" component={Community} />
         <Route path="/profile" component={ProfilePage} />
+        <Route path="/support/cases/:id" component={SupportCasePage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

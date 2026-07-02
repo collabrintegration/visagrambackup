@@ -426,6 +426,56 @@ export interface SubmitVisaReportBody {
   notes?: string;
 }
 
+export interface SupportCaseComment {
+  id: number;
+  caseId: number;
+  userId: string;
+  body: string;
+  isAdmin: boolean;
+  createdAt: string;
+}
+
+export type SupportCaseStatus = typeof SupportCaseStatus[keyof typeof SupportCaseStatus];
+
+
+export const SupportCaseStatus = {
+  open: 'open',
+  in_progress: 'in_progress',
+  resolved: 'resolved',
+  closed: 'closed',
+} as const;
+
+export interface SupportCase {
+  id: number;
+  userId: string;
+  subject: string;
+  body: string;
+  status: SupportCaseStatus;
+  createdAt: string;
+  updatedAt: string;
+  comments?: SupportCaseComment[];
+}
+
+export interface CreateSupportCaseBody {
+  subject: string;
+  body: string;
+}
+
+export type AddSupportCommentBodyStatus = typeof AddSupportCommentBodyStatus[keyof typeof AddSupportCommentBodyStatus];
+
+
+export const AddSupportCommentBodyStatus = {
+  open: 'open',
+  in_progress: 'in_progress',
+  resolved: 'resolved',
+  closed: 'closed',
+} as const;
+
+export interface AddSupportCommentBody {
+  body: string;
+  status?: AddSupportCommentBodyStatus;
+}
+
 export type ListCountriesParams = {
 /**
  * Search by country name
