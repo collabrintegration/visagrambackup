@@ -98,14 +98,14 @@ export default function Community() {
         ) : (
           <div className="space-y-4">
             {feed.map((item, idx) => (
-              <>
-                <FeedCard key={`${item.type}-${item.id}`} item={item} />
+              <div key={`${item.type}-${item.id}`}>
+                <FeedCard item={item} />
                 {(idx + 1) % 6 === 0 && idx < feed.length - 1 && (
-                  <div key={`ad-${idx}`} className="py-2">
+                  <div className="py-2">
                     <AdUnit slot="3456789012" format="fluid" className="pt-5" />
                   </div>
                 )}
-              </>
+              </div>
             ))}
           </div>
         )}
@@ -116,9 +116,12 @@ export default function Community() {
 
 function FeedCard({ item }: { item: FeedItem }) {
   const isReview = item.type === "review";
+  const href = isReview
+    ? `/country/${item.countryCode}`
+    : `/questions/${item.id}`;
 
   return (
-    <Link href={`/country/${item.countryCode}`}>
+    <Link href={href}>
       <div className="bg-card border border-border rounded-2xl p-5 hover:border-primary/30 transition-all group cursor-pointer">
         {/* Header */}
         <div className="flex items-start justify-between gap-3 mb-3">

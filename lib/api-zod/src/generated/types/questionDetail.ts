@@ -5,12 +5,12 @@
  * Visa Explorer API
  * OpenAPI spec version: 0.1.0
  */
+import type { Answer } from './answer';
 import type { UserSnippet } from './userSnippet';
 
-export interface QuestionSummary {
+export interface QuestionDetail {
   id: number;
-  /** @nullable */
-  countryCode?: string | null;
+  countryCode: string;
   /** @nullable */
   countryName?: string | null;
   /** @nullable */
@@ -22,7 +22,8 @@ export interface QuestionSummary {
   resolved: boolean;
   createdAt: string;
   answersCount: number;
-  followersCount?: number;
+  followersCount: number;
   isFollowing?: boolean;
   user: UserSnippet;
+  answers: Answer[];
 }

@@ -265,7 +265,8 @@ export const GetCommunityFeedResponseItem = zod.object({
   "user": zod.object({
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
-  "profileImageUrl": zod.string().nullish()
+  "profileImageUrl": zod.string().nullish(),
+  "homeCountry": zod.string().nullish()
 }),
   "data": zod.object({
 
@@ -298,7 +299,8 @@ export const GetCountryReviewsResponse = zod.object({
   "user": zod.object({
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
-  "profileImageUrl": zod.string().nullish()
+  "profileImageUrl": zod.string().nullish(),
+  "homeCountry": zod.string().nullish()
 })
 }))
 })
@@ -336,7 +338,8 @@ export const CreateCountryReviewResponse = zod.object({
   "user": zod.object({
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
-  "profileImageUrl": zod.string().nullish()
+  "profileImageUrl": zod.string().nullish(),
+  "homeCountry": zod.string().nullish()
 })
 })
 
@@ -350,16 +353,22 @@ export const GetCountryQuestionsParams = zod.object({
 
 export const GetCountryQuestionsResponseItem = zod.object({
   "id": zod.number(),
+  "countryCode": zod.string().nullish(),
+  "countryName": zod.string().nullish(),
+  "countryFlag": zod.string().nullish(),
   "passportCode": zod.string().nullish(),
   "title": zod.string(),
   "body": zod.string(),
   "resolved": zod.boolean(),
   "createdAt": zod.string(),
   "answersCount": zod.number(),
+  "followersCount": zod.number().optional(),
+  "isFollowing": zod.boolean().optional(),
   "user": zod.object({
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
-  "profileImageUrl": zod.string().nullish()
+  "profileImageUrl": zod.string().nullish(),
+  "homeCountry": zod.string().nullish()
 })
 })
 export const GetCountryQuestionsResponse = zod.array(GetCountryQuestionsResponseItem)
@@ -380,16 +389,22 @@ export const CreateCountryQuestionBody = zod.object({
 
 export const CreateCountryQuestionResponse = zod.object({
   "id": zod.number(),
+  "countryCode": zod.string().nullish(),
+  "countryName": zod.string().nullish(),
+  "countryFlag": zod.string().nullish(),
   "passportCode": zod.string().nullish(),
   "title": zod.string(),
   "body": zod.string(),
   "resolved": zod.boolean(),
   "createdAt": zod.string(),
   "answersCount": zod.number(),
+  "followersCount": zod.number().optional(),
+  "isFollowing": zod.boolean().optional(),
   "user": zod.object({
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
-  "profileImageUrl": zod.string().nullish()
+  "profileImageUrl": zod.string().nullish(),
+  "homeCountry": zod.string().nullish()
 })
 })
 
@@ -408,12 +423,15 @@ export const GetQuestionAnswersResponse = zod.object({
   "answers": zod.array(zod.object({
   "id": zod.number(),
   "body": zod.string(),
+  "gifUrl": zod.string().nullish(),
   "isAccepted": zod.boolean(),
+  "repliesCount": zod.number().optional(),
   "createdAt": zod.string(),
   "user": zod.object({
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
-  "profileImageUrl": zod.string().nullish()
+  "profileImageUrl": zod.string().nullish(),
+  "homeCountry": zod.string().nullish()
 })
 }))
 })
@@ -427,20 +445,186 @@ export const PostAnswerParams = zod.object({
 })
 
 export const PostAnswerBody = zod.object({
-  "body": zod.string()
+  "body": zod.string(),
+  "gifUrl": zod.string().optional()
 })
 
 export const PostAnswerResponse = zod.object({
   "id": zod.number(),
   "body": zod.string(),
+  "gifUrl": zod.string().nullish(),
   "isAccepted": zod.boolean(),
+  "repliesCount": zod.number().optional(),
   "createdAt": zod.string(),
   "user": zod.object({
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
-  "profileImageUrl": zod.string().nullish()
+  "profileImageUrl": zod.string().nullish(),
+  "homeCountry": zod.string().nullish()
 })
 })
+
+
+/**
+ * @summary Post a question (specify countryCode in body)
+ */
+export const CreateQuestionBody = zod.object({
+  "title": zod.string(),
+  "body": zod.string(),
+  "countryCode": zod.string(),
+  "passportCode": zod.string().optional()
+})
+
+export const CreateQuestionResponse = zod.object({
+  "id": zod.number(),
+  "countryCode": zod.string().nullish(),
+  "countryName": zod.string().nullish(),
+  "countryFlag": zod.string().nullish(),
+  "passportCode": zod.string().nullish(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "resolved": zod.boolean(),
+  "createdAt": zod.string(),
+  "answersCount": zod.number(),
+  "followersCount": zod.number().optional(),
+  "isFollowing": zod.boolean().optional(),
+  "user": zod.object({
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "homeCountry": zod.string().nullish()
+})
+})
+
+
+/**
+ * @summary Get a question with full detail and answers
+ */
+export const GetQuestionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetQuestionResponse = zod.object({
+  "id": zod.number(),
+  "countryCode": zod.string(),
+  "countryName": zod.string().nullish(),
+  "countryFlag": zod.string().nullish(),
+  "passportCode": zod.string().nullish(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "resolved": zod.boolean(),
+  "createdAt": zod.string(),
+  "answersCount": zod.number(),
+  "followersCount": zod.number(),
+  "isFollowing": zod.boolean().optional(),
+  "user": zod.object({
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "homeCountry": zod.string().nullish()
+}),
+  "answers": zod.array(zod.object({
+  "id": zod.number(),
+  "body": zod.string(),
+  "gifUrl": zod.string().nullish(),
+  "isAccepted": zod.boolean(),
+  "repliesCount": zod.number().optional(),
+  "createdAt": zod.string(),
+  "user": zod.object({
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "homeCountry": zod.string().nullish()
+})
+}))
+})
+
+
+/**
+ * @summary Toggle follow status on a question
+ */
+export const ToggleQuestionFollowParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ToggleQuestionFollowResponse = zod.object({
+  "following": zod.boolean(),
+  "followersCount": zod.number()
+})
+
+
+/**
+ * @summary Get replies to an answer
+ */
+export const GetAnswerRepliesParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetAnswerRepliesResponseItem = zod.object({
+  "id": zod.number(),
+  "body": zod.string(),
+  "gifUrl": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "user": zod.object({
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "homeCountry": zod.string().nullish()
+})
+})
+export const GetAnswerRepliesResponse = zod.array(GetAnswerRepliesResponseItem)
+
+
+/**
+ * @summary Reply to an answer
+ */
+export const PostAnswerReplyParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PostAnswerReplyBody = zod.object({
+  "body": zod.string(),
+  "gifUrl": zod.string().optional()
+})
+
+export const PostAnswerReplyResponse = zod.object({
+  "id": zod.number(),
+  "body": zod.string(),
+  "gifUrl": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "user": zod.object({
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "homeCountry": zod.string().nullish()
+})
+})
+
+
+/**
+ * @summary Get questions the authenticated user follows
+ */
+export const GetFollowedQuestionsResponseItem = zod.object({
+  "id": zod.number(),
+  "countryCode": zod.string().nullish(),
+  "countryName": zod.string().nullish(),
+  "countryFlag": zod.string().nullish(),
+  "passportCode": zod.string().nullish(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "resolved": zod.boolean(),
+  "createdAt": zod.string(),
+  "answersCount": zod.number(),
+  "followersCount": zod.number().optional(),
+  "isFollowing": zod.boolean().optional(),
+  "user": zod.object({
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "homeCountry": zod.string().nullish()
+})
+})
+export const GetFollowedQuestionsResponse = zod.array(GetFollowedQuestionsResponseItem)
 
 
 /**
@@ -584,7 +768,8 @@ export const GetVisaReportsResponse = zod.object({
   "user": zod.object({
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
-  "profileImageUrl": zod.string().nullish()
+  "profileImageUrl": zod.string().nullish(),
+  "homeCountry": zod.string().nullish()
 })
 }))
 })
@@ -619,7 +804,8 @@ export const SubmitVisaReportResponse = zod.object({
   "user": zod.object({
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
-  "profileImageUrl": zod.string().nullish()
+  "profileImageUrl": zod.string().nullish(),
+  "homeCountry": zod.string().nullish()
 })
 })
 

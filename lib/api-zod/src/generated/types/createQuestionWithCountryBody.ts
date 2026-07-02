@@ -6,7 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface CreateAnswerBody {
+export interface CreateQuestionWithCountryBody {
+  title: string;
   body: string;
-  gifUrl?: string;
+  countryCode: string;
+  passportCode?: string;
 }

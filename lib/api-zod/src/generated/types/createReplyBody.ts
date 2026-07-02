@@ -6,7 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface CreateAnswerBody {
+export interface CreateReplyBody {
   body: string;
   gifUrl?: string;
 }

@@ -38,6 +38,8 @@ export interface UserSnippet {
   lastName?: string | null;
   /** @nullable */
   profileImageUrl?: string | null;
+  /** @nullable */
+  homeCountry?: string | null;
 }
 
 export interface Review {
@@ -85,12 +87,20 @@ export interface CreateReviewBody {
 export interface QuestionSummary {
   id: number;
   /** @nullable */
+  countryCode?: string | null;
+  /** @nullable */
+  countryName?: string | null;
+  /** @nullable */
+  countryFlag?: string | null;
+  /** @nullable */
   passportCode?: string | null;
   title: string;
   body: string;
   resolved: boolean;
   createdAt: string;
   answersCount: number;
+  followersCount?: number;
+  isFollowing?: boolean;
   user: UserSnippet;
 }
 
@@ -100,16 +110,66 @@ export interface CreateQuestionBody {
   passportCode?: string;
 }
 
+export interface CreateQuestionWithCountryBody {
+  title: string;
+  body: string;
+  countryCode: string;
+  passportCode?: string;
+}
+
 export interface Answer {
   id: number;
   body: string;
+  /** @nullable */
+  gifUrl?: string | null;
   isAccepted: boolean;
+  repliesCount?: number;
   createdAt: string;
   user: UserSnippet;
 }
 
 export interface CreateAnswerBody {
   body: string;
+  gifUrl?: string;
+}
+
+export interface AnswerReply {
+  id: number;
+  body: string;
+  /** @nullable */
+  gifUrl?: string | null;
+  createdAt: string;
+  user: UserSnippet;
+}
+
+export interface CreateReplyBody {
+  body: string;
+  gifUrl?: string;
+}
+
+export interface QuestionDetail {
+  id: number;
+  countryCode: string;
+  /** @nullable */
+  countryName?: string | null;
+  /** @nullable */
+  countryFlag?: string | null;
+  /** @nullable */
+  passportCode?: string | null;
+  title: string;
+  body: string;
+  resolved: boolean;
+  createdAt: string;
+  answersCount: number;
+  followersCount: number;
+  isFollowing?: boolean;
+  user: UserSnippet;
+  answers: Answer[];
+}
+
+export interface FollowStatus {
+  following: boolean;
+  followersCount: number;
 }
 
 export type QuestionWithAnswersQuestion = { [key: string]: unknown };

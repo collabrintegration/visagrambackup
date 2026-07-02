@@ -7,13 +7,11 @@
  */
 import type { UserSnippet } from './userSnippet';
 
-export interface Answer {
+export interface AnswerReply {
   id: number;
   body: string;
   /** @nullable */
   gifUrl?: string | null;
-  isAccepted: boolean;
-  repliesCount?: number;
   createdAt: string;
   user: UserSnippet;
 }

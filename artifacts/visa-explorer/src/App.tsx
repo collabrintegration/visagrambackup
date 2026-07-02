@@ -13,6 +13,7 @@ import VisaDetail from "@/pages/visa";
 import Community from "@/pages/community";
 import ProfilePage from "@/pages/profile";
 import SupportCasePage from "@/pages/support-case";
+import QuestionDetailPage from "@/pages/question-detail";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,6 +38,7 @@ function Router() {
         <Route path="/community" component={Community} />
         <Route path="/profile" component={ProfilePage} />
         <Route path="/support/cases/:id" component={SupportCasePage} />
+        <Route path="/questions/:id" component={QuestionDetailPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

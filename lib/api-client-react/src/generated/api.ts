@@ -22,16 +22,20 @@ import type {
 import type {
   AddSupportCommentBody,
   Answer,
+  AnswerReply,
   AuthUser,
   AuthUserEnvelope,
   Country,
   CountryDetail,
   CreateAnswerBody,
   CreateQuestionBody,
+  CreateQuestionWithCountryBody,
+  CreateReplyBody,
   CreateReviewBody,
   CreateSupportCaseBody,
   ErrorResponse,
   FeedItem,
+  FollowStatus,
   GetCommunityFeedParams,
   GetVisaReportsParams,
   HealthStatus,
@@ -41,6 +45,7 @@ import type {
   OkResponse,
   PassportDestinationsResponse,
   PassportRankEntry,
+  QuestionDetail,
   QuestionSummary,
   QuestionWithAnswers,
   Review,
@@ -1335,6 +1340,448 @@ export const usePostAnswer = <TError = ErrorType<void>,
       > => {
       return useMutation(getPostAnswerMutationOptions(options));
     }
+
+export const getCreateQuestionUrl = () => {
+
+
+
+
+  return `/api/questions`
+}
+
+/**
+ * @summary Post a question (specify countryCode in body)
+ */
+export const createQuestion = async (createQuestionWithCountryBody: CreateQuestionWithCountryBody, options?: RequestInit): Promise<QuestionSummary> => {
+
+  return customFetch<QuestionSummary>(getCreateQuestionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createQuestionWithCountryBody)
+  }
+);}
+
+
+
+
+export const getCreateQuestionMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createQuestion>>, TError,{data: BodyType<CreateQuestionWithCountryBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createQuestion>>, TError,{data: BodyType<CreateQuestionWithCountryBody>}, TContext> => {
+
+const mutationKey = ['createQuestion'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createQuestion>>, {data: BodyType<CreateQuestionWithCountryBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createQuestion(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateQuestionMutationResult = NonNullable<Awaited<ReturnType<typeof createQuestion>>>
+    export type CreateQuestionMutationBody = BodyType<CreateQuestionWithCountryBody>
+    export type CreateQuestionMutationError = ErrorType<void>
+
+    /**
+ * @summary Post a question (specify countryCode in body)
+ */
+export const useCreateQuestion = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createQuestion>>, TError,{data: BodyType<CreateQuestionWithCountryBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createQuestion>>,
+        TError,
+        {data: BodyType<CreateQuestionWithCountryBody>},
+        TContext
+      > => {
+      return useMutation(getCreateQuestionMutationOptions(options));
+    }
+
+export const getGetQuestionUrl = (id: number,) => {
+
+
+
+
+  return `/api/questions/${id}`
+}
+
+/**
+ * @summary Get a question with full detail and answers
+ */
+export const getQuestion = async (id: number, options?: RequestInit): Promise<QuestionDetail> => {
+
+  return customFetch<QuestionDetail>(getGetQuestionUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQuestionQueryKey = (id: number,) => {
+    return [
+    `/api/questions/${id}`
+    ] as const;
+    }
+
+
+export const getGetQuestionQueryOptions = <TData = Awaited<ReturnType<typeof getQuestion>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQuestion>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQuestionQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQuestion>>> = ({ signal }) => getQuestion(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQuestion>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQuestionQueryResult = NonNullable<Awaited<ReturnType<typeof getQuestion>>>
+export type GetQuestionQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get a question with full detail and answers
+ */
+
+export function useGetQuestion<TData = Awaited<ReturnType<typeof getQuestion>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQuestion>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQuestionQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getToggleQuestionFollowUrl = (id: number,) => {
+
+
+
+
+  return `/api/questions/${id}/follow`
+}
+
+/**
+ * @summary Toggle follow status on a question
+ */
+export const toggleQuestionFollow = async (id: number, options?: RequestInit): Promise<FollowStatus> => {
+
+  return customFetch<FollowStatus>(getToggleQuestionFollowUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getToggleQuestionFollowMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof toggleQuestionFollow>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof toggleQuestionFollow>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['toggleQuestionFollow'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof toggleQuestionFollow>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  toggleQuestionFollow(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ToggleQuestionFollowMutationResult = NonNullable<Awaited<ReturnType<typeof toggleQuestionFollow>>>
+
+    export type ToggleQuestionFollowMutationError = ErrorType<void>
+
+    /**
+ * @summary Toggle follow status on a question
+ */
+export const useToggleQuestionFollow = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof toggleQuestionFollow>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof toggleQuestionFollow>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getToggleQuestionFollowMutationOptions(options));
+    }
+
+export const getGetAnswerRepliesUrl = (id: number,) => {
+
+
+
+
+  return `/api/answers/${id}/replies`
+}
+
+/**
+ * @summary Get replies to an answer
+ */
+export const getAnswerReplies = async (id: number, options?: RequestInit): Promise<AnswerReply[]> => {
+
+  return customFetch<AnswerReply[]>(getGetAnswerRepliesUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAnswerRepliesQueryKey = (id: number,) => {
+    return [
+    `/api/answers/${id}/replies`
+    ] as const;
+    }
+
+
+export const getGetAnswerRepliesQueryOptions = <TData = Awaited<ReturnType<typeof getAnswerReplies>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAnswerReplies>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAnswerRepliesQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAnswerReplies>>> = ({ signal }) => getAnswerReplies(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAnswerReplies>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAnswerRepliesQueryResult = NonNullable<Awaited<ReturnType<typeof getAnswerReplies>>>
+export type GetAnswerRepliesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get replies to an answer
+ */
+
+export function useGetAnswerReplies<TData = Awaited<ReturnType<typeof getAnswerReplies>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAnswerReplies>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAnswerRepliesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostAnswerReplyUrl = (id: number,) => {
+
+
+
+
+  return `/api/answers/${id}/replies`
+}
+
+/**
+ * @summary Reply to an answer
+ */
+export const postAnswerReply = async (id: number,
+    createReplyBody: CreateReplyBody, options?: RequestInit): Promise<AnswerReply> => {
+
+  return customFetch<AnswerReply>(getPostAnswerReplyUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createReplyBody)
+  }
+);}
+
+
+
+
+export const getPostAnswerReplyMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAnswerReply>>, TError,{id: number;data: BodyType<CreateReplyBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postAnswerReply>>, TError,{id: number;data: BodyType<CreateReplyBody>}, TContext> => {
+
+const mutationKey = ['postAnswerReply'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postAnswerReply>>, {id: number;data: BodyType<CreateReplyBody>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  postAnswerReply(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostAnswerReplyMutationResult = NonNullable<Awaited<ReturnType<typeof postAnswerReply>>>
+    export type PostAnswerReplyMutationBody = BodyType<CreateReplyBody>
+    export type PostAnswerReplyMutationError = ErrorType<void>
+
+    /**
+ * @summary Reply to an answer
+ */
+export const usePostAnswerReply = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAnswerReply>>, TError,{id: number;data: BodyType<CreateReplyBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postAnswerReply>>,
+        TError,
+        {id: number;data: BodyType<CreateReplyBody>},
+        TContext
+      > => {
+      return useMutation(getPostAnswerReplyMutationOptions(options));
+    }
+
+export const getGetFollowedQuestionsUrl = () => {
+
+
+
+
+  return `/api/users/me/followed-questions`
+}
+
+/**
+ * @summary Get questions the authenticated user follows
+ */
+export const getFollowedQuestions = async ( options?: RequestInit): Promise<QuestionSummary[]> => {
+
+  return customFetch<QuestionSummary[]>(getGetFollowedQuestionsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetFollowedQuestionsQueryKey = () => {
+    return [
+    `/api/users/me/followed-questions`
+    ] as const;
+    }
+
+
+export const getGetFollowedQuestionsQueryOptions = <TData = Awaited<ReturnType<typeof getFollowedQuestions>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFollowedQuestions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFollowedQuestionsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFollowedQuestions>>> = ({ signal }) => getFollowedQuestions({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFollowedQuestions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetFollowedQuestionsQueryResult = NonNullable<Awaited<ReturnType<typeof getFollowedQuestions>>>
+export type GetFollowedQuestionsQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get questions the authenticated user follows
+ */
+
+export function useGetFollowedQuestions<TData = Awaited<ReturnType<typeof getFollowedQuestions>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFollowedQuestions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetFollowedQuestionsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetTravelMapUrl = () => {
 

@@ -450,6 +450,132 @@ paths:
         "401":
           description: Unauthorized
 
+  /questions:
+    post:
+      tags: [community]
+      operationId: createQuestion
+      summary: Post a question (specify countryCode in body)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateQuestionWithCountryBody"
+      responses:
+        "201":
+          description: Question created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestionSummary"
+        "401":
+          description: Unauthorized
+
+  /questions/{id}:
+    get:
+      tags: [community]
+      operationId: getQuestion
+      summary: Get a question with full detail and answers
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Question detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestionDetail"
+        "404":
+          description: Not found
+
+  /questions/{id}/follow:
+    post:
+      tags: [community]
+      operationId: toggleQuestionFollow
+      summary: Toggle follow status on a question
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Follow status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FollowStatus"
+        "401":
+          description: Unauthorized
+
+  /answers/{id}/replies:
+    get:
+      tags: [community]
+      operationId: getAnswerReplies
+      summary: Get replies to an answer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Replies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnswerReply"
+    post:
+      tags: [community]
+      operationId: postAnswerReply
+      summary: Reply to an answer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReplyBody"
+      responses:
+        "201":
+          description: Reply posted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnswerReply"
+        "401":
+          description: Unauthorized
+
+  /users/me/followed-questions:
+    get:
+      tags: [users]
+      operationId: getFollowedQuestions
+      summary: Get questions the authenticated user follows
+      responses:
+        "200":
+          description: Followed questions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QuestionSummary"
+        "401":
+          description: Unauthorized
+
   /travel-map:
     get:
       tags: [community]
@@ -738,6 +864,8 @@ components:
           type: ["string", "null"]
         profileImageUrl:
           type: ["string", "null"]
+        homeCountry:
+          type: ["string", "null"]
 
     Review:
       type: object
@@ -804,6 +932,12 @@ components:
       properties:
         id:
           type: integer
+        countryCode:
+          type: ["string", "null"]
+        countryName:
+          type: ["string", "null"]
+        countryFlag:
+          type: ["string", "null"]
         passportCode:
           type: ["string", "null"]
         title:
@@ -816,6 +950,10 @@ components:
           type: string
         answersCount:
           type: integer
+        followersCount:
+          type: integer
+        isFollowing:
+          type: boolean
         user:
           $ref: "#/components/schemas/UserSnippet"
 
@@ -830,6 +968,19 @@ components:
         passportCode:
           type: string
 
+    CreateQuestionWithCountryBody:
+      type: object
+      required: [title, body, countryCode]
+      properties:
+        title:
+          type: string
+        body:
+          type: string
+        countryCode:
+          type: string
+        passportCode:
+          type: string
+
     Answer:
       type: object
       required: [id, body, isAccepted, createdAt, user]
@@ -838,8 +989,12 @@ components:
           type: integer
         body:
           type: string
+        gifUrl:
+          type: ["string", "null"]
         isAccepted:
           type: boolean
+        repliesCount:
+          type: integer
         createdAt:
           type: string
         user:
@@ -851,6 +1006,76 @@ components:
       properties:
         body:
           type: string
+        gifUrl:
+          type: string
+
+    AnswerReply:
+      type: object
+      required: [id, body, createdAt, user]
+      properties:
+        id:
+          type: integer
+        body:
+          type: string
+        gifUrl:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserSnippet"
+
+    CreateReplyBody:
+      type: object
+      required: [body]
+      properties:
+        body:
+          type: string
+        gifUrl:
+          type: string
+
+    QuestionDetail:
+      type: object
+      required: [id, title, body, resolved, createdAt, answersCount, followersCount, user, countryCode, answers]
+      properties:
+        id:
+          type: integer
+        countryCode:
+          type: string
+        countryName:
+          type: ["string", "null"]
+        countryFlag:
+          type: ["string", "null"]
+        passportCode:
+          type: ["string", "null"]
+        title:
+          type: string
+        body:
+          type: string
+        resolved:
+          type: boolean
+        createdAt:
+          type: string
+        answersCount:
+          type: integer
+        followersCount:
+          type: integer
+        isFollowing:
+          type: boolean
+        user:
+          $ref: "#/components/schemas/UserSnippet"
+        answers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Answer"
+
+    FollowStatus:
+      type: object
+      required: [following, followersCount]
+      properties:
+        following:
+          type: boolean
+        followersCount:
+          type: integer
 
     QuestionWithAnswers:
       type: object

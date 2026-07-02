@@ -31,7 +31,26 @@ export const answersTable = pgTable("answers", {
   userId: text("user_id").notNull(),
   questionId: integer("question_id").notNull(),
   body: text("body").notNull(),
+  gifUrl: text("gif_url"),
   isAccepted: boolean("is_accepted").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const questionFollowsTable = pgTable("question_follows", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  questionId: integer("question_id").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  unique("question_follows_unique").on(t.userId, t.questionId),
+]);
+
+export const answerRepliesTable = pgTable("answer_replies", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  answerId: integer("answer_id").notNull(),
+  body: text("body").notNull(),
+  gifUrl: text("gif_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -57,6 +76,9 @@ export type Question = typeof questionsTable.$inferSelect;
 export const insertAnswerSchema = createInsertSchema(answersTable).omit({ id: true, userId: true, createdAt: true });
 export type InsertAnswer = z.infer<typeof insertAnswerSchema>;
 export type Answer = typeof answersTable.$inferSelect;
+
+export type QuestionFollow = typeof questionFollowsTable.$inferSelect;
+export type AnswerReply = typeof answerRepliesTable.$inferSelect;
 
 export const insertTravelEntrySchema = createInsertSchema(travelEntriesTable).omit({ id: true, userId: true, createdAt: true });
 export type InsertTravelEntry = z.infer<typeof insertTravelEntrySchema>;

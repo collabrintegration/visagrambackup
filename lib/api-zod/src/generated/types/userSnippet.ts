@@ -13,4 +13,6 @@ export interface UserSnippet {
   lastName?: string | null;
   /** @nullable */
   profileImageUrl?: string | null;
+  /** @nullable */
+  homeCountry?: string | null;
 }

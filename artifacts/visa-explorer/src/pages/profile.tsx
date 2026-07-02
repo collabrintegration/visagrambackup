@@ -8,10 +8,13 @@ import {
   useUpdateMyProfile,
   useGetMyCases,
   useCreateSupportCase,
+  useCreateQuestion,
+  useGetFollowedQuestions,
   getGetTravelMapQueryKey,
   getGetMyActivityQueryKey,
   getGetCurrentAuthUserQueryKey,
   getGetMyCasesQueryKey,
+  getGetFollowedQuestionsQueryKey,
 } from "@workspace/api-client-react";
 import type { ActivityQuestion } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
@@ -19,7 +22,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Map, CheckCircle2, Heart, LogIn, Loader2, Trash2, Globe,
   User, MessageSquare, BookOpen, ChevronDown, ShieldAlert,
-  PlusCircle, X, Clock, RefreshCw, XCircle,
+  PlusCircle, X, Clock, RefreshCw, XCircle, Bell, PenLine, Save,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,7 +45,7 @@ const STATUS_CONFIG = {
 
 type TravelStatus = keyof typeof STATUS_CONFIG;
 type ProfileTab = "travel" | "activity" | "cases";
-type ActivitySubTab = "asked" | "answered";
+type ActivitySubTab = "asked" | "answered" | "following";
 
 const CASE_STATUS: Record<string, { label: string; cls: string; icon: typeof Clock }> = {
   open:        { label: "Open",        cls: "bg-blue-500/10 text-blue-400",       icon: ShieldAlert },
@@ -66,7 +69,7 @@ function timeAgo(dateStr: string): string {
 
 function QuestionCard({ q }: { q: ActivityQuestion }) {
   return (
-    <Link href={`/country/${q.countryCode}`}>
+    <Link href={`/questions/${q.id}`}>
       <div className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-all cursor-pointer group">
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -100,12 +103,53 @@ function QuestionCard({ q }: { q: ActivityQuestion }) {
   );
 }
 
+function FollowedQuestionCard({ q }: { q: { id: number; title: string; countryCode: string | null; countryName?: string | null; countryFlag?: string | null; answersCount: number; resolved: boolean; createdAt: string; passportCode?: string | null; followersCount: number } }) {
+  return (
+    <Link href={`/questions/${q.id}`}>
+      <div className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-all cursor-pointer group">
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            {q.countryFlag && <span>{q.countryFlag}</span>}
+            <span>{q.countryName ?? q.countryCode}</span>
+            <span>·</span>
+            <span>{timeAgo(q.createdAt)}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {q.resolved && (
+              <Badge variant="secondary" className="text-xs bg-emerald-500/10 text-emerald-400 border-none shrink-0">
+                <CheckCircle2 className="w-3 h-3 mr-1" /> Resolved
+              </Badge>
+            )}
+          </div>
+        </div>
+        <p className="font-semibold text-sm group-hover:text-primary transition-colors line-clamp-2 mb-2">
+          {q.title}
+        </p>
+        <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <MessageSquare className="w-3 h-3" /> {q.answersCount} {q.answersCount === 1 ? "answer" : "answers"}
+          </span>
+          <span className="flex items-center gap-1">
+            <Bell className="w-3 h-3" /> {q.followersCount} following
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 export default function Profile() {
   const { user, isAuthenticated, isLoading: authLoading, login } = useAuth();
   const [activeTab, setActiveTab] = useState<ProfileTab>("travel");
   const [travelFilter, setTravelFilter] = useState<TravelStatus>("visited");
   const [activitySub, setActivitySub] = useState<ActivitySubTab>("asked");
   const [editingCountry, setEditingCountry] = useState(false);
+  const [localHomeCountry, setLocalHomeCountry] = useState<string | null>(null);
+  const [savingError, setSavingError] = useState<string | null>(null);
+  const [showAskModal, setShowAskModal] = useState(false);
+  const [askCountry, setAskCountry] = useState<string | null>(null);
+  const [askTitle, setAskTitle] = useState("");
+  const [askBody, setAskBody] = useState("");
   const queryClient = useQueryClient();
 
   const { data: entries = [], isLoading: mapLoading } = useGetTravelMap({
@@ -114,6 +158,10 @@ export default function Profile() {
 
   const { data: activity, isLoading: activityLoading } = useGetMyActivity({
     query: { queryKey: getGetMyActivityQueryKey(), enabled: isAuthenticated && activeTab === "activity" },
+  });
+
+  const { data: followedQuestions = [], isLoading: followedLoading } = useGetFollowedQuestions({
+    query: { queryKey: getGetFollowedQuestionsQueryKey(), enabled: isAuthenticated && activeTab === "activity" && activitySub === "following" },
   });
 
   const { data: cases = [], isLoading: casesLoading } = useGetMyCases({
@@ -143,9 +191,29 @@ export default function Profile() {
 
   const { mutate: updateProfile, isPending: isSavingCountry } = useUpdateMyProfile({
     mutation: {
-      onSuccess: () => {
+      onSuccess: (data) => {
         void queryClient.invalidateQueries({ queryKey: getGetCurrentAuthUserQueryKey() });
+        const updated = data as { homeCountry?: string | null };
+        setLocalHomeCountry(updated.homeCountry ?? null);
         setEditingCountry(false);
+        setSavingError(null);
+      },
+      onError: () => {
+        setSavingError("Failed to save. Please try again.");
+      },
+    },
+  });
+
+  const { mutate: createQuestion, isPending: isCreatingQuestion } = useCreateQuestion({
+    mutation: {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: getGetMyActivityQueryKey() });
+        setShowAskModal(false);
+        setAskCountry(null);
+        setAskTitle("");
+        setAskBody("");
+        setActiveTab("activity");
+        setActivitySub("asked");
       },
     },
   });
@@ -174,6 +242,9 @@ export default function Profile() {
   const activeEntries = travelFilter === "visited" ? visited : wantToVisit;
   const cfg = STATUS_CONFIG[travelFilter];
   const totalActivity = (activity?.questionsAsked?.length ?? 0) + (activity?.questionsAnswered?.length ?? 0);
+  const displayHomeCountry = localHomeCountry !== null
+    ? localHomeCountry
+    : (user as { homeCountry?: string | null })?.homeCountry ?? null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -203,21 +274,28 @@ export default function Profile() {
               {/* Home country */}
               <div className="mt-3">
                 {editingCountry ? (
-                  <div className="flex items-center gap-2 max-w-xs">
-                    <CountryCombobox
-                      value={(user as { homeCountry?: string | null })?.homeCountry ?? null}
-                      onChange={(code) => updateProfile({ data: { homeCountry: code } })}
-                      placeholder="Select your passport country"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setEditingCountry(false)}
-                      className="text-muted-foreground hover:text-foreground shrink-0"
-                    >
-                      Cancel
-                    </Button>
-                    {isSavingCountry && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                  <div className="flex flex-col gap-2 max-w-xs">
+                    <div className="flex items-center gap-2">
+                      <CountryCombobox
+                        value={displayHomeCountry}
+                        onChange={(code) => {
+                          setSavingError(null);
+                          updateProfile({ data: { homeCountry: code } });
+                        }}
+                        placeholder="Select your passport country"
+                      />
+                      {isSavingCountry && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground shrink-0" />}
+                      {!isSavingCountry && (
+                        <button
+                          onClick={() => { setEditingCountry(false); setSavingError(null); }}
+                          className="text-muted-foreground hover:text-foreground shrink-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                    {savingError && <p className="text-xs text-rose-400">{savingError}</p>}
+                    <p className="text-xs text-muted-foreground">Select from the dropdown — saves automatically.</p>
                   </div>
                 ) : (
                   <button
@@ -225,14 +303,21 @@ export default function Profile() {
                     className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
                   >
                     <Globe className="w-4 h-4" />
-                    {(user as { homeCountry?: string | null })?.homeCountry
-                      ? <span>Passport: <span className="text-foreground font-medium">{(user as { homeCountry?: string | null }).homeCountry}</span></span>
+                    {displayHomeCountry
+                      ? <span>Passport: <span className="text-foreground font-medium">{displayHomeCountry}</span></span>
                       : <span className="group-hover:text-primary">+ Set your passport country</span>
                     }
                     <ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
                 )}
               </div>
+            </div>
+
+            {/* Ask a Question CTA */}
+            <div className="shrink-0">
+              <Button size="sm" onClick={() => setShowAskModal(true)}>
+                <PenLine className="w-4 h-4 mr-1.5" /> Ask a Question
+              </Button>
             </div>
           </div>
 
@@ -289,7 +374,6 @@ export default function Profile() {
         {/* ── Travel Map Tab ──────────────────────────────────────────── */}
         {activeTab === "travel" && (
           <>
-            {/* Sub-filter */}
             <div className="flex gap-2 mb-6">
               {(["visited", "want_to_visit"] as TravelStatus[]).map((s) => {
                 const c = STATUS_CONFIG[s];
@@ -370,67 +454,106 @@ export default function Profile() {
         {/* ── My Q&A Tab ─────────────────────────────────────────────── */}
         {activeTab === "activity" && (
           <>
-            <div className="flex gap-2 mb-6">
-              {([
-                { id: "asked" as const, label: "Questions I Asked", count: activity?.questionsAsked?.length ?? 0 },
-                { id: "answered" as const, label: "Questions I Answered", count: activity?.questionsAnswered?.length ?? 0 },
-              ]).map(({ id, label, count }) => (
-                <button
-                  key={id}
-                  onClick={() => setActivitySub(id)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                    activitySub === id
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card border border-border text-muted-foreground hover:border-primary/40"
-                  }`}
-                >
-                  {label}
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${activitySub === id ? "bg-white/20" : "bg-muted"}`}>
-                    {count}
-                  </span>
-                </button>
-              ))}
+            <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+              <div className="flex gap-2 flex-wrap">
+                {([
+                  { id: "asked" as const, label: "Questions I Asked", count: activity?.questionsAsked?.length ?? 0 },
+                  { id: "answered" as const, label: "Questions I Answered", count: activity?.questionsAnswered?.length ?? 0 },
+                  { id: "following" as const, label: "Following", count: followedQuestions.length, icon: Bell },
+                ]).map(({ id, label, count }) => (
+                  <button
+                    key={id}
+                    onClick={() => setActivitySub(id)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                      activitySub === id
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-card border border-border text-muted-foreground hover:border-primary/40"
+                    }`}
+                  >
+                    {label}
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${activitySub === id ? "bg-white/20" : "bg-muted"}`}>
+                      {count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <Button size="sm" variant="outline" onClick={() => setShowAskModal(true)}>
+                <PenLine className="w-3.5 h-3.5 mr-1.5" /> Ask a Question
+              </Button>
             </div>
 
-            {activityLoading ? (
-              <div className="flex justify-center py-20">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              </div>
-            ) : (() => {
-              const items = activitySub === "asked"
-                ? (activity?.questionsAsked ?? [])
-                : (activity?.questionsAnswered ?? []);
-              if (items.length === 0) {
+            {/* Asked / Answered tabs */}
+            {(activitySub === "asked" || activitySub === "answered") && (
+              activityLoading ? (
+                <div className="flex justify-center py-20">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+              ) : (() => {
+                const items = activitySub === "asked"
+                  ? (activity?.questionsAsked ?? [])
+                  : (activity?.questionsAnswered ?? []);
+                if (items.length === 0) {
+                  return (
+                    <div className="text-center py-20">
+                      <MessageSquare className="w-12 h-12 mx-auto text-muted mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">
+                        {activitySub === "asked" ? "No questions asked yet" : "No questions answered yet"}
+                      </h3>
+                      <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+                        {activitySub === "asked"
+                          ? "Ask a question about visas, safety, or travel tips for any country."
+                          : "Help other travelers by answering their questions on country pages."}
+                      </p>
+                      <div className="flex gap-3 justify-center flex-wrap">
+                        <Button onClick={() => setShowAskModal(true)}>
+                          <PenLine className="w-4 h-4 mr-2" /> Ask a Question
+                        </Button>
+                        <Button variant="outline" asChild>
+                          <Link href="/explore"><Globe className="w-4 h-4 mr-2" /> Browse Countries</Link>
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                }
                 return (
-                  <div className="text-center py-20">
-                    <MessageSquare className="w-12 h-12 mx-auto text-muted mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">
-                      {activitySub === "asked" ? "No questions asked yet" : "No questions answered yet"}
-                    </h3>
-                    <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-                      {activitySub === "asked"
-                        ? "Visit a country page to ask a question about visas, safety, or travel tips."
-                        : "Help other travelers by answering their questions on country pages."}
-                    </p>
-                    <Button variant="outline" asChild>
-                      <Link href="/explore"><Globe className="w-4 h-4 mr-2" /> Browse Countries</Link>
-                    </Button>
+                  <div className="space-y-3 max-w-2xl">
+                    {items.map((q) => <QuestionCard key={q.id} q={q} />)}
                   </div>
                 );
-              }
-              return (
-                <div className="space-y-3 max-w-2xl">
-                  {items.map((q) => <QuestionCard key={q.id} q={q} />)}
+              })()
+            )}
+
+            {/* Following tab */}
+            {activitySub === "following" && (
+              followedLoading ? (
+                <div className="flex justify-center py-20">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
                 </div>
-              );
-            })()}
+              ) : followedQuestions.length === 0 ? (
+                <div className="text-center py-20">
+                  <Bell className="w-12 h-12 mx-auto text-muted mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Not following any questions yet</h3>
+                  <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+                    Open a question and click "Follow" to get notified of new answers.
+                  </p>
+                  <Button variant="outline" asChild>
+                    <Link href="/community"><Globe className="w-4 h-4 mr-2" /> Browse Community</Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3 max-w-2xl">
+                  {followedQuestions.map((q) => (
+                    <FollowedQuestionCard key={q.id} q={q as { id: number; title: string; countryCode: string | null; countryName?: string | null; countryFlag?: string | null; answersCount: number; resolved: boolean; createdAt: string; passportCode?: string | null; followersCount: number }} />
+                  ))}
+                </div>
+              )
+            )}
           </>
         )}
 
         {/* ── Support Cases Tab ────────────────────────────────────────── */}
         {activeTab === "cases" && (
           <div className="max-w-2xl">
-            {/* New case form */}
             {showNewCase ? (
               <div className="bg-card border border-border rounded-2xl p-6 mb-6 space-y-4">
                 <div className="flex items-center justify-between">
@@ -480,7 +603,6 @@ export default function Profile() {
               </div>
             )}
 
-            {/* Cases list */}
             {casesLoading ? (
               <div className="flex justify-center py-20">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -526,6 +648,64 @@ export default function Profile() {
           </div>
         )}
       </div>
+
+      {/* ── Ask a Question Modal ────────────────────────────────────── */}
+      {showAskModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowAskModal(false); }}
+        >
+          <div className="bg-card border border-border rounded-2xl w-full max-w-lg shadow-2xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+              <h2 className="font-semibold text-lg">Ask a Question</h2>
+              <button onClick={() => setShowAskModal(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="text-xs text-muted-foreground mb-1.5 block font-medium">Country</label>
+                <CountryCombobox
+                  value={askCountry}
+                  onChange={setAskCountry}
+                  placeholder="Which country is your question about?"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1.5 block font-medium">Question title</label>
+                <input
+                  value={askTitle}
+                  onChange={(e) => setAskTitle(e.target.value)}
+                  placeholder="e.g. Do I need a visa if I have a US passport?"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  maxLength={160}
+                />
+                <p className="text-xs text-muted-foreground mt-1 text-right">{askTitle.length}/160</p>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1.5 block font-medium">Details</label>
+                <textarea
+                  value={askBody}
+                  onChange={(e) => setAskBody(e.target.value)}
+                  placeholder="Add any relevant context — your passport, visa type, trip dates, what you've already tried…"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm resize-none h-28 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                />
+              </div>
+              <div className="flex gap-3 pt-1">
+                <Button
+                  className="flex-1"
+                  disabled={isCreatingQuestion || !askCountry || !askTitle.trim() || !askBody.trim()}
+                  onClick={() => createQuestion({ data: { countryCode: askCountry!, title: askTitle.trim(), body: askBody.trim() } })}
+                >
+                  {isCreatingQuestion ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Save className="w-4 h-4 mr-1.5" />}
+                  Post Question
+                </Button>
+                <Button variant="ghost" onClick={() => setShowAskModal(false)}>Cancel</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

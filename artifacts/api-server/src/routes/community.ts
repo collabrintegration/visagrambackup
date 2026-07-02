@@ -1,12 +1,29 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { db, reviewsTable, questionsTable, answersTable, travelEntriesTable, usersTable, countriesTable, visaReportsTable } from "@workspace/db";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { db, reviewsTable, questionsTable, answersTable, travelEntriesTable, usersTable, countriesTable, visaReportsTable, questionFollowsTable, answerRepliesTable } from "@workspace/db";
+import { eq, and, desc, sql, count } from "drizzle-orm";
 
 const router: IRouter = Router();
 
-function userSnippet(u: { firstName: string | null; lastName: string | null; profileImageUrl: string | null } | undefined) {
-  if (!u) return { firstName: null, lastName: null, profileImageUrl: null };
-  return { firstName: u.firstName, lastName: u.lastName, profileImageUrl: u.profileImageUrl };
+function userSnippet(u: { firstName: string | null; lastName: string | null; profileImageUrl: string | null; homeCountry?: string | null } | undefined) {
+  if (!u) return { firstName: null, lastName: null, profileImageUrl: null, homeCountry: null };
+  return { firstName: u.firstName, lastName: u.lastName, profileImageUrl: u.profileImageUrl, homeCountry: u.homeCountry ?? null };
+}
+
+async function questionFollowStats(questionId: number, userId?: string): Promise<{ followersCount: number; isFollowing: boolean }> {
+  const [{ followersCount }] = await db
+    .select({ followersCount: count() })
+    .from(questionFollowsTable)
+    .where(eq(questionFollowsTable.questionId, questionId));
+
+  if (!userId) return { followersCount: Number(followersCount), isFollowing: false };
+
+  const existing = await db
+    .select()
+    .from(questionFollowsTable)
+    .where(and(eq(questionFollowsTable.userId, userId), eq(questionFollowsTable.questionId, questionId)))
+    .limit(1);
+
+  return { followersCount: Number(followersCount), isFollowing: existing.length > 0 };
 }
 
 // ── Community Feed ─────────────────────────────────────────────────────────
@@ -184,6 +201,7 @@ router.post("/countries/:code/reviews", async (req: Request, res: Response) => {
 // ── Questions ──────────────────────────────────────────────────────────────
 router.get("/countries/:code/questions", async (req: Request, res: Response) => {
   const code = String(req.params.code);
+  const currentUserId = req.isAuthenticated() ? req.user.id : undefined;
 
   const rows = await db.select({
     id: questionsTable.id,
@@ -197,23 +215,35 @@ router.get("/countries/:code/questions", async (req: Request, res: Response) => 
     firstName: usersTable.firstName,
     lastName: usersTable.lastName,
     profileImageUrl: usersTable.profileImageUrl,
+    homeCountry: usersTable.homeCountry,
     answersCount: sql<number>`(SELECT COUNT(*) FROM answers WHERE question_id = ${questionsTable.id})`.as("answers_count"),
+    followersCount: sql<number>`(SELECT COUNT(*) FROM question_follows WHERE question_id = ${questionsTable.id})`.as("followers_count"),
   })
     .from(questionsTable)
     .leftJoin(usersTable, eq(questionsTable.userId, usersTable.id))
     .where(eq(questionsTable.countryCode, code.toUpperCase()))
     .orderBy(desc(questionsTable.createdAt));
 
-  res.json(rows.map((q) => ({
-    id: q.id,
-    passportCode: q.passportCode,
-    title: q.title,
-    body: q.body,
-    resolved: q.resolved,
-    createdAt: q.createdAt,
-    answersCount: Number(q.answersCount),
-    user: userSnippet(q),
-  })));
+  const result = await Promise.all(rows.map(async (q) => {
+    const isFollowing = currentUserId
+      ? (await db.select().from(questionFollowsTable).where(and(eq(questionFollowsTable.userId, currentUserId), eq(questionFollowsTable.questionId, q.id))).limit(1)).length > 0
+      : false;
+    return {
+      id: q.id,
+      countryCode: q.countryCode,
+      passportCode: q.passportCode,
+      title: q.title,
+      body: q.body,
+      resolved: q.resolved,
+      createdAt: q.createdAt,
+      answersCount: Number(q.answersCount),
+      followersCount: Number(q.followersCount),
+      isFollowing,
+      user: userSnippet(q),
+    };
+  }));
+
+  res.json(result);
 });
 
 router.post("/countries/:code/questions", async (req: Request, res: Response) => {
@@ -248,17 +278,37 @@ router.post("/countries/:code/questions", async (req: Request, res: Response) =>
 router.get("/questions/:id/answers", async (req: Request, res: Response) => {
   const questionId = Number(req.params.id);
 
-  const [question, answers] = await Promise.all([
-    db.select().from(questionsTable).where(eq(questionsTable.id, questionId)).limit(1),
+  const [questionRows, answers] = await Promise.all([
+    db.select({
+      id: questionsTable.id,
+      userId: questionsTable.userId,
+      countryCode: questionsTable.countryCode,
+      passportCode: questionsTable.passportCode,
+      title: questionsTable.title,
+      body: questionsTable.body,
+      resolved: questionsTable.resolved,
+      createdAt: questionsTable.createdAt,
+      firstName: usersTable.firstName,
+      lastName: usersTable.lastName,
+      profileImageUrl: usersTable.profileImageUrl,
+      homeCountry: usersTable.homeCountry,
+    })
+      .from(questionsTable)
+      .leftJoin(usersTable, eq(questionsTable.userId, usersTable.id))
+      .where(eq(questionsTable.id, questionId))
+      .limit(1),
     db.select({
       id: answersTable.id,
       userId: answersTable.userId,
       body: answersTable.body,
+      gifUrl: answersTable.gifUrl,
       isAccepted: answersTable.isAccepted,
       createdAt: answersTable.createdAt,
       firstName: usersTable.firstName,
       lastName: usersTable.lastName,
       profileImageUrl: usersTable.profileImageUrl,
+      homeCountry: usersTable.homeCountry,
+      repliesCount: sql<number>`(SELECT COUNT(*) FROM answer_replies WHERE answer_id = ${answersTable.id})`.as("replies_count"),
     })
       .from(answersTable)
       .leftJoin(usersTable, eq(answersTable.userId, usersTable.id))
@@ -266,17 +316,20 @@ router.get("/questions/:id/answers", async (req: Request, res: Response) => {
       .orderBy(desc(answersTable.isAccepted), desc(answersTable.createdAt)),
   ]);
 
-  if (!question[0]) {
+  if (!questionRows[0]) {
     res.status(404).json({ error: "Question not found" });
     return;
   }
 
+  const q = questionRows[0];
   res.json({
-    question: question[0],
+    question: { ...q, user: userSnippet(q) },
     answers: answers.map((a) => ({
       id: a.id,
       body: a.body,
+      gifUrl: a.gifUrl,
       isAccepted: a.isAccepted,
+      repliesCount: Number(a.repliesCount),
       createdAt: a.createdAt,
       user: userSnippet(a),
     })),
@@ -290,7 +343,7 @@ router.post("/questions/:id/answers", async (req: Request, res: Response) => {
   }
 
   const questionId = Number(req.params.id);
-  const { body } = req.body;
+  const { body, gifUrl } = req.body;
 
   if (!body) {
     res.status(400).json({ error: "body is required" });
@@ -305,10 +358,275 @@ router.post("/questions/:id/answers", async (req: Request, res: Response) => {
 
   const [answer] = await db
     .insert(answersTable)
-    .values({ userId: req.user.id, questionId, body })
+    .values({ userId: req.user.id, questionId, body, gifUrl: gifUrl || null })
     .returning();
 
   res.status(201).json(answer);
+});
+
+// ── Get single question detail ───────────────────────────────────────────────
+router.get("/questions/:id", async (req: Request, res: Response) => {
+  const questionId = Number(req.params.id);
+  const currentUserId = req.isAuthenticated() ? req.user.id : undefined;
+
+  const [questionRows, answers, countryRows] = await Promise.all([
+    db.select({
+      id: questionsTable.id,
+      userId: questionsTable.userId,
+      countryCode: questionsTable.countryCode,
+      passportCode: questionsTable.passportCode,
+      title: questionsTable.title,
+      body: questionsTable.body,
+      resolved: questionsTable.resolved,
+      createdAt: questionsTable.createdAt,
+      firstName: usersTable.firstName,
+      lastName: usersTable.lastName,
+      profileImageUrl: usersTable.profileImageUrl,
+      homeCountry: usersTable.homeCountry,
+    })
+      .from(questionsTable)
+      .leftJoin(usersTable, eq(questionsTable.userId, usersTable.id))
+      .where(eq(questionsTable.id, questionId))
+      .limit(1),
+    db.select({
+      id: answersTable.id,
+      userId: answersTable.userId,
+      body: answersTable.body,
+      gifUrl: answersTable.gifUrl,
+      isAccepted: answersTable.isAccepted,
+      createdAt: answersTable.createdAt,
+      firstName: usersTable.firstName,
+      lastName: usersTable.lastName,
+      profileImageUrl: usersTable.profileImageUrl,
+      homeCountry: usersTable.homeCountry,
+      repliesCount: sql<number>`(SELECT COUNT(*) FROM answer_replies WHERE answer_id = ${answersTable.id})`.as("replies_count"),
+    })
+      .from(answersTable)
+      .leftJoin(usersTable, eq(answersTable.userId, usersTable.id))
+      .where(eq(answersTable.questionId, questionId))
+      .orderBy(desc(answersTable.isAccepted), desc(answersTable.createdAt)),
+    db.select({ name: countriesTable.name, flagEmoji: countriesTable.flagEmoji })
+      .from(countriesTable)
+      .where(sql`countries.code = (SELECT country_code FROM questions WHERE id = ${questionId} LIMIT 1)`)
+      .limit(1),
+  ]);
+
+  if (!questionRows[0]) {
+    res.status(404).json({ error: "Question not found" });
+    return;
+  }
+
+  const q = questionRows[0];
+  const { followersCount, isFollowing } = await questionFollowStats(questionId, currentUserId);
+
+  res.json({
+    id: q.id,
+    countryCode: q.countryCode,
+    countryName: countryRows[0]?.name ?? null,
+    countryFlag: countryRows[0]?.flagEmoji ?? null,
+    passportCode: q.passportCode,
+    title: q.title,
+    body: q.body,
+    resolved: q.resolved,
+    createdAt: q.createdAt,
+    answersCount: answers.length,
+    followersCount,
+    isFollowing,
+    user: userSnippet(q),
+    answers: answers.map((a) => ({
+      id: a.id,
+      body: a.body,
+      gifUrl: a.gifUrl,
+      isAccepted: a.isAccepted,
+      repliesCount: Number(a.repliesCount),
+      createdAt: a.createdAt,
+      user: userSnippet(a),
+    })),
+  });
+});
+
+// ── Create question (global, countryCode in body) ───────────────────────────
+router.post("/questions", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Login required" });
+    return;
+  }
+
+  const { title, body, countryCode, passportCode } = req.body;
+  if (!title || !body || !countryCode) {
+    res.status(400).json({ error: "title, body, and countryCode are required" });
+    return;
+  }
+
+  const [question] = await db
+    .insert(questionsTable)
+    .values({
+      userId: req.user.id,
+      countryCode: String(countryCode).toUpperCase(),
+      title,
+      body,
+      passportCode: passportCode?.toUpperCase() || null,
+    })
+    .returning();
+
+  const country = await db.select({ name: countriesTable.name, flagEmoji: countriesTable.flagEmoji })
+    .from(countriesTable)
+    .where(eq(countriesTable.code, question.countryCode))
+    .limit(1);
+
+  res.status(201).json({
+    id: question.id,
+    countryCode: question.countryCode,
+    countryName: country[0]?.name ?? null,
+    countryFlag: country[0]?.flagEmoji ?? null,
+    passportCode: question.passportCode,
+    title: question.title,
+    body: question.body,
+    resolved: question.resolved,
+    createdAt: question.createdAt,
+    answersCount: 0,
+    followersCount: 0,
+    isFollowing: false,
+    user: userSnippet({ firstName: req.user.firstName ?? null, lastName: req.user.lastName ?? null, profileImageUrl: req.user.profileImageUrl ?? null }),
+  });
+});
+
+// ── Follow/Unfollow question ─────────────────────────────────────────────────
+router.post("/questions/:id/follow", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Login required" });
+    return;
+  }
+
+  const questionId = Number(req.params.id);
+  const userId = req.user.id;
+
+  const existing = await db
+    .select()
+    .from(questionFollowsTable)
+    .where(and(eq(questionFollowsTable.userId, userId), eq(questionFollowsTable.questionId, questionId)))
+    .limit(1);
+
+  if (existing.length > 0) {
+    await db.delete(questionFollowsTable).where(and(eq(questionFollowsTable.userId, userId), eq(questionFollowsTable.questionId, questionId)));
+  } else {
+    await db.insert(questionFollowsTable).values({ userId, questionId });
+  }
+
+  const { followersCount, isFollowing } = await questionFollowStats(questionId, userId);
+  res.json({ following: isFollowing, followersCount });
+});
+
+// ── Followed questions ───────────────────────────────────────────────────────
+router.get("/users/me/followed-questions", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Login required" });
+    return;
+  }
+
+  const userId = req.user.id;
+
+  const rows = await db.select({
+    id: questionsTable.id,
+    countryCode: questionsTable.countryCode,
+    passportCode: questionsTable.passportCode,
+    title: questionsTable.title,
+    body: questionsTable.body,
+    resolved: questionsTable.resolved,
+    createdAt: questionsTable.createdAt,
+    firstName: usersTable.firstName,
+    lastName: usersTable.lastName,
+    profileImageUrl: usersTable.profileImageUrl,
+    homeCountry: usersTable.homeCountry,
+    countryName: countriesTable.name,
+    countryFlag: countriesTable.flagEmoji,
+    answersCount: sql<number>`(SELECT COUNT(*) FROM answers WHERE question_id = ${questionsTable.id})`.as("answers_count"),
+    followersCount: sql<number>`(SELECT COUNT(*) FROM question_follows WHERE question_id = ${questionsTable.id})`.as("followers_count"),
+  })
+    .from(questionFollowsTable)
+    .innerJoin(questionsTable, eq(questionFollowsTable.questionId, questionsTable.id))
+    .leftJoin(usersTable, eq(questionsTable.userId, usersTable.id))
+    .leftJoin(countriesTable, eq(questionsTable.countryCode, countriesTable.code))
+    .where(eq(questionFollowsTable.userId, userId))
+    .orderBy(desc(questionFollowsTable.createdAt));
+
+  res.json(rows.map((q) => ({
+    id: q.id,
+    countryCode: q.countryCode,
+    countryName: q.countryName ?? null,
+    countryFlag: q.countryFlag ?? null,
+    passportCode: q.passportCode,
+    title: q.title,
+    body: q.body,
+    resolved: q.resolved,
+    createdAt: q.createdAt,
+    answersCount: Number(q.answersCount),
+    followersCount: Number(q.followersCount),
+    isFollowing: true,
+    user: userSnippet(q),
+  })));
+});
+
+// ── Answer replies ───────────────────────────────────────────────────────────
+router.get("/answers/:id/replies", async (req: Request, res: Response) => {
+  const answerId = Number(req.params.id);
+
+  const replies = await db.select({
+    id: answerRepliesTable.id,
+    body: answerRepliesTable.body,
+    gifUrl: answerRepliesTable.gifUrl,
+    createdAt: answerRepliesTable.createdAt,
+    firstName: usersTable.firstName,
+    lastName: usersTable.lastName,
+    profileImageUrl: usersTable.profileImageUrl,
+    homeCountry: usersTable.homeCountry,
+  })
+    .from(answerRepliesTable)
+    .leftJoin(usersTable, eq(answerRepliesTable.userId, usersTable.id))
+    .where(eq(answerRepliesTable.answerId, answerId))
+    .orderBy(answerRepliesTable.createdAt);
+
+  res.json(replies.map((r) => ({
+    id: r.id,
+    body: r.body,
+    gifUrl: r.gifUrl,
+    createdAt: r.createdAt,
+    user: userSnippet(r),
+  })));
+});
+
+router.post("/answers/:id/replies", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Login required" });
+    return;
+  }
+
+  const answerId = Number(req.params.id);
+  const { body, gifUrl } = req.body;
+
+  if (!body) {
+    res.status(400).json({ error: "body is required" });
+    return;
+  }
+
+  const [answer] = await db.select().from(answersTable).where(eq(answersTable.id, answerId)).limit(1);
+  if (!answer) {
+    res.status(404).json({ error: "Answer not found" });
+    return;
+  }
+
+  const [reply] = await db
+    .insert(answerRepliesTable)
+    .values({ userId: req.user.id, answerId, body, gifUrl: gifUrl || null })
+    .returning();
+
+  res.status(201).json({
+    id: reply.id,
+    body: reply.body,
+    gifUrl: reply.gifUrl,
+    createdAt: reply.createdAt,
+    user: userSnippet({ firstName: req.user.firstName ?? null, lastName: req.user.lastName ?? null, profileImageUrl: req.user.profileImageUrl ?? null }),
+  });
 });
 
 router.post("/questions/:id/resolve", async (req: Request, res: Response) => {
