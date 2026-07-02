@@ -1,6 +1,16 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { db, groupsTable, groupMembersTable, groupMessagesTable, groupJoinRequestsTable, usersTable, blockedUsersTable } from "@workspace/db";
 import { eq, and, desc, lt, count, sql, inArray } from "drizzle-orm";
+import { moderateMessage } from "../lib/moderation";
+
+async function isSuperAdmin(userId: string): Promise<boolean> {
+  const [user] = await db
+    .select({ isSuperAdmin: usersTable.isSuperAdmin })
+    .from(usersTable)
+    .where(eq(usersTable.id, userId))
+    .limit(1);
+  return user?.isSuperAdmin === true;
+}
 
 const router: IRouter = Router();
 
@@ -182,7 +192,8 @@ router.patch("/groups/:id", async (req: Request, res: Response) => {
   const userId = req.user.id;
   const groupId = Number(req.params.id);
 
-  if (!(await isAdminOf(groupId, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
+  const superAdmin = await isSuperAdmin(userId);
+  if (!superAdmin && !(await isAdminOf(groupId, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
 
   const { name, description, emoji, isPrivate } = req.body as {
     name?: string;
@@ -219,7 +230,8 @@ router.delete("/groups/:id", async (req: Request, res: Response) => {
   const userId = req.user.id;
   const groupId = Number(req.params.id);
 
-  if (!(await isAdminOf(groupId, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
+  const superAdmin = await isSuperAdmin(userId);
+  if (!superAdmin && !(await isAdminOf(groupId, userId))) { res.status(403).json({ error: "Forbidden" }); return; }
 
   await db.delete(groupsTable).where(eq(groupsTable.id, groupId));
   res.status(204).end();
@@ -492,6 +504,9 @@ router.post("/groups/:id/messages", async (req: Request, res: Response) => {
 
   const { content, gifUrl } = req.body as { content?: string; gifUrl?: string };
   if (!content?.trim() && !gifUrl) { res.status(400).json({ error: "content or gifUrl is required" }); return; }
+
+  const moderationError = moderateMessage(content, gifUrl);
+  if (moderationError) { res.status(422).json({ error: moderationError }); return; }
 
   const [message] = await db
     .insert(groupMessagesTable)

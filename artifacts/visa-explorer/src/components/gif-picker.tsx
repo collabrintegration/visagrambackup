@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ImageIcon, X, Search } from "lucide-react";
+import { ImageIcon, X, Search, Link, Images } from "lucide-react";
 
 export const CURATED_GIFS = [
   { url: "https://media.giphy.com/media/3o7bu3XilJ5BOiSGic/giphy.gif", label: "Takeoff ✈️" },
@@ -42,11 +42,11 @@ export const CURATED_GIFS = [
 
 export function GifPreview({ url }: { url: string }) {
   return (
-    <div className="mt-2 rounded-lg overflow-hidden inline-block max-w-[160px]">
+    <div className="mt-2 rounded-lg overflow-hidden inline-block max-w-[200px]">
       <img
         src={url}
-        alt="GIF"
-        className="w-full max-h-[100px] object-contain bg-black/20"
+        alt="Image"
+        className="w-full max-h-[140px] object-contain bg-black/20"
         loading="lazy"
       />
     </div>
@@ -61,7 +61,10 @@ export function GifPicker({
   onChange: (v: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<"gif" | "url">("gif");
   const [search, setSearch] = useState("");
+  const [urlInput, setUrlInput] = useState("");
+  const [urlError, setUrlError] = useState("");
 
   const filtered = search.trim()
     ? CURATED_GIFS.filter((g) =>
@@ -80,6 +83,23 @@ export function GifPicker({
     setOpen(false);
   }
 
+  function handleUrlSubmit() {
+    const trimmed = urlInput.trim();
+    if (!trimmed) { setUrlError("Please enter a URL"); return; }
+    try {
+      const parsed = new URL(trimmed);
+      if (!["http:", "https:"].includes(parsed.protocol)) {
+        setUrlError("Only http/https URLs are allowed"); return;
+      }
+    } catch {
+      setUrlError("Please enter a valid URL"); return;
+    }
+    setUrlError("");
+    onChange(trimmed);
+    setUrlInput("");
+    setOpen(false);
+  }
+
   return (
     <div>
       <div className="flex items-center gap-2">
@@ -88,8 +108,8 @@ export function GifPicker({
           onClick={() => setOpen((o) => !o)}
           className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
-          <ImageIcon className="w-3.5 h-3.5" />
-          {value ? "Change GIF" : "Add GIF"}
+          <Images className="w-3.5 h-3.5" />
+          {value ? "Change image / GIF" : "Add image / GIF"}
         </button>
         {value && (
           <button
@@ -106,52 +126,129 @@ export function GifPicker({
 
       {open && (
         <div className="mt-2 rounded-xl border border-border bg-card shadow-lg p-3 max-w-sm">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search GIFs…"
-                className="w-full pl-7 pr-3 py-1.5 text-xs bg-background border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/50"
-              />
-            </div>
+          {/* Tabs */}
+          <div className="flex gap-1 mb-3 bg-background rounded-lg p-0.5 border border-border">
             <button
               type="button"
-              onClick={() => setOpen(false)}
-              className="text-muted-foreground hover:text-foreground"
+              onClick={() => setTab("gif")}
+              className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-1.5 rounded-md transition-all ${
+                tab === "gif"
+                  ? "bg-primary text-primary-foreground font-medium"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
             >
-              <X className="w-4 h-4" />
+              <ImageIcon className="w-3 h-3" />
+              GIFs
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("url")}
+              className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-1.5 rounded-md transition-all ${
+                tab === "url"
+                  ? "bg-primary text-primary-foreground font-medium"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Link className="w-3 h-3" />
+              Image URL
             </button>
           </div>
-          <div className="grid grid-cols-4 gap-1.5 max-h-56 overflow-y-auto">
-            {filtered.map((gif) => (
-              <button
-                key={gif.url}
-                type="button"
-                onClick={() => select(gif.url)}
-                title={gif.label}
-                className={`relative rounded-lg overflow-hidden aspect-square bg-black/20 border-2 transition-all hover:border-primary/60 ${
-                  value === gif.url ? "border-primary" : "border-transparent"
-                }`}
-              >
-                <img
-                  src={gif.url}
-                  alt={gif.label}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </button>
-            ))}
-            {filtered.length === 0 && (
-              <div className="col-span-4 py-6 text-center text-xs text-muted-foreground">
-                No GIFs match "{search}"
+
+          {tab === "gif" && (
+            <>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                  <input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search GIFs…"
+                    className="w-full pl-7 pr-3 py-1.5 text-xs bg-background border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-            )}
-          </div>
-          <p className="text-center text-[10px] text-muted-foreground mt-2">
-            Powered by Giphy
-          </p>
+              <div className="grid grid-cols-4 gap-1.5 max-h-56 overflow-y-auto">
+                {filtered.map((gif) => (
+                  <button
+                    key={gif.url}
+                    type="button"
+                    onClick={() => select(gif.url)}
+                    title={gif.label}
+                    className={`relative rounded-lg overflow-hidden aspect-square bg-black/20 border-2 transition-all hover:border-primary/60 ${
+                      value === gif.url ? "border-primary" : "border-transparent"
+                    }`}
+                  >
+                    <img
+                      src={gif.url}
+                      alt={gif.label}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </button>
+                ))}
+                {filtered.length === 0 && (
+                  <div className="col-span-4 py-6 text-center text-xs text-muted-foreground">
+                    No GIFs match "{search}"
+                  </div>
+                )}
+              </div>
+              <p className="text-center text-[10px] text-muted-foreground mt-2">
+                Powered by Giphy
+              </p>
+            </>
+          )}
+
+          {tab === "url" && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Paste any image URL (jpg, png, webp, gif…)
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={urlInput}
+                  onChange={(e) => { setUrlInput(e.target.value); setUrlError(""); }}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleUrlSubmit(); }}}
+                  placeholder="https://…"
+                  className="flex-1 px-3 py-1.5 text-xs bg-background border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/50"
+                />
+                <button
+                  type="button"
+                  onClick={handleUrlSubmit}
+                  className="px-3 py-1.5 text-xs bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
+                >
+                  Add
+                </button>
+              </div>
+              {urlError && (
+                <p className="text-xs text-destructive">{urlError}</p>
+              )}
+              {urlInput && !urlError && (
+                <div className="rounded-lg overflow-hidden max-w-[140px]">
+                  <img
+                    src={urlInput}
+                    alt="Preview"
+                    className="w-full object-contain max-h-[100px] bg-black/20"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  />
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="w-full text-xs text-muted-foreground hover:text-foreground mt-1"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

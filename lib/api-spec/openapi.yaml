@@ -1955,6 +1955,8 @@ components:
           type: ["string", "null"]
         homeCountry:
           type: ["string", "null"]
+        isSuperAdmin:
+          type: boolean
 
     AuthUserEnvelope:
       type: object

@@ -25,6 +25,7 @@ export interface AuthUser {
   profileImageUrl: string | null;
   /** @nullable */
   homeCountry?: string | null;
+  isSuperAdmin?: boolean;
 }
 
 export interface AuthUserEnvelope {
