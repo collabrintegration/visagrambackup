@@ -20,7 +20,7 @@ router.post("/track", async (req, res) => {
   res.status(204).end();
 });
 
-router.get("/admin/site-stats", async (req, res) => {
+router.get("/api/admin/site-stats", async (req, res) => {
   if (!(await isSuperAdmin(req))) {
     res.status(403).json({ error: "Forbidden" });
     return;
