@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@workspace/replit-auth-web";
-import { useUpdateMyProfile, getGetCurrentAuthUserQueryKey } from "@workspace/api-client-react";
+import {
+  useUpdateMyProfile,
+  useGetCurrentAuthUser,
+  getGetCurrentAuthUserQueryKey,
+} from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, UserCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,17 +25,30 @@ const MIN_DOB = (() => {
   return d.toISOString().split("T")[0];
 })();
 
-function isProfileComplete(user: Record<string, unknown> | null | undefined): boolean {
+type AnyUser = Record<string, unknown> | null | undefined;
+
+function isProfileComplete(user: AnyUser): boolean {
   if (!user) return true;
   return !!(user.firstName && user.lastName && (user.dateOfBirth || user.age) && user.sex && user.location);
 }
 
 export default function ProfileCompletionGate() {
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
 
-  const typedUser = user as Record<string, unknown> | null | undefined;
-  const needsCompletion = isAuthenticated && !authLoading && !isProfileComplete(typedUser);
+  // Use React Query so we can invalidate and see the updated user immediately
+  const { data: authEnvelope, isLoading: userLoading } = useGetCurrentAuthUser({
+    query: {
+      queryKey: getGetCurrentAuthUserQueryKey(),
+      enabled: isAuthenticated,
+    },
+  });
+  const rqUser = (authEnvelope as { user?: AnyUser } | undefined)?.user as AnyUser;
+
+  const [done, setDone] = useState(false);
+
+  const isLoading = authLoading || userLoading;
+  const needsCompletion = !done && isAuthenticated && !isLoading && !!rqUser && !isProfileComplete(rqUser);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -41,19 +58,25 @@ export default function ProfileCompletionGate() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (needsCompletion && typedUser) {
-      setFirstName((typedUser.firstName as string) || "");
-      setLastName((typedUser.lastName as string) || "");
-      setDob((typedUser.dateOfBirth as string) || "");
-      setSex((typedUser.sex as string) || "");
-      setLocation((typedUser.location as string) || "");
+    if (needsCompletion && rqUser) {
+      setFirstName((rqUser.firstName as string) || "");
+      setLastName((rqUser.lastName as string) || "");
+      setDob((rqUser.dateOfBirth as string) || "");
+      setSex((rqUser.sex as string) || "");
+      setLocation((rqUser.location as string) || "");
     }
   }, [needsCompletion]);
 
   const { mutate: updateProfile, isPending } = useUpdateMyProfile({
     mutation: {
       onSuccess: () => {
+        // Dismiss immediately — don't wait for SWR/RQ refetch
+        setDone(true);
+        // Invalidate so profile page reflects new data
         void queryClient.invalidateQueries({ queryKey: getGetCurrentAuthUserQueryKey() });
+      },
+      onError: () => {
+        setErrors({ submit: "Something went wrong. Please try again." });
       },
     },
   });
@@ -76,7 +99,7 @@ export default function ProfileCompletionGate() {
       if (age > 120) e.dob = "Please enter a valid date of birth";
     }
     if (!sex) e.sex = "Required";
-    if (!location.trim()) e.location = "Select a city from the suggestions";
+    if (!location.trim()) e.location = "Please enter your city";
     return e;
   }
 
@@ -189,6 +212,10 @@ export default function ProfileCompletionGate() {
               : <p className="text-xs text-muted-foreground mt-1">Start typing and pick from the suggestions.</p>
             }
           </div>
+
+          {errors.submit && (
+            <p className="text-xs text-rose-400 text-center">{errors.submit}</p>
+          )}
 
           <Button type="submit" className="w-full" disabled={isPending}>
             {isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving…</> : "Save & Continue"}
