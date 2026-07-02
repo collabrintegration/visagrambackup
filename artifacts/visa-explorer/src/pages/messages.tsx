@@ -101,11 +101,13 @@ function ThreadPanel({
   const qc = useQueryClient();
   const otherId = conv.otherUserId;
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const [text, setText] = useState("");
   const [gifUrl, setGifUrl] = useState("");
   const [showGif, setShowGif] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const mention = useMentionAutocomplete(text, setText, inputRef);
 
   const inboxKey = getGetDmInboxQueryKey();
   const requestsKey = getGetDmRequestsQueryKey();
@@ -279,7 +281,7 @@ function ThreadPanel({
                       isOwn ? "bg-primary text-primary-foreground rounded-tr-sm" : "bg-card border border-border rounded-tl-sm"
                     }`}
                   >
-                    {msg.content && <span className="whitespace-pre-wrap">{msg.content}</span>}
+                    {msg.content && <MentionText text={msg.content} className="whitespace-pre-wrap" />}
                     {msg.gifUrl && <GifPreview url={msg.gifUrl} />}
                   </div>
                   <div className="flex items-center gap-1 mt-0.5 px-1">
@@ -327,14 +329,28 @@ function ThreadPanel({
             >
               <ImageIcon className="w-4 h-4" />
             </button>
-            <input
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-              placeholder={isRequest ? "Accept request first to reply…" : "Type a message…"}
-              disabled={isRequest}
-              className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 disabled:opacity-50 disabled:cursor-not-allowed"
-            />
+            <div className="relative flex-1">
+              {mention.active && (
+                <MentionDropdown
+                  suggestions={mention.suggestions}
+                  highlighted={mention.highlighted}
+                  onHover={mention.setHighlighted}
+                  onSelect={mention.select}
+                />
+              )}
+              <input
+                ref={inputRef}
+                value={text}
+                onChange={(e) => mention.onChangeText(e.target.value, e.target.selectionStart ?? e.target.value.length)}
+                onKeyDown={(e) => {
+                  if (mention.onKeyDown(e)) return;
+                  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+                }}
+                placeholder={isRequest ? "Accept request first to reply…" : "Type a message… (@ to mention)"}
+                disabled={isRequest}
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
             <Button
               size="sm"
               disabled={(!text.trim() && !gifUrl) || isSending || isRequest}

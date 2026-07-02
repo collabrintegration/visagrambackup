@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useParams, Link } from "wouter";
 import {
   useGetQuestion,
@@ -24,6 +24,9 @@ import { GifPicker, GifPreview } from "@/components/gif-picker";
 import UserMiniCard from "@/components/user-mini-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import MentionDropdown from "@/components/mention-dropdown";
+import MentionText from "@/components/mention-text";
+import { useMentionAutocomplete } from "@/hooks/use-mention-autocomplete";
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -62,6 +65,8 @@ function ReplyThread({ answerId, isAuthenticated, login }: { answerId: number; i
   const [gifUrl, setGifUrl] = useState("");
   const qc = useQueryClient();
   const { user: authUser } = useAuth();
+  const replyInputRef = useRef<HTMLTextAreaElement>(null);
+  const mention = useMentionAutocomplete(body, setBody, replyInputRef);
 
   const { data: replies = [], isLoading } = useGetAnswerReplies(answerId, {
     query: { queryKey: getGetAnswerRepliesQueryKey(answerId) },
@@ -116,7 +121,7 @@ function ReplyThread({ answerId, isAuthenticated, login }: { answerId: number; i
                 </button>
               )}
             </div>
-            <p className="text-sm text-foreground/90 whitespace-pre-wrap">{r.body}</p>
+            <MentionText text={r.body} className="text-sm text-foreground/90 whitespace-pre-wrap block" />
             {r.gifUrl && <GifPreview url={r.gifUrl} />}
           </div>
         </div>
@@ -124,13 +129,25 @@ function ReplyThread({ answerId, isAuthenticated, login }: { answerId: number; i
 
       {showForm ? (
         <div className="space-y-2 pt-1">
-          <textarea
-            autoFocus
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="Write a reply…"
-            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm resize-none h-20 focus:outline-none focus:ring-1 focus:ring-primary/50"
-          />
+          <div className="relative">
+            {mention.active && (
+              <MentionDropdown
+                suggestions={mention.suggestions}
+                highlighted={mention.highlighted}
+                onHover={mention.setHighlighted}
+                onSelect={mention.select}
+              />
+            )}
+            <textarea
+              ref={replyInputRef}
+              autoFocus
+              value={body}
+              onChange={(e) => mention.onChangeText(e.target.value, e.target.selectionStart ?? e.target.value.length)}
+              onKeyDown={(e) => { if (mention.onKeyDown(e)) return; }}
+              placeholder="Write a reply… (@ to mention)"
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm resize-none h-20 focus:outline-none focus:ring-1 focus:ring-primary/50"
+            />
+          </div>
           <GifPicker value={gifUrl} onChange={setGifUrl} />
           <div className="flex gap-2">
             <Button
@@ -194,7 +211,7 @@ function AnswerCard({ answer, isAuthenticated, login, questionOwnerId, authUserI
             )}
             <span className="text-xs text-muted-foreground">· {timeAgo(answer.createdAt)}</span>
           </div>
-          <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">{answer.body}</p>
+          <MentionText text={answer.body} className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed block" />
           {answer.gifUrl && <GifPreview url={answer.gifUrl} />}
 
           <div className="flex items-center gap-3 mt-3">
@@ -243,6 +260,8 @@ export default function QuestionDetailPage() {
 
   const [answerBody, setAnswerBody] = useState("");
   const [answerGif, setAnswerGif] = useState("");
+  const answerInputRef = useRef<HTMLTextAreaElement>(null);
+  const answerMention = useMentionAutocomplete(answerBody, setAnswerBody, answerInputRef);
 
   const { data: question, isLoading } = useGetQuestion(questionId, {
     query: { queryKey: getGetQuestionQueryKey(questionId), enabled: !!questionId },
@@ -323,7 +342,7 @@ export default function QuestionDetailPage() {
                 )}
               </div>
               <h1 className="text-xl font-bold leading-tight mb-4">{question.title}</h1>
-              <p className="text-foreground/80 leading-relaxed whitespace-pre-wrap mb-5">{question.body}</p>
+              <MentionText text={question.body} className="text-foreground/80 leading-relaxed whitespace-pre-wrap mb-5 block" />
             </div>
           </div>
 
@@ -398,12 +417,24 @@ export default function QuestionDetailPage() {
             <div className="space-y-4">
               <div className="flex gap-3">
                 <Avatar user={user} />
-                <textarea
-                  value={answerBody}
-                  onChange={(e) => setAnswerBody(e.target.value)}
-                  placeholder="Share your experience, knowledge, or advice…"
-                  className="flex-1 bg-background border border-border rounded-xl px-4 py-3 text-sm resize-none h-28 focus:outline-none focus:ring-1 focus:ring-primary/50"
-                />
+                <div className="relative flex-1">
+                  {answerMention.active && (
+                    <MentionDropdown
+                      suggestions={answerMention.suggestions}
+                      highlighted={answerMention.highlighted}
+                      onHover={answerMention.setHighlighted}
+                      onSelect={answerMention.select}
+                    />
+                  )}
+                  <textarea
+                    ref={answerInputRef}
+                    value={answerBody}
+                    onChange={(e) => answerMention.onChangeText(e.target.value, e.target.selectionStart ?? e.target.value.length)}
+                    onKeyDown={(e) => { if (answerMention.onKeyDown(e)) return; }}
+                    placeholder="Share your experience, knowledge, or advice… (@ to mention)"
+                    className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm resize-none h-28 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  />
+                </div>
               </div>
               <GifPicker value={answerGif} onChange={setAnswerGif} />
               <div className="flex justify-end">
