@@ -213,6 +213,14 @@ export default function Community() {
   const [groupDesc, setGroupDesc] = useState("");
   const [groupEmoji, setGroupEmoji] = useState("🌍");
   const [groupPrivate, setGroupPrivate] = useState(false);
+  const [groupSort, setGroupSort] = useState<"members" | "newest" | "alpha">("members");
+  const [groupType, setGroupType] = useState<"all" | "public" | "private">("all");
+  const [groupPage, setGroupPage] = useState(0);
+  const [qaPage, setQaPage] = useState(0);
+  const [qaSort, setQaSort] = useState<"newest" | "answers">("newest");
+
+  const GROUPS_PER_PAGE = 12;
+  const QA_PER_PAGE = 10;
 
   const { data: feed = [], isLoading: feedLoading } = useGetCommunityFeed(
     { limit: 100 },
@@ -286,10 +294,15 @@ export default function Community() {
 
   const filteredSidebarGroups = useMemo(() => {
     const q = groupSearch.toLowerCase().trim();
-    const sorted = [...allGroups].sort((a, b) => b.memberCount - a.memberCount);
-    if (!q) return sorted;
-    return sorted.filter((g) => g.name.toLowerCase().includes(q) || (g.description ?? "").toLowerCase().includes(q));
-  }, [allGroups, groupSearch]);
+    let result = [...allGroups];
+    if (groupType === "public") result = result.filter((g) => !g.isPrivate);
+    if (groupType === "private") result = result.filter((g) => g.isPrivate);
+    if (q) result = result.filter((g) => g.name.toLowerCase().includes(q) || (g.description ?? "").toLowerCase().includes(q));
+    if (groupSort === "members") result.sort((a, b) => b.memberCount - a.memberCount);
+    else if (groupSort === "newest") result.sort((a, b) => b.id - a.id);
+    else result.sort((a, b) => a.name.localeCompare(b.name));
+    return result;
+  }, [allGroups, groupSearch, groupSort, groupType]);
 
   const isLoading = authLoading || feedLoading;
 
@@ -384,157 +397,217 @@ export default function Community() {
       <div className="container mx-auto px-4 py-8 max-w-7xl" onClick={() => setCountryOpen(false)}>
         <div className="flex gap-6 items-start">
 
-          {/* ── LEFT: Groups column ─────────────────────────────── */}
-          <div className="w-80 shrink-0">
+          {/* ── LEFT: Groups column (major portion) ─────────────── */}
+          <div className="min-w-0 flex-[3]">
             {/* Column header */}
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold flex items-center gap-2">
+              <h3 className="font-semibold flex items-center gap-2 text-base">
                 <Users className="w-4 h-4 text-primary" /> Travel Groups
-              </h3>
-              <Link href="/groups">
-                <span className="text-xs text-primary hover:underline">See all</span>
-              </Link>
-            </div>
-
-            {/* Group search */}
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-              <input
-                value={groupSearch}
-                onChange={(e) => setGroupSearch(e.target.value)}
-                placeholder="Search groups…"
-                className="w-full bg-card border border-border rounded-xl pl-9 pr-9 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 placeholder:text-muted-foreground"
-              />
-              {groupSearch && (
-                <button onClick={() => setGroupSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            {/* Groups as square grid */}
-            {filteredSidebarGroups.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                {groupSearch ? "No groups found" : "No groups yet"}
-              </p>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {filteredSidebarGroups.map((g) => (
-                  <div
-                    key={g.id}
-                    className="bg-card border border-border rounded-2xl p-3 hover:border-primary/40 transition-colors flex flex-col items-center text-center aspect-square justify-between"
-                  >
-                    <div className="flex-1 flex flex-col items-center justify-center gap-1 min-h-0">
-                      <span className="text-3xl leading-none">{g.emoji}</span>
-                      <div className="flex items-center gap-1 mt-1">
-                        <p className="text-xs font-semibold line-clamp-2 leading-tight">{g.name}</p>
-                        {g.isPrivate && <Lock className="w-2.5 h-2.5 text-muted-foreground shrink-0" />}
-                      </div>
-                      <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-                        <Users className="w-2.5 h-2.5" />{g.memberCount}
-                      </span>
-                    </div>
-                    <div className="w-full mt-2">
-                      {g.isMember ? (
-                        <Link href={`/groups/${g.id}`}>
-                          <Button size="sm" className="w-full h-7 text-xs">
-                            <MessageSquare className="w-3 h-3 mr-1" />Chat
-                          </Button>
-                        </Link>
-                      ) : isAuthenticated ? (
-                        <Button size="sm" variant="outline" className="w-full h-7 text-xs" onClick={() => joinGroup({ id: g.id })}>
-                          <UserPlus className="w-3 h-3 mr-1" />
-                          {g.isPrivate ? "Request" : "Join"}
-                        </Button>
-                      ) : (
-                        <Button size="sm" variant="outline" className="w-full h-7 text-xs" onClick={login}>
-                          <LogIn className="w-3 h-3 mr-1" />Join
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {isAuthenticated && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full text-xs text-muted-foreground mt-3"
-                onClick={() => setShowGroupModal(true)}
-              >
-                <Plus className="w-3 h-3 mr-1.5" /> Create a group
-              </Button>
-            )}
-          </div>
-
-          {/* ── RIGHT: Questions column ─────────────────────────── */}
-          <div className="flex-1 min-w-0">
-            {/* Q&A column header + search row */}
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-primary" /> Questions & Answers
+                {filteredSidebarGroups.length > 0 && (
+                  <span className="text-xs font-normal text-muted-foreground">({filteredSidebarGroups.length})</span>
+                )}
               </h3>
               {isAuthenticated && (
-                <Button size="sm" onClick={() => setShowAskModal(true)}>
-                  <PenLine className="w-3.5 h-3.5 mr-1.5" /> Ask a Question
+                <Button size="sm" variant="outline" onClick={() => setShowGroupModal(true)}>
+                  <Plus className="w-3.5 h-3.5 mr-1.5" /> New Group
                 </Button>
               )}
             </div>
 
-            {/* Q&A search + country filter */}
-            <div className="flex gap-2 mb-4">
-              <div className="relative flex-1">
+            {/* Group search + filters row */}
+            <div className="flex gap-2 mb-4 flex-wrap">
+              {/* Search */}
+              <div className="relative flex-1 min-w-[160px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                <input
+                  value={groupSearch}
+                  onChange={(e) => { setGroupSearch(e.target.value); setGroupPage(0); }}
+                  placeholder="Search groups…"
+                  className="w-full bg-card border border-border rounded-xl pl-9 pr-9 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 placeholder:text-muted-foreground"
+                />
+                {groupSearch && (
+                  <button onClick={() => { setGroupSearch(""); setGroupPage(0); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+              {/* Type filter */}
+              <div className="flex items-center gap-1 bg-card border border-border rounded-xl px-1.5 py-1">
+                {(["all", "public", "private"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => { setGroupType(t); setGroupPage(0); }}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all capitalize ${groupType === t ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    {t === "all" ? "All" : t === "public" ? "🌐 Public" : "🔒 Private"}
+                  </button>
+                ))}
+              </div>
+              {/* Sort */}
+              <div className="flex items-center gap-1 bg-card border border-border rounded-xl px-1.5 py-1">
+                {([["members", "👥 Members"], ["newest", "🆕 Newest"], ["alpha", "🔤 A–Z"]] as const).map(([val, label]) => (
+                  <button
+                    key={val}
+                    onClick={() => { setGroupSort(val); setGroupPage(0); }}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${groupSort === val ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Groups grid */}
+            {filteredSidebarGroups.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <Users className="w-10 h-10 text-muted-foreground/30 mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  {groupSearch || groupType !== "all" ? "No groups match your filters" : "No groups yet"}
+                </p>
+                {isAuthenticated && (
+                  <Button size="sm" className="mt-3" onClick={() => setShowGroupModal(true)}>
+                    <Plus className="w-3.5 h-3.5 mr-1.5" /> Create the first group
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-3 gap-3 lg:grid-cols-4">
+                  {filteredSidebarGroups.slice(groupPage * GROUPS_PER_PAGE, (groupPage + 1) * GROUPS_PER_PAGE).map((g) => (
+                    <div
+                      key={g.id}
+                      className="bg-card border border-border rounded-2xl p-3 hover:border-primary/40 transition-colors flex flex-col items-center text-center aspect-square justify-between"
+                    >
+                      <div className="flex-1 flex flex-col items-center justify-center gap-1 min-h-0">
+                        <span className="text-3xl leading-none">{g.emoji}</span>
+                        <div className="flex items-center gap-1 mt-1">
+                          <p className="text-xs font-semibold line-clamp-2 leading-tight">{g.name}</p>
+                          {g.isPrivate && <Lock className="w-2.5 h-2.5 text-muted-foreground shrink-0" />}
+                        </div>
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                          <Users className="w-2.5 h-2.5" />{g.memberCount}
+                        </span>
+                      </div>
+                      <div className="w-full mt-2">
+                        {g.isMember ? (
+                          <Link href={`/groups/${g.id}`}>
+                            <Button size="sm" className="w-full h-7 text-xs">
+                              <MessageSquare className="w-3 h-3 mr-1" />Chat
+                            </Button>
+                          </Link>
+                        ) : isAuthenticated ? (
+                          <Button size="sm" variant="outline" className="w-full h-7 text-xs" onClick={() => joinGroup({ id: g.id })}>
+                            <UserPlus className="w-3 h-3 mr-1" />
+                            {g.isPrivate ? "Request" : "Join"}
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="outline" className="w-full h-7 text-xs" onClick={login}>
+                            <LogIn className="w-3 h-3 mr-1" />Join
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Groups pagination */}
+                {filteredSidebarGroups.length > GROUPS_PER_PAGE && (
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/50">
+                    <span className="text-xs text-muted-foreground">
+                      {groupPage * GROUPS_PER_PAGE + 1}–{Math.min((groupPage + 1) * GROUPS_PER_PAGE, filteredSidebarGroups.length)} of {filteredSidebarGroups.length}
+                    </span>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => setGroupPage((p) => Math.max(0, p - 1))} disabled={groupPage === 0} className="h-7 px-3 text-xs">
+                        ← Prev
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setGroupPage((p) => p + 1)} disabled={(groupPage + 1) * GROUPS_PER_PAGE >= filteredSidebarGroups.length} className="h-7 px-3 text-xs">
+                        Next →
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* ── RIGHT: Questions column ─────────────────────────── */}
+          <div className="min-w-0 flex-[2]">
+            {/* Q&A column header */}
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold flex items-center gap-2 text-base">
+                <MessageSquare className="w-4 h-4 text-primary" /> Q&amp;A
+              </h3>
+              {isAuthenticated && (
+                <Button size="sm" onClick={() => setShowAskModal(true)}>
+                  <PenLine className="w-3.5 h-3.5 mr-1.5" /> Ask
+                </Button>
+              )}
+            </div>
+
+            {/* Q&A search + country filter + sort */}
+            <div className="flex flex-col gap-2 mb-4">
+              {/* Search */}
+              <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                 <input
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => { setSearch(e.target.value); setQaPage(0); }}
                   placeholder="Search questions…"
                   className="w-full bg-card border border-border rounded-xl pl-9 pr-9 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 placeholder:text-muted-foreground"
                 />
                 {search && (
-                  <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <button onClick={() => { setSearch(""); setQaPage(0); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                     <X className="w-4 h-4" />
                   </button>
                 )}
               </div>
-              {/* Country filter */}
-              <div className="relative">
-                <button
-                  onClick={(e) => { e.stopPropagation(); setCountryOpen((v) => !v); }}
-                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm transition-all whitespace-nowrap ${
-                    countryFilter
-                      ? "bg-primary/10 border-primary/40 text-primary"
-                      : "bg-card border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
-                  }`}
-                >
-                  <Globe className="w-4 h-4 shrink-0" />
-                  <span className="max-w-[110px] truncate hidden sm:inline">{selectedCountryLabel ?? "Country"}</span>
-                  {countryFilter ? (
-                    <button onClick={(e) => { e.stopPropagation(); setCountryFilter(""); setCountryOpen(false); }}>
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  ) : (
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  )}
-                </button>
-                {countryOpen && (
-                  <div className="absolute right-0 top-full mt-1 w-56 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden">
-                    <div className="max-h-64 overflow-y-auto py-1">
-                      <button onClick={() => { setCountryFilter(""); setCountryOpen(false); }}
-                        className={`w-full text-left px-4 py-2.5 text-sm hover:bg-muted/50 ${!countryFilter ? "text-primary font-medium" : "text-foreground"}`}>
-                        All Countries
-                      </button>
-                      {countries.map(([code, label]) => (
-                        <button key={code} onClick={() => { setCountryFilter(code); setCountryOpen(false); }}
-                          className={`w-full text-left px-4 py-2.5 text-sm hover:bg-muted/50 ${countryFilter === code ? "text-primary font-medium bg-primary/5" : "text-foreground"}`}>
-                          {label}
+              {/* Country filter + sort row */}
+              <div className="flex gap-2">
+                {/* Country */}
+                <div className="relative flex-1">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setCountryOpen((v) => !v); }}
+                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl border text-sm transition-all ${
+                      countryFilter
+                        ? "bg-primary/10 border-primary/40 text-primary"
+                        : "bg-card border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                    }`}
+                  >
+                    <Globe className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate text-xs flex-1 text-left">{selectedCountryLabel ?? "All countries"}</span>
+                    {countryFilter ? (
+                      <span onClick={(e) => { e.stopPropagation(); setCountryFilter(""); setCountryOpen(false); setQaPage(0); }}>
+                        <X className="w-3 h-3" />
+                      </span>
+                    ) : (
+                      <ChevronDown className="w-3 h-3 shrink-0" />
+                    )}
+                  </button>
+                  {countryOpen && (
+                    <div className="absolute left-0 top-full mt-1 w-56 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden">
+                      <div className="max-h-56 overflow-y-auto py-1">
+                        <button onClick={() => { setCountryFilter(""); setCountryOpen(false); setQaPage(0); }}
+                          className={`w-full text-left px-4 py-2 text-xs hover:bg-muted/50 ${!countryFilter ? "text-primary font-medium" : "text-foreground"}`}>
+                          All Countries
                         </button>
-                      ))}
+                        {countries.map(([code, label]) => (
+                          <button key={code} onClick={() => { setCountryFilter(code); setCountryOpen(false); setQaPage(0); }}
+                            className={`w-full text-left px-4 py-2 text-xs hover:bg-muted/50 ${countryFilter === code ? "text-primary font-medium bg-primary/5" : "text-foreground"}`}>
+                            {label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
+                {/* Sort */}
+                <div className="flex items-center gap-1 bg-card border border-border rounded-xl px-1.5 py-1 shrink-0">
+                  <button onClick={() => { setQaSort("newest"); setQaPage(0); }} className={`px-2 py-1 rounded-lg text-xs font-medium transition-all ${qaSort === "newest" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+                    🕐 New
+                  </button>
+                  <button onClick={() => { setQaSort("answers"); setQaPage(0); }} className={`px-2 py-1 rounded-lg text-xs font-medium transition-all ${qaSort === "answers" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+                    💬 Top
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -544,83 +617,92 @@ export default function Community() {
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
               </div>
             ) : (() => {
-              const questions = filtered.filter((item) => item.type === "question");
-              if (questions.length === 0) {
+              let questions = filtered.filter((item) => item.type === "question");
+              if (qaSort === "answers") {
+                questions = [...questions].sort((a, b) => {
+                  const aA = typeof a.data.answersCount === "number" ? a.data.answersCount : 0;
+                  const bA = typeof b.data.answersCount === "number" ? b.data.answersCount : 0;
+                  return bA - aA;
+                });
+              }
+              const totalQa = questions.length;
+              const pageQa = questions.slice(qaPage * QA_PER_PAGE, (qaPage + 1) * QA_PER_PAGE);
+              if (totalQa === 0) {
                 return (
-                  <div className="text-center py-20">
-                    <MessageSquare className="w-12 h-12 mx-auto text-muted mb-4 opacity-40" />
-                    <h3 className="text-lg font-semibold mb-2">
+                  <div className="text-center py-16">
+                    <MessageSquare className="w-10 h-10 mx-auto text-muted mb-3 opacity-40" />
+                    <p className="text-sm font-semibold mb-1">
                       {search || countryFilter ? "No questions found" : "No questions yet"}
-                    </h3>
-                    <p className="text-muted-foreground mb-4 text-sm">
-                      {search || countryFilter
-                        ? "Try adjusting your search or country filter."
-                        : "Be the first to ask a question about a country."}
+                    </p>
+                    <p className="text-muted-foreground text-xs mb-4">
+                      {search || countryFilter ? "Try different filters." : "Be the first to ask."}
                     </p>
                     {!isAuthenticated ? (
-                      <Button onClick={login}><LogIn className="w-4 h-4 mr-2" />Sign in to ask</Button>
+                      <Button size="sm" onClick={login}><LogIn className="w-3.5 h-3.5 mr-1.5" />Sign in to ask</Button>
                     ) : (
-                      <Button onClick={() => setShowAskModal(true)}><PenLine className="w-4 h-4 mr-2" />Ask a Question</Button>
+                      <Button size="sm" onClick={() => setShowAskModal(true)}><PenLine className="w-3.5 h-3.5 mr-1.5" />Ask a Question</Button>
                     )}
                   </div>
                 );
               }
               return (
-                <div className="space-y-2">
-                  {questions.map((item) => {
-                    const title = typeof item.data.title === "string" ? item.data.title : "";
-                    const body = typeof item.data.body === "string" ? item.data.body : "";
-                    const answers = typeof item.data.answersCount === "number" ? item.data.answersCount : 0;
-                    const authorId = item.user?.userId;
-                    const isOwn = !!myId && authorId === myId;
-                    return (
-                      <Link key={item.id} href={`/questions/${item.id}`}>
-                        <div className="group bg-card border border-border rounded-xl px-4 py-3 hover:border-primary/40 transition-colors cursor-pointer">
-                          <div className="flex items-start gap-3">
-                            {/* Avatar */}
-                            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold shrink-0 mt-0.5">
-                              {(item.user?.firstName || "A")[0].toUpperCase()}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              {/* Title */}
-                              <p className="font-semibold text-sm group-hover:text-primary transition-colors line-clamp-1">
-                                {title}
-                              </p>
-                              {/* 2-line description */}
-                              {body && (
-                                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-relaxed">
-                                  {body}
-                                </p>
-                              )}
-                              {/* Meta row */}
-                              <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
-                                <span className="flex items-center gap-1">
-                                  <Globe className="w-2.5 h-2.5" />
-                                  {item.countryName ?? item.countryCode}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <MessageSquare className="w-2.5 h-2.5" />
-                                  {answers} {answers === 1 ? "answer" : "answers"}
-                                </span>
-                                <span>{timeAgo(item.createdAt)}</span>
+                <>
+                  <div className="space-y-2">
+                    {pageQa.map((item) => {
+                      const title = typeof item.data.title === "string" ? item.data.title : "";
+                      const body = typeof item.data.body === "string" ? item.data.body : "";
+                      const answers = typeof item.data.answersCount === "number" ? item.data.answersCount : 0;
+                      const authorId = item.user?.userId;
+                      const isOwn = !!myId && authorId === myId;
+                      return (
+                        <Link key={item.id} href={`/questions/${item.id}`}>
+                          <div className="group bg-card border border-border rounded-xl px-4 py-3 hover:border-primary/40 transition-colors cursor-pointer">
+                            <div className="flex items-start gap-3">
+                              <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold shrink-0 mt-0.5">
+                                {(item.user?.firstName || "A")[0].toUpperCase()}
                               </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-sm group-hover:text-primary transition-colors line-clamp-1">{title}</p>
+                                {body && (
+                                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-relaxed">{body}</p>
+                                )}
+                                <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
+                                  <span className="flex items-center gap-1"><Globe className="w-2.5 h-2.5" />{item.countryName ?? item.countryCode}</span>
+                                  <span className="flex items-center gap-1"><MessageSquare className="w-2.5 h-2.5" />{answers} {answers === 1 ? "answer" : "answers"}</span>
+                                  <span>{timeAgo(item.createdAt)}</span>
+                                </div>
+                              </div>
+                              {isOwn && (
+                                <button
+                                  onClick={(e) => { e.preventDefault(); if (confirm("Delete this question?")) deleteQuestion({ id: item.id }); }}
+                                  className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors shrink-0 opacity-0 group-hover:opacity-100"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
                             </div>
-                            {/* Delete button */}
-                            {isOwn && (
-                              <button
-                                onClick={(e) => { e.preventDefault(); if (confirm("Delete this question?")) deleteQuestion({ id: item.id }); }}
-                                className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors shrink-0 opacity-0 group-hover:opacity-100"
-                                title="Delete question"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
                           </div>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                  {/* Q&A pagination */}
+                  {totalQa > QA_PER_PAGE && (
+                    <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/50">
+                      <span className="text-xs text-muted-foreground">
+                        {qaPage * QA_PER_PAGE + 1}–{Math.min((qaPage + 1) * QA_PER_PAGE, totalQa)} of {totalQa}
+                      </span>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => setQaPage((p) => Math.max(0, p - 1))} disabled={qaPage === 0} className="h-7 px-3 text-xs">
+                          ← Prev
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setQaPage((p) => p + 1)} disabled={(qaPage + 1) * QA_PER_PAGE >= totalQa} className="h-7 px-3 text-xs">
+                          Next →
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
               );
             })()}
           </div>
