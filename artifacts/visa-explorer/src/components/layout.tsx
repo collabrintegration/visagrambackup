@@ -38,7 +38,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const links = [
     { href: "/", label: "Home", icon: Compass },
-    { href: "/friends", label: "Friends", icon: UserPlus },
+    { href: "/friends", label: "Profile", icon: UserPlus },
     { href: "/community", label: "Community", icon: Users },
     { href: "/explore", label: "Explore\u00a0Visa", icon: MapIcon, matchPaths: ["/explore", "/passport"] },
     { href: "/tracker", label: "Tracker", icon: ClipboardList },
