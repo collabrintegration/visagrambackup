@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 
 import Layout from "@/components/layout";
+import AIChatWidget from "@/components/ai-chat-widget";
 import Home from "@/pages/home";
 import Explore from "@/pages/explore";
 import CountryDetail from "@/pages/country";
@@ -51,6 +52,7 @@ function App() {
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
           <Router />
+          <AIChatWidget />
         </WouterRouter>
         <Toaster />
       </TooltipProvider>

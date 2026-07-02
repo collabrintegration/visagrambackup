@@ -786,13 +786,15 @@ function QuestionItem({
 
   return (
     <div className="border border-border/60 rounded-xl overflow-hidden">
-      <button
+      <div
+        className="w-full text-left p-4 hover:bg-muted/20 transition-colors cursor-pointer"
         onClick={onToggle}
-        className="w-full text-left p-4 hover:bg-muted/20 transition-colors"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-sm">{q.title}</p>
+            <Link href={`/questions/${q.id}`} onClick={(e) => e.stopPropagation()}>
+              <p className="font-medium text-sm hover:text-primary transition-colors">{q.title}</p>
+            </Link>
             {q.body && !isExpanded && (
               <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{q.body}</p>
             )}
@@ -802,13 +804,20 @@ function QuestionItem({
             {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
           </div>
         </div>
-      </button>
+      </div>
 
       {isExpanded && (
         <div className="border-t border-border/60 p-4 space-y-4">
           {q.body && <p className="text-sm text-muted-foreground">{q.body}</p>}
-          <div className="text-xs text-muted-foreground">
-            Asked by {q.user?.firstName || "Anonymous"} · {timeAgo(q.createdAt)}
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              Asked by {q.user?.firstName || "Anonymous"} · {timeAgo(q.createdAt)}
+            </p>
+            <Link href={`/questions/${q.id}`}>
+              <span className="text-xs text-primary hover:underline flex items-center gap-1">
+                View full discussion →
+              </span>
+            </Link>
           </div>
 
           {answersLoading ? (
