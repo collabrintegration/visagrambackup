@@ -13,6 +13,9 @@ import {
   useGetAdminSiteStats,
   useAdminSearchUsers,
   useGetAdminUserDetail,
+  useListPhotos,
+  useCreatePhoto,
+  useDeletePhoto,
   getGetTravelMapQueryKey,
   getGetMyActivityQueryKey,
   getGetCurrentAuthUserQueryKey,
@@ -21,8 +24,10 @@ import {
   getGetAdminSiteStatsQueryKey,
   getAdminSearchUsersQueryKey,
   getGetAdminUserDetailQueryKey,
+  getListPhotosQueryKey,
 } from "@workspace/api-client-react";
-import type { ActivityQuestion, AdminUserResult, AdminUserDetail } from "@workspace/api-client-react";
+import type { ActivityQuestion, AdminUserResult, AdminUserDetail, TravelPhoto } from "@workspace/api-client-react";
+import { ObjectUploader } from "@workspace/object-storage-web";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -54,7 +59,7 @@ const STATUS_CONFIG = {
 } as const;
 
 type TravelStatus = keyof typeof STATUS_CONFIG;
-type ProfileTab = "travel" | "activity" | "cases" | "admin";
+type ProfileTab = "travel" | "activity" | "cases" | "photos" | "admin";
 type ActivitySubTab = "asked" | "answered" | "following";
 
 const CASE_STATUS: Record<string, { label: string; cls: string; icon: typeof Clock }> = {
@@ -175,6 +180,14 @@ export default function Profile() {
   const [askBody, setAskBody] = useState("");
   const queryClient = useQueryClient();
 
+  // Photos tab state
+  const [photoLightbox, setPhotoLightbox] = useState<TravelPhoto | null>(null);
+  const [showPhotoUploadModal, setShowPhotoUploadModal] = useState(false);
+  const [photoUploadCountry, setPhotoUploadCountry] = useState<string | null>(null);
+  const [pendingPhotoPath, setPendingPhotoPath] = useState<string | null>(null);
+  const [pendingPhotoCaption, setPendingPhotoCaption] = useState("");
+  const [showPhotoCaptionStep, setShowPhotoCaptionStep] = useState(false);
+
   const { data: entries = [], isLoading: mapLoading } = useGetTravelMap({
     query: { queryKey: getGetTravelMapQueryKey(), enabled: isAuthenticated },
   });
@@ -189,6 +202,35 @@ export default function Profile() {
 
   const { data: cases = [], isLoading: casesLoading } = useGetMyCases({
     query: { queryKey: getGetMyCasesQueryKey(), enabled: isAuthenticated && activeTab === "cases" },
+  });
+
+  const myUserId = (user as { id?: string })?.id ?? "";
+  const photoQueryParams = { userId: myUserId, limit: 50 };
+  const { data: myPhotosData, isLoading: photosLoading } = useListPhotos(photoQueryParams, {
+    query: { queryKey: getListPhotosQueryKey(photoQueryParams), enabled: !!myUserId && activeTab === "photos" },
+  });
+  const myPhotos = myPhotosData?.photos ?? [];
+
+  const createPhoto = useCreatePhoto({
+    mutation: {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: getListPhotosQueryKey(photoQueryParams) });
+        setShowPhotoCaptionStep(false);
+        setShowPhotoUploadModal(false);
+        setPendingPhotoPath(null);
+        setPendingPhotoCaption("");
+        setPhotoUploadCountry(null);
+      },
+    },
+  });
+
+  const deletePhoto = useDeletePhoto({
+    mutation: {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: getListPhotosQueryKey(photoQueryParams) });
+        setPhotoLightbox(null);
+      },
+    },
   });
 
   const isSuperAdmin = (user as { isSuperAdmin?: boolean })?.isSuperAdmin === true;
@@ -604,6 +646,7 @@ export default function Profile() {
             {[
               { id: "activity" as const, label: "My Q&A", icon: BookOpen },
               { id: "travel" as const, label: "Travel Map", icon: Map },
+              { id: "photos" as const, label: "Photos", icon: Camera },
               { id: "cases" as const, label: "Support Cases", icon: ShieldAlert },
               ...(isSuperAdmin ? [{ id: "admin" as const, label: "Site Stats", icon: BarChart2 }] : []),
             ].map(({ id, label, icon: Icon, ...rest }) => {
@@ -966,6 +1009,202 @@ export default function Profile() {
                     </Link>
                   );
                 })}
+              </div>
+            )}
+          </div>
+        )}
+
+
+        {/* ── Photos Tab ──────────────────────────────────────────────── */}
+        {activeTab === "photos" && (
+          <div>
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-lg font-bold flex items-center gap-2">
+                  <Camera className="w-5 h-5 text-primary" /> My Travel Photos
+                </h2>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  {myPhotos.length > 0 ? `${myPhotos.length} photo${myPhotos.length !== 1 ? "s" : ""} shared` : "No photos uploaded yet"}
+                </p>
+              </div>
+              <Button onClick={() => { setShowPhotoUploadModal(true); setShowPhotoCaptionStep(false); setPendingPhotoPath(null); setPendingPhotoCaption(""); }}>
+                <Camera className="w-4 h-4 mr-1.5" /> Upload Photo
+              </Button>
+            </div>
+
+            {photosLoading ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : myPhotos.length === 0 ? (
+              <div className="text-center py-20 border border-dashed border-border rounded-2xl">
+                <Camera className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
+                <h3 className="text-base font-semibold mb-2">No photos yet</h3>
+                <p className="text-muted-foreground text-sm mb-4 max-w-xs mx-auto">
+                  Upload photos from your travels — they'll appear on the country pages too.
+                </p>
+                <Button onClick={() => setShowPhotoUploadModal(true)}>
+                  <Camera className="w-4 h-4 mr-1.5" /> Upload your first photo
+                </Button>
+              </div>
+            ) : (
+              <div className="columns-2 sm:columns-3 lg:columns-4 gap-3 space-y-3">
+                {myPhotos.map((photo) => (
+                  <div
+                    key={photo.id}
+                    className="relative group break-inside-avoid rounded-xl overflow-hidden cursor-pointer border border-border hover:border-primary/40 transition-all"
+                    onClick={() => setPhotoLightbox(photo)}
+                  >
+                    <img
+                      src={`/api/storage${photo.objectPath}`}
+                      alt={photo.caption ?? "Travel photo"}
+                      className="w-full object-cover"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute bottom-0 left-0 right-0 p-2 translate-y-1 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all">
+                      {photo.caption && (
+                        <p className="text-xs text-white/90 line-clamp-1">{photo.caption}</p>
+                      )}
+                      <p className="text-[10px] text-white/60 mt-0.5">{photo.countryCode}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Photo lightbox */}
+            {photoLightbox && (
+              <div
+                className="fixed inset-0 z-[400] bg-black/90 flex items-center justify-center p-4"
+                onClick={() => setPhotoLightbox(null)}
+              >
+                <div className="relative max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => setPhotoLightbox(null)}
+                    className="absolute -top-10 right-0 text-white/70 hover:text-white"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                  <img
+                    src={`/api/storage${photoLightbox.objectPath}`}
+                    alt={photoLightbox.caption ?? "Travel photo"}
+                    className="w-full rounded-xl object-contain max-h-[75vh]"
+                  />
+                  <div className="flex items-center justify-between mt-3 px-1">
+                    <div>
+                      {photoLightbox.caption && (
+                        <p className="text-white/90 text-sm">{photoLightbox.caption}</p>
+                      )}
+                      <p className="text-white/50 text-xs mt-0.5">{photoLightbox.countryCode}</p>
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => deletePhoto.mutate({ id: photoLightbox.id })}
+                      disabled={deletePhoto.isPending}
+                    >
+                      {deletePhoto.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                      <span className="ml-1.5">Delete</span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Upload modal */}
+            {showPhotoUploadModal && (
+              <div
+                className="fixed inset-0 z-[400] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+                onClick={(e) => { if (e.target === e.currentTarget) { setShowPhotoUploadModal(false); setShowPhotoCaptionStep(false); setPendingPhotoPath(null); } }}
+              >
+                <div className="bg-card border border-border rounded-2xl w-full max-w-md shadow-2xl">
+                  <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+                    <h2 className="font-semibold text-lg">Upload a Travel Photo</h2>
+                    <button onClick={() => { setShowPhotoUploadModal(false); setShowPhotoCaptionStep(false); setPendingPhotoPath(null); }} className="text-muted-foreground hover:text-foreground">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="p-6 space-y-4">
+                    {!showPhotoCaptionStep ? (
+                      <>
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1.5 block font-medium">Which country?</label>
+                          <CountryCombobox
+                            value={photoUploadCountry}
+                            onChange={setPhotoUploadCountry}
+                            placeholder="Select the country you photographed"
+                          />
+                        </div>
+                        {photoUploadCountry && (
+                          <div>
+                            <label className="text-xs text-muted-foreground mb-1.5 block font-medium">Photo</label>
+                            <ObjectUploader
+                              maxNumberOfFiles={1}
+                              maxFileSize={10 * 1024 * 1024}
+                              onGetUploadParameters={async (file) => {
+                                const res = await fetch("/api/storage/uploads/request-url", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
+                                });
+                                const data = await res.json() as { uploadURL: string; objectPath: string };
+                                setPendingPhotoPath(data.objectPath);
+                                return { method: "PUT" as const, url: data.uploadURL, headers: { "Content-Type": file.type as string } };
+                              }}
+                              onComplete={(result) => {
+                                if ((result.successful ?? []).length > 0) {
+                                  setShowPhotoCaptionStep(true);
+                                }
+                              }}
+                            >
+                              <div className="w-full border-2 border-dashed border-border rounded-xl py-10 flex flex-col items-center gap-2 text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors cursor-pointer">
+                                <Camera className="w-8 h-8" />
+                                <span className="text-sm font-medium">Click to upload photo</span>
+                                <span className="text-xs">JPG, PNG, WebP up to 10 MB</span>
+                              </div>
+                            </ObjectUploader>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1.5 block font-medium">Caption (optional)</label>
+                          <input
+                            value={pendingPhotoCaption}
+                            onChange={(e) => setPendingPhotoCaption(e.target.value)}
+                            placeholder="Where was this? What's the story?"
+                            className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                            maxLength={120}
+                            autoFocus
+                          />
+                        </div>
+                        <div className="flex gap-3 pt-1">
+                          <Button
+                            className="flex-1"
+                            disabled={createPhoto.isPending || !photoUploadCountry || !pendingPhotoPath}
+                            onClick={() => {
+                              if (!photoUploadCountry || !pendingPhotoPath) return;
+                              createPhoto.mutate({
+                                data: {
+                                  countryCode: photoUploadCountry,
+                                  objectPath: pendingPhotoPath,
+                                  caption: pendingPhotoCaption.trim() || undefined,
+                                },
+                              });
+                            }}
+                          >
+                            {createPhoto.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Camera className="w-4 h-4 mr-1.5" />}
+                            Save Photo
+                          </Button>
+                          <Button variant="ghost" onClick={() => { setShowPhotoCaptionStep(false); setPendingPhotoPath(null); }}>Back</Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>

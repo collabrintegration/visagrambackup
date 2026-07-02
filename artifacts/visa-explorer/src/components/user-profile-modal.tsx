@@ -1,6 +1,6 @@
-import { useGetPublicUserProfile, getGetPublicUserProfileQueryKey, useSendFriendRequest, useAcceptFriendRequest, getSearchUsersQueryKey, getListFriendRequestsQueryKey } from "@workspace/api-client-react";
+import { useGetPublicUserProfile, getGetPublicUserProfileQueryKey, useSendFriendRequest, useAcceptFriendRequest, getSearchUsersQueryKey, getListFriendRequestsQueryKey, useListPhotos, getListPhotosQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { X, MapPin, Globe, CheckCircle2, Heart, UserPlus, UserCheck, Clock, Check, Loader2 } from "lucide-react";
+import { X, MapPin, Globe, CheckCircle2, Heart, UserPlus, UserCheck, Clock, Check, Loader2, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 function Avatar({ url, name, size = "lg" }: { url?: string | null; name: string; size?: "lg" | "xl" }) {
@@ -28,6 +28,12 @@ export default function UserProfileModal({ userId, onClose, onInvalidate }: Prop
   const { data: profile, isLoading } = useGetPublicUserProfile(userId, {
     query: { queryKey: getGetPublicUserProfileQueryKey(userId) },
   });
+
+  const photoParams = { userId, limit: 9 };
+  const { data: photoData } = useListPhotos(photoParams, {
+    query: { queryKey: getListPhotosQueryKey(photoParams), enabled: !!userId },
+  });
+  const userPhotos = photoData?.photos ?? [];
 
   const sendRequest = useSendFriendRequest({
     mutation: {
@@ -130,6 +136,29 @@ export default function UserProfileModal({ userId, onClose, onInvalidate }: Prop
                   </div>
                   <p className="text-2xl font-bold text-primary">{profile.wantToVisitCount ?? 0}</p>
                   <p className="text-xs text-muted-foreground">countries</p>
+                </div>
+              </div>
+            )}
+
+            {/* Travel photos strip */}
+            {userPhotos.length > 0 && (
+              <div>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Camera className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="text-xs font-medium text-muted-foreground">Travel Photos</span>
+                  <span className="text-xs text-muted-foreground/60">({userPhotos.length})</span>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {userPhotos.slice(0, 9).map((photo) => (
+                    <div key={photo.id} className="aspect-square rounded-lg overflow-hidden bg-muted">
+                      <img
+                        src={`/api/storage${photo.objectPath}`}
+                        alt={photo.caption ?? "Travel photo"}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
