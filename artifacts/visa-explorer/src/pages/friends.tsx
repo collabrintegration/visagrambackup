@@ -402,13 +402,74 @@ function AdminGroupPanel({ group }: { group: Group }) {
   );
 }
 
+interface FriendsListSectionProps {
+  friends: { id: string; firstName?: string | null; lastName?: string | null; profileImageUrl?: string | null; homeCountry?: string | null }[];
+  loading: boolean;
+  onRemove: (id: string) => void;
+  onMessage: (id: string) => void;
+  onFindPeople: () => void;
+}
+
+function FriendsListSection({ friends, loading, onRemove, onMessage, onFindPeople }: FriendsListSectionProps) {
+  const [q, setQ] = useState("");
+  const filtered = q.trim()
+    ? friends.filter(f => {
+        const name = [f.firstName, f.lastName].filter(Boolean).join(" ").toLowerCase();
+        return name.includes(q.toLowerCase()) || (f.homeCountry ?? "").toLowerCase().includes(q.toLowerCase());
+      })
+    : friends;
+
+  return (
+    <div className="space-y-3">
+      {friends.length > 0 && (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <input
+            value={q}
+            onChange={e => setQ(e.target.value)}
+            placeholder="Search friends…"
+            className="w-full pl-9 pr-4 py-2 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+          />
+        </div>
+      )}
+      <div className="rounded-2xl border border-border bg-card p-2 space-y-0.5">
+        {loading ? (
+          <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+        ) : friends.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 py-12 text-center">
+            <Users className="w-10 h-10 text-muted-foreground opacity-40" />
+            <p className="font-semibold">No friends yet</p>
+            <p className="text-sm text-muted-foreground">Search for travelers and send them a request.</p>
+            <Button size="sm" onClick={onFindPeople}><Search className="w-3.5 h-3.5 mr-1.5" />Find People</Button>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 py-10 text-center">
+            <p className="text-sm text-muted-foreground">No friends match "<span className="text-foreground">{q}</span>"</p>
+          </div>
+        ) : (
+          filtered.map(f => (
+            <FriendRow
+              key={f.id}
+              {...f}
+              onRemove={() => onRemove(f.id)}
+              onMessage={() => onMessage(f.id)}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
 function FriendsGroupsTab() {
+  const [groupSearch, setGroupSearch] = useState("");
   const { data: groups = [], isLoading } = useListGroups({
     query: { queryKey: getListGroupsQueryKey(), enabled: true },
   });
 
-  const myGroups = groups.filter((g) => g.isMember && !g.isAdmin);
-  const adminGroups = groups.filter((g) => g.isAdmin);
+  const q = groupSearch.trim().toLowerCase();
+  const myGroups = groups.filter((g) => g.isMember && !g.isAdmin).filter(g => !q || g.name.toLowerCase().includes(q));
+  const adminGroups = groups.filter((g) => g.isAdmin).filter(g => !q || g.name.toLowerCase().includes(q));
 
   if (isLoading) {
     return <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
@@ -425,8 +486,22 @@ function FriendsGroupsTab() {
     );
   }
 
+  const totalGroups = groups.filter(g => g.isMember || g.isAdmin).length;
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      {totalGroups > 0 && (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <input
+            value={groupSearch}
+            onChange={e => setGroupSearch(e.target.value)}
+            placeholder="Search groups…"
+            className="w-full pl-9 pr-4 py-2 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+          />
+        </div>
+      )}
+      <div className="space-y-8">
       {adminGroups.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-3">
@@ -468,6 +543,7 @@ function FriendsGroupsTab() {
       <Link href="/groups">
         <Button variant="outline" size="sm"><Users className="w-4 h-4 mr-2" /> Browse All Groups</Button>
       </Link>
+      </div>
     </div>
   );
 }
@@ -569,27 +645,13 @@ export default function FriendsPage() {
 
             {/* ── Friends list ── */}
             {rightTab === "friends" && (
-              <div className="rounded-2xl border border-border bg-card p-2 space-y-0.5">
-                {loadingFriends ? (
-                  <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
-                ) : friends.length === 0 ? (
-                  <div className="flex flex-col items-center gap-3 py-12 text-center">
-                    <Users className="w-10 h-10 text-muted-foreground opacity-40" />
-                    <p className="font-semibold">No friends yet</p>
-                    <p className="text-sm text-muted-foreground">Search for travelers and send them a request.</p>
-                    <Button size="sm" onClick={() => setRightTab("search")}><Search className="w-3.5 h-3.5 mr-1.5" />Find People</Button>
-                  </div>
-                ) : (
-                  friends.map(f => (
-                    <FriendRow
-                      key={f.id}
-                      {...f}
-                      onRemove={() => removeFriend.mutate({ userId: f.id }, { onSuccess: invalidate })}
-                      onMessage={() => { setDmOpenUserId(f.id); setRightTab("messages"); }}
-                    />
-                  ))
-                )}
-              </div>
+              <FriendsListSection
+                friends={friends}
+                loading={loadingFriends}
+                onRemove={(id) => removeFriend.mutate({ userId: id }, { onSuccess: invalidate })}
+                onMessage={(id) => { setDmOpenUserId(id); setRightTab("messages"); }}
+                onFindPeople={() => setRightTab("search")}
+              />
             )}
 
             {/* ── Requests ── */}

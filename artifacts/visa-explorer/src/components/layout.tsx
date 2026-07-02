@@ -28,7 +28,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { href: "/friends", label: "Friends", icon: UserPlus },
     { href: "/community", label: "Community", icon: Users },
     { href: "/groups", label: "Groups", icon: Globe },
-    { href: "/explore", label: "Explore Visa", icon: MapIcon, matchPaths: ["/explore", "/passport"] },
+    { href: "/explore", label: "Explore\u00a0Visa", icon: MapIcon, matchPaths: ["/explore", "/passport"] },
     { href: "/tracker", label: "Tracker", icon: ClipboardList },
   ];
 
