@@ -3,13 +3,13 @@ import {
   useGetPublicUserProfile,
   useListPhotos,
   useListTestimonials,
-  useListGroups,
+  useListUserFriends,
   useSendFriendRequest,
   useAcceptFriendRequest,
   getGetPublicUserProfileQueryKey,
   getListPhotosQueryKey,
   getListTestimonialsQueryKey,
-  getListGroupsQueryKey,
+  getListUserFriendsQueryKey,
 } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useQueryClient } from "@tanstack/react-query";
@@ -43,14 +43,14 @@ function Avatar({ url, name, size = 80 }: { url?: string | null; name: string; s
   );
 }
 
-type Tab = "photos" | "groups" | "testimonials";
+type Tab = "friends" | "photos" | "testimonials";
 
 export default function UserPublicProfilePage() {
   const { id: userId } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const { isAuthenticated, user } = useAuth();
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<Tab>("photos");
+  const [tab, setTab] = useState<Tab>("friends");
   const [lightboxPhoto, setLightboxPhoto] = useState<{ objectPath: string; caption?: string | null; countryCode?: string | null } | null>(null);
 
   const myId = (user as { id?: string })?.id ?? "";
@@ -69,10 +69,9 @@ export default function UserPublicProfilePage() {
     query: { queryKey: getListTestimonialsQueryKey(userId ?? ""), enabled: !!userId },
   });
 
-  const { data: allGroups = [] } = useListGroups({
-    query: { queryKey: getListGroupsQueryKey(), enabled: isAuthenticated },
+  const { data: userFriends = [], isLoading: friendsLoading } = useListUserFriends(userId ?? "", {
+    query: { queryKey: getListUserFriendsQueryKey(userId ?? ""), enabled: !!userId },
   });
-  const sharedGroups = allGroups.filter(g => g.isMember || g.isAdmin);
 
   const sendRequest = useSendFriendRequest({
     mutation: {
@@ -163,15 +162,15 @@ export default function UserPublicProfilePage() {
             <div className="h-20 bg-gradient-to-br from-primary/40 via-purple-500/30 to-pink-500/40" />
 
             <div className="px-5 pb-5 -mt-10">
-              {/* Avatar + photo count */}
+              {/* Avatar + friend count */}
               <div className="flex items-end justify-between">
                 <div className="w-20 h-20 shrink-0">
                   <Avatar url={p.profileImageUrl} name={fullName} size={80} />
                 </div>
                 <div className="text-right pb-1">
-                  <p className="text-4xl font-extrabold leading-none text-foreground">{photos.length}</p>
+                  <p className="text-4xl font-extrabold leading-none text-foreground">{userFriends.length}</p>
                   <p className="text-xs text-muted-foreground mt-0.5 flex items-center justify-end gap-1">
-                    <Camera className="w-3 h-3" />Photos
+                    <Users className="w-3 h-3" />Friends
                   </p>
                 </div>
               </div>
@@ -293,8 +292,8 @@ export default function UserPublicProfilePage() {
           {/* Tab bar */}
           <div className="flex items-center gap-1 border-b border-border mb-5">
             {([
+              { key: "friends" as Tab, label: "Friends", icon: Users, count: userFriends.length },
               { key: "photos" as Tab, label: "Photos", icon: ImageIcon, count: photos.length },
-              { key: "groups" as Tab, label: "Shared Groups", icon: Users, count: sharedGroups.length },
               { key: "testimonials" as Tab, label: "Testimonials", icon: Star, count: testimonials.length },
             ]).map((t) => (
               <button
@@ -314,6 +313,50 @@ export default function UserPublicProfilePage() {
               </button>
             ))}
           </div>
+
+          {/* Friends tab */}
+          {tab === "friends" && (
+            <div>
+              {friendsLoading ? (
+                <div className="flex justify-center py-16">
+                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                </div>
+              ) : userFriends.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 py-16 text-center">
+                  <Users className="w-10 h-10 text-muted-foreground opacity-40" />
+                  <p className="font-semibold">No friends yet</p>
+                  <p className="text-sm text-muted-foreground">
+                    {p.firstName ?? "This traveler"} hasn't connected with anyone yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {userFriends.map((friend) => {
+                    const friendName = [friend.firstName, friend.lastName].filter(Boolean).join(" ") || "Traveler";
+                    return (
+                      <Link key={friend.id} href={`/user/${friend.id}`}>
+                        <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:border-primary/40 transition-colors cursor-pointer">
+                          {friend.profileImageUrl ? (
+                            <img src={friend.profileImageUrl} alt={friendName} className="w-10 h-10 rounded-full object-cover shrink-0" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/80 to-pink-500/80 flex items-center justify-center shrink-0">
+                              <span className="text-sm font-bold text-white">{friendName.charAt(0).toUpperCase()}</span>
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold truncate">{friendName}</p>
+                            {friend.homeCountry && (
+                              <p className="text-xs text-muted-foreground truncate">{friend.homeCountry}</p>
+                            )}
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Photos tab */}
           {tab === "photos" && (
@@ -352,50 +395,6 @@ export default function UserPublicProfilePage() {
                         </div>
                       )}
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Groups tab */}
-          {tab === "groups" && (
-            <div>
-              {!isAuthenticated ? (
-                <div className="flex flex-col items-center gap-3 py-16 text-center">
-                  <Users className="w-10 h-10 text-muted-foreground opacity-40" />
-                  <p className="font-semibold">Sign in to see shared groups</p>
-                </div>
-              ) : sharedGroups.length === 0 ? (
-                <div className="flex flex-col items-center gap-3 py-16 text-center">
-                  <Users className="w-10 h-10 text-muted-foreground opacity-40" />
-                  <p className="font-semibold">No shared groups</p>
-                  <p className="text-sm text-muted-foreground">
-                    You and {p.firstName ?? "this traveler"} aren't in any groups together.
-                  </p>
-                  <Link href="/groups">
-                    <Button size="sm" variant="outline"><Users className="w-3.5 h-3.5 mr-1.5" />Browse Groups</Button>
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {sharedGroups.map(g => (
-                    <Link key={g.id} href={`/groups/${g.id}`}>
-                      <div className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card hover:border-primary/40 transition-colors cursor-pointer">
-                        <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-xl shrink-0">
-                          {g.emoji ?? "🌍"}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm truncate">{g.name}</p>
-                          {g.memberCount != null && (
-                            <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                              <Users className="w-3 h-3" />{g.memberCount} member{g.memberCount !== 1 ? "s" : ""}
-                            </p>
-                          )}
-                        </div>
-                        <Badge variant="secondary" className="text-xs shrink-0">Open Chat</Badge>
-                      </div>
-                    </Link>
                   ))}
                 </div>
               )}

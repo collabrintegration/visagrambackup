@@ -2129,6 +2129,30 @@ paths:
         "404":
           description: User not found
 
+  /users/{userId}/friends:
+    get:
+      operationId: listUserFriends
+      summary: Get a user's public friends list
+      security:
+        - session: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of user's friends
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FriendProfile"
+        "404":
+          description: User not found
+
   /friends:
     get:
       operationId: listFriends

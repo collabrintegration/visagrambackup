@@ -164,6 +164,52 @@ router.get("/users/:userId", async (req: Request, res: Response) => {
   });
 });
 
+// ── List a user's public friends ──────────────────────────────────────────────
+router.get("/users/:userId/friends", async (req: Request, res: Response) => {
+  const { userId } = req.params;
+
+  const requesterAlias = alias(usersTable, "requester");
+  const addresseeAlias = alias(usersTable, "addressee");
+
+  const rows = await db
+    .select({
+      friendshipSince: friendshipsTable.createdAt,
+      requesterId: friendshipsTable.requesterId,
+      addresseeId: friendshipsTable.addresseeId,
+      requesterFirstName: requesterAlias.firstName,
+      requesterLastName: requesterAlias.lastName,
+      requesterImageUrl: requesterAlias.profileImageUrl,
+      requesterCountry: requesterAlias.homeCountry,
+      addresseeFirstName: addresseeAlias.firstName,
+      addresseeLastName: addresseeAlias.lastName,
+      addresseeImageUrl: addresseeAlias.profileImageUrl,
+      addresseeCountry: addresseeAlias.homeCountry,
+    })
+    .from(friendshipsTable)
+    .innerJoin(requesterAlias, eq(friendshipsTable.requesterId, requesterAlias.id))
+    .innerJoin(addresseeAlias, eq(friendshipsTable.addresseeId, addresseeAlias.id))
+    .where(
+      and(
+        eq(friendshipsTable.status, "accepted"),
+        or(eq(friendshipsTable.requesterId, userId), eq(friendshipsTable.addresseeId, userId)),
+      ),
+    );
+
+  const friends = rows.map((r) => {
+    const theyAreRequester = r.requesterId === userId;
+    return {
+      id: theyAreRequester ? r.addresseeId : r.requesterId,
+      firstName: theyAreRequester ? r.addresseeFirstName : r.requesterFirstName,
+      lastName: theyAreRequester ? r.addresseeLastName : r.requesterLastName,
+      profileImageUrl: theyAreRequester ? r.addresseeImageUrl : r.requesterImageUrl,
+      homeCountry: theyAreRequester ? r.addresseeCountry : r.requesterCountry,
+      friendshipSince: r.friendshipSince,
+    };
+  });
+
+  res.json(friends);
+});
+
 // ── List my friends ───────────────────────────────────────────────────────────
 router.get("/friends", async (req: Request, res: Response) => {
   const myId = requireAuth(req, res);

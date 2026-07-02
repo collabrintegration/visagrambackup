@@ -6857,6 +6857,83 @@ export function useGetPublicUserProfile<TData = Awaited<ReturnType<typeof getPub
 
 
 
+export const getListUserFriendsUrl = (userId: string,) => {
+
+
+
+
+  return `/api/users/${userId}/friends`
+}
+
+/**
+ * @summary Get a user's public friends list
+ */
+export const listUserFriends = async (userId: string, options?: RequestInit): Promise<FriendProfile[]> => {
+
+  return customFetch<FriendProfile[]>(getListUserFriendsUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListUserFriendsQueryKey = (userId: string,) => {
+    return [
+    `/api/users/${userId}/friends`
+    ] as const;
+    }
+
+
+export const getListUserFriendsQueryOptions = <TData = Awaited<ReturnType<typeof listUserFriends>>, TError = ErrorType<void>>(userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listUserFriends>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListUserFriendsQueryKey(userId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listUserFriends>>> = ({ signal }) => listUserFriends(userId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: userId !== null && userId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listUserFriends>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListUserFriendsQueryResult = NonNullable<Awaited<ReturnType<typeof listUserFriends>>>
+export type ListUserFriendsQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get a user's public friends list
+ */
+
+export function useListUserFriends<TData = Awaited<ReturnType<typeof listUserFriends>>, TError = ErrorType<void>>(
+ userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listUserFriends>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListUserFriendsQueryOptions(userId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getListFriendsUrl = () => {
 
 

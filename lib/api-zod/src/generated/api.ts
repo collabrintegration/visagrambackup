@@ -2093,6 +2093,24 @@ export const GetPublicUserProfileResponse = zod.object({
 
 
 /**
+ * @summary Get a user's public friends list
+ */
+export const ListUserFriendsParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const ListUserFriendsResponseItem = zod.object({
+  "id": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "homeCountry": zod.string().nullish(),
+  "friendshipSince": zod.string().nullish()
+})
+export const ListUserFriendsResponse = zod.array(ListUserFriendsResponseItem)
+
+
+/**
  * @summary List accepted friends
  */
 export const ListFriendsResponseItem = zod.object({
