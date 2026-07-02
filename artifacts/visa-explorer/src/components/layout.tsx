@@ -122,11 +122,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     )}
                     {user?.firstName ?? "Profile"}
                     <ChevronDown className={`w-3.5 h-3.5 transition-transform ${profileOpen ? "rotate-180" : ""}`} />
-                    {totalBadge > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 min-w-[17px] h-[17px] bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
-                        {totalBadge > 99 ? "99+" : totalBadge}
-                      </span>
-                    )}
                   </button>
 
                   {profileOpen && (
