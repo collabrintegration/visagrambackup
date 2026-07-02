@@ -25,11 +25,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const links = [
     { href: "/", label: "Home", icon: Compass },
-    { href: "/community", label: "Community", icon: Users },
     { href: "/friends", label: "Friends", icon: UserPlus },
+    { href: "/community", label: "Community", icon: Users },
     { href: "/groups", label: "Groups", icon: Globe },
-    { href: "/explore", label: "Explore", icon: MapIcon },
-    { href: "/passport", label: "Passport Power", icon: BookOpen },
+    { href: "/explore", label: "Explore Visa", icon: MapIcon, matchPaths: ["/explore", "/passport"] },
     { href: "/tracker", label: "Tracker", icon: ClipboardList },
   ];
 
@@ -59,7 +58,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
             {links.map((link) => {
               const Icon = link.icon;
-              const isActive = location === link.href || (link.href !== "/" && location.startsWith(link.href));
+              const isActive = (link.matchPaths ?? [link.href]).some(p =>
+                p === "/" ? location === p : location.startsWith(p)
+              );
               return (
                 <Link
                   key={link.href}
@@ -123,7 +124,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center overflow-x-auto px-2 py-1 gap-1">
             {links.map((link) => {
               const Icon = link.icon;
-              const isActive = location === link.href || (link.href !== "/" && location.startsWith(link.href));
+              const isActive = (link.matchPaths ?? [link.href]).some(p =>
+                p === "/" ? location === p : location.startsWith(p)
+              );
               return (
                 <Link
                   key={link.href}

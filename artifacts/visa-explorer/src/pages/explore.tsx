@@ -150,6 +150,12 @@ export default function Explore() {
                 {tab === "countries" ? "Browse Countries" : "Search Visas"}
               </button>
             ))}
+            <Link
+              href="/passport"
+              className="px-5 py-2 rounded-lg text-sm font-semibold transition-all text-muted-foreground hover:text-foreground"
+            >
+              🛂 Passport Power
+            </Link>
           </div>
 
           {/* ── Browse Countries: search + region filters ── */}

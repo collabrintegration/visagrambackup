@@ -546,8 +546,8 @@ export default function FriendsPage() {
             <div className="flex items-center gap-1 border-b border-border mb-5">
               {([
                 { key: "friends" as RightTab, label: "Friends", icon: Users, count: friends.length },
-                { key: "requests" as RightTab, label: "Requests", icon: Inbox, count: requests.length },
                 { key: "messages" as RightTab, label: "Messages", icon: MessageSquare, count: dmBadge > 0 ? dmBadge : null },
+                { key: "requests" as RightTab, label: "Requests", icon: Inbox, count: requests.length },
                 { key: "groups" as RightTab, label: "My Groups", icon: Users, count: null },
                 { key: "search" as RightTab, label: "Find People", icon: Search, count: null },
               ]).map((tab) => (

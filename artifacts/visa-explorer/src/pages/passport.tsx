@@ -94,7 +94,7 @@ export default function PassportPower() {
   return (
     <div className="min-h-screen bg-background">
       <Helmet>
-        <title>Passport Power Rankings — Compare Passport Strength | Visagram</title>
+        <title>Passport Power — Explore Visa | Visagram</title>
         <meta name="description" content="Compare the strength of passports from 190+ countries. See how many destinations each passport unlocks visa-free, on arrival, or with an eVisa." />
         <meta property="og:title" content="Passport Power Rankings — Compare Passport Strength | Visagram" />
         <meta property="og:description" content="Compare the strength of passports from 190+ countries and discover where your passport unlocks visa-free access." />
@@ -102,6 +102,23 @@ export default function PassportPower() {
         <meta property="og:image" content="https://visagram.io/og-image.png" />
         <meta name="twitter:image" content="https://visagram.io/og-image.png" />
       </Helmet>
+      {/* ── Sub-nav: Explore Visa tabs ── */}
+      <div className="bg-card/40 border-b border-border">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex gap-1 bg-muted/40 rounded-xl p-1 w-fit border border-border">
+            <Link href="/explore" className="px-5 py-2 rounded-lg text-sm font-semibold text-muted-foreground hover:text-foreground transition-all">
+              Browse Countries
+            </Link>
+            <Link href="/explore" className="px-5 py-2 rounded-lg text-sm font-semibold text-muted-foreground hover:text-foreground transition-all">
+              Search Visas
+            </Link>
+            <span className="px-5 py-2 rounded-lg text-sm font-semibold bg-card text-foreground shadow-sm border border-border">
+              🛂 Passport Power
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* ── Identity hero ── */}
       <div className="relative overflow-hidden h-64 md:h-72">
         {/* Background landmark photo of selected passport country */}
