@@ -175,6 +175,7 @@ export default function Community() {
 
   // Create Group modal state
   const [showGroupModal, setShowGroupModal] = useState(false);
+  const [groupSearch, setGroupSearch] = useState("");
   const [groupName, setGroupName] = useState("");
   const [groupDesc, setGroupDesc] = useState("");
   const [groupEmoji, setGroupEmoji] = useState("🌍");
@@ -237,6 +238,13 @@ export default function Community() {
   const exactDuplicate = similarGroups.some(
     (g) => g.name.toLowerCase().trim() === groupName.toLowerCase().trim(),
   );
+
+  const filteredSidebarGroups = useMemo(() => {
+    const q = groupSearch.toLowerCase().trim();
+    const sorted = [...allGroups].sort((a, b) => b.memberCount - a.memberCount);
+    if (!q) return sorted.slice(0, 8);
+    return sorted.filter((g) => g.name.toLowerCase().includes(q) || (g.description ?? "").toLowerCase().includes(q)).slice(0, 8);
+  }, [allGroups, groupSearch]);
 
   const isLoading = authLoading || feedLoading;
 
@@ -426,64 +434,161 @@ export default function Community() {
         </div>
       </div>
 
-      {/* Feed */}
-      <div className="container mx-auto px-4 py-8 max-w-3xl" onClick={() => setCountryOpen(false)}>
-        {isLoading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-24">
-            {feed.length === 0 ? (
-              <>
-                <TrendingUp className="w-12 h-12 mx-auto text-muted mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No posts yet</h3>
-                <p className="text-muted-foreground mb-6">
-                  Be the first to share a review or ask a question about a country.
-                </p>
-                {!isAuthenticated && (
-                  <Button onClick={login}>
-                    <LogIn className="w-4 h-4 mr-2" /> Sign in to get started
-                  </Button>
+      {/* Feed + Groups sidebar */}
+      <div className="container mx-auto px-4 py-8 max-w-6xl" onClick={() => setCountryOpen(false)}>
+        <div className="flex gap-8">
+          {/* ── Main feed ────────────────────────────────────────── */}
+          <div className="flex-1 min-w-0">
+            {isLoading ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="text-center py-24">
+                {feed.length === 0 ? (
+                  <>
+                    <TrendingUp className="w-12 h-12 mx-auto text-muted mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No posts yet</h3>
+                    <p className="text-muted-foreground mb-6">
+                      Be the first to share a review or ask a question about a country.
+                    </p>
+                    {!isAuthenticated && (
+                      <Button onClick={login}>
+                        <LogIn className="w-4 h-4 mr-2" /> Sign in to get started
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Filter className="w-12 h-12 mx-auto text-muted mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No results found</h3>
+                    <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+                      Try adjusting your search or filters to find what you're looking for.
+                    </p>
+                    <Button variant="outline" onClick={() => { setSearch(""); setTypeFilter("all"); setCountryFilter(""); }}>
+                      <X className="w-4 h-4 mr-2" /> Clear filters
+                    </Button>
+                  </>
                 )}
-              </>
+              </div>
             ) : (
               <>
-                <Filter className="w-12 h-12 mx-auto text-muted mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No results found</h3>
-                <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-                  Try adjusting your search or filters to find what you're looking for.
-                </p>
-                <Button variant="outline" onClick={() => { setSearch(""); setTypeFilter("all"); setCountryFilter(""); }}>
-                  <X className="w-4 h-4 mr-2" /> Clear filters
-                </Button>
+                {(search || typeFilter !== "all" || countryFilter) && (
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {filtered.length} result{filtered.length !== 1 ? "s" : ""}
+                    {countryFilter && selectedCountryLabel ? ` in ${selectedCountryLabel}` : ""}
+                    {search ? ` for "${search}"` : ""}
+                  </p>
+                )}
+                <div className="space-y-4">
+                  {filtered.map((item, idx) => (
+                    <div key={`${item.type}-${item.id}`}>
+                      <FeedCard item={item} />
+                      {(idx + 1) % 6 === 0 && idx < filtered.length - 1 && (
+                        <div className="py-2">
+                          <AdUnit slot="3456789012" format="fluid" className="pt-5" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </>
             )}
           </div>
-        ) : (
-          <>
-            {/* Results count */}
-            {(search || typeFilter !== "all" || countryFilter) && (
-              <p className="text-sm text-muted-foreground mb-4">
-                {filtered.length} result{filtered.length !== 1 ? "s" : ""}
-                {countryFilter && selectedCountryLabel ? ` in ${selectedCountryLabel}` : ""}
-                {search ? ` for "${search}"` : ""}
-              </p>
-            )}
-            <div className="space-y-4">
-              {filtered.map((item, idx) => (
-                <div key={`${item.type}-${item.id}`}>
-                  <FeedCard item={item} />
-                  {(idx + 1) % 6 === 0 && idx < filtered.length - 1 && (
-                    <div className="py-2">
-                      <AdUnit slot="3456789012" format="fluid" className="pt-5" />
+
+          {/* ── Groups sidebar ────────────────────────────────────── */}
+          <div className="hidden lg:block w-72 shrink-0">
+            <div className="sticky top-32 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-sm flex items-center gap-2">
+                  <Users className="w-4 h-4 text-primary" /> Travel Groups
+                </h3>
+                <Link href="/groups">
+                  <span className="text-xs text-primary hover:underline">See all</span>
+                </Link>
+              </div>
+
+              {/* Group search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                <input
+                  value={groupSearch}
+                  onChange={(e) => setGroupSearch(e.target.value)}
+                  placeholder="Search groups…"
+                  className="w-full bg-card border border-border rounded-xl pl-8 pr-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 placeholder:text-muted-foreground"
+                />
+                {groupSearch && (
+                  <button onClick={() => setGroupSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+
+              {/* Group list */}
+              <div className="space-y-2">
+                {filteredSidebarGroups.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">
+                    {groupSearch ? "No groups found" : "No groups yet"}
+                  </p>
+                ) : (
+                  filteredSidebarGroups.map((g) => (
+                    <div key={g.id} className="bg-card border border-border rounded-xl p-3 hover:border-primary/30 transition-colors">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-xl shrink-0">{g.emoji}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <p className="text-xs font-semibold truncate">{g.name}</p>
+                            {g.isPrivate && (
+                              <Lock className="w-2.5 h-2.5 text-muted-foreground shrink-0" />
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1 mt-0.5 text-[11px] text-muted-foreground">
+                            <Users className="w-2.5 h-2.5" />
+                            <span>{g.memberCount} member{g.memberCount !== 1 ? "s" : ""}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-2.5">
+                        {g.isMember ? (
+                          <Link href={`/groups/${g.id}`}>
+                            <Button size="sm" className="w-full h-7 text-xs">
+                              <MessageSquare className="w-3 h-3 mr-1.5" /> Open Chat
+                            </Button>
+                          </Link>
+                        ) : isAuthenticated ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full h-7 text-xs"
+                            onClick={() => joinGroup({ id: g.id })}
+                          >
+                            <UserPlus className="w-3 h-3 mr-1.5" />
+                            {g.isPrivate ? "Request to Join" : "Join Group"}
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="outline" className="w-full h-7 text-xs" onClick={login}>
+                            <LogIn className="w-3 h-3 mr-1.5" /> Sign in to join
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </div>
-              ))}
+                  ))
+                )}
+              </div>
+
+              {isAuthenticated && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full text-xs text-muted-foreground"
+                  onClick={() => setShowGroupModal(true)}
+                >
+                  <Plus className="w-3 h-3 mr-1.5" /> Create a group
+                </Button>
+              )}
             </div>
-          </>
-        )}
+          </div>
+        </div>
       </div>
     </div>
 
