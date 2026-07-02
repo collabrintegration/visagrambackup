@@ -9,6 +9,8 @@ import {
   useCreateGroup,
   useJoinGroup,
   getListGroupsQueryKey,
+  useDeleteQuestion,
+  useDeleteCountryReview,
 } from "@workspace/api-client-react";
 import type { FeedItem, Country, Group } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
@@ -16,7 +18,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   MessageSquare, Star, Globe, Users, Loader2, MapPin, LogIn,
   TrendingUp, Search, X, ChevronDown, Filter, PenLine, Save,
-  Plus, Lock, UserPlus, AlertTriangle,
+  Plus, Lock, UserPlus, AlertTriangle, Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -68,13 +70,14 @@ function StarRow({ rating }: { rating: number }) {
   );
 }
 
-function FeedCard({ item, myId }: { item: FeedItem; myId?: string }) {
+function FeedCard({ item, myId, onDelete }: { item: FeedItem; myId?: string; onDelete?: () => void }) {
   const isReview = item.type === "review";
   const href = isReview
     ? `/country/${item.countryCode}`
     : `/questions/${item.id}`;
   const authorId = item.user?.userId;
   const canMessage = authorId && authorId !== myId;
+  const isOwn = !!myId && authorId === myId;
 
   return (
     <div className="bg-card border border-border rounded-2xl p-5 hover:border-primary/30 transition-all group">
@@ -103,6 +106,15 @@ function FeedCard({ item, myId }: { item: FeedItem; myId?: string }) {
             >
               <MessageSquare className="w-3.5 h-3.5" />
             </Link>
+          )}
+          {isOwn && onDelete && (
+            <button
+              onClick={(e) => { e.preventDefault(); if (confirm(`Delete this ${isReview ? "review" : "question"}?`)) onDelete(); }}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors"
+              title={`Delete ${isReview ? "review" : "question"}`}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
           )}
           <Badge
             variant="secondary"
@@ -214,6 +226,18 @@ export default function Community() {
         setAskTitle("");
         setAskBody("");
       },
+    },
+  });
+
+  const { mutate: deleteQuestion } = useDeleteQuestion({
+    mutation: {
+      onSuccess: () => void queryClient.invalidateQueries({ queryKey: getGetCommunityFeedQueryKey({ limit: 100 }) }),
+    },
+  });
+
+  const { mutate: deleteReview } = useDeleteCountryReview({
+    mutation: {
+      onSuccess: () => void queryClient.invalidateQueries({ queryKey: getGetCommunityFeedQueryKey({ limit: 100 }) }),
     },
   });
 
@@ -496,7 +520,17 @@ export default function Community() {
                 <div className="space-y-4">
                   {filtered.map((item, idx) => (
                     <div key={`${item.type}-${item.id}`}>
-                      <FeedCard item={item} myId={myId} />
+                      <FeedCard
+                        item={item}
+                        myId={myId}
+                        onDelete={
+                          item.user?.userId === myId
+                            ? item.type === "question"
+                              ? () => deleteQuestion({ id: item.id })
+                              : () => deleteReview({ code: item.countryCode })
+                            : undefined
+                        }
+                      />
                       {(idx + 1) % 6 === 0 && idx < filtered.length - 1 && (
                         <div className="py-2">
                           <AdUnit slot="3456789012" format="fluid" className="pt-5" />

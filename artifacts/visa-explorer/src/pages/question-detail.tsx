@@ -10,13 +10,15 @@ import {
   getGetAnswerRepliesQueryKey,
   usePostAnswerReply,
   getGetFollowedQuestionsQueryKey,
+  useDeleteAnswer,
+  useDeleteAnswerReply,
 } from "@workspace/api-client-react";
 import type { Answer } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, Loader2, MessageSquare, CheckCircle2, Bell, BellOff,
-  Send, Reply, ChevronDown, ChevronUp, Globe,
+  Send, Reply, ChevronDown, ChevronUp, Globe, Trash2,
 } from "lucide-react";
 import { GifPicker, GifPreview } from "@/components/gif-picker";
 import { Button } from "@/components/ui/button";
@@ -58,6 +60,7 @@ function ReplyThread({ answerId, isAuthenticated, login }: { answerId: number; i
   const [body, setBody] = useState("");
   const [gifUrl, setGifUrl] = useState("");
   const qc = useQueryClient();
+  const { user: authUser } = useAuth();
 
   const { data: replies = [], isLoading } = useGetAnswerReplies(answerId, {
     query: { queryKey: getGetAnswerRepliesQueryKey(answerId) },
@@ -71,6 +74,12 @@ function ReplyThread({ answerId, isAuthenticated, login }: { answerId: number; i
         setGifUrl("");
         setShowForm(false);
       },
+    },
+  });
+
+  const { mutate: deleteReply } = useDeleteAnswerReply({
+    mutation: {
+      onSuccess: () => void qc.invalidateQueries({ queryKey: getGetAnswerRepliesQueryKey(answerId) }),
     },
   });
 
@@ -90,6 +99,15 @@ function ReplyThread({ answerId, isAuthenticated, login }: { answerId: number; i
                 </span>
               )}
               <span className="text-xs text-muted-foreground">· {timeAgo(r.createdAt)}</span>
+              {authUser?.id === r.user?.userId && (
+                <button
+                  onClick={() => { if (confirm("Delete this reply?")) deleteReply({ id: answerId, replyId: r.id }); }}
+                  className="p-0.5 rounded text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors ml-auto"
+                  title="Delete reply"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              )}
             </div>
             <p className="text-sm text-foreground/90 whitespace-pre-wrap">{r.body}</p>
             {r.gifUrl && <GifPreview url={r.gifUrl} />}
@@ -133,12 +151,13 @@ function ReplyThread({ answerId, isAuthenticated, login }: { answerId: number; i
   );
 }
 
-function AnswerCard({ answer, isAuthenticated, login, questionOwnerId, onAccept }: {
+function AnswerCard({ answer, isAuthenticated, login, questionOwnerId, onAccept, onDelete }: {
   answer: Answer;
   isAuthenticated: boolean;
   login: () => void;
   questionOwnerId?: string;
   onAccept?: (answerId: number) => void;
+  onDelete?: (answerId: number) => void;
 }) {
   const [showReplies, setShowReplies] = useState(false);
   const { user: authUser } = useAuth();
@@ -183,6 +202,15 @@ function AnswerCard({ answer, isAuthenticated, login, questionOwnerId, onAccept 
                 ✓ Accept as best answer
               </button>
             )}
+            {onDelete && authUser?.id === answer.user?.userId && (
+              <button
+                onClick={() => { if (confirm("Delete this answer?")) onDelete(answer.id); }}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-400 transition-colors ml-auto"
+                title="Delete answer"
+              >
+                <Trash2 className="w-3 h-3" /> Delete
+              </button>
+            )}
           </div>
 
           {showReplies && (
@@ -223,6 +251,15 @@ export default function QuestionDetailPage() {
         void qc.invalidateQueries({ queryKey: getGetQuestionAnswersQueryKey(questionId) });
         setAnswerBody("");
         setAnswerGif("");
+      },
+    },
+  });
+
+  const { mutate: deleteAnswer } = useDeleteAnswer({
+    mutation: {
+      onSuccess: () => {
+        void qc.invalidateQueries({ queryKey: getGetQuestionQueryKey(questionId) });
+        void qc.invalidateQueries({ queryKey: getGetQuestionAnswersQueryKey(questionId) });
       },
     },
   });
@@ -324,7 +361,8 @@ export default function QuestionDetailPage() {
                 answer={a}
                 isAuthenticated={isAuthenticated}
                 login={login}
-                questionOwnerId={question.user ? undefined : undefined}
+                questionOwnerId={question.user?.userId ?? undefined}
+                onDelete={(id) => deleteAnswer({ id })}
               />
             ))}
           </div>

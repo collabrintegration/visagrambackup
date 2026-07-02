@@ -208,6 +208,17 @@ router.post("/countries/:code/reviews", async (req: Request, res: Response) => {
   res.status(201).json(review);
 });
 
+router.delete("/countries/:code/reviews", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) { res.status(401).json({ error: "Login required" }); return; }
+  const code = String(req.params.code);
+  const [deleted] = await db
+    .delete(reviewsTable)
+    .where(and(eq(reviewsTable.userId, req.user.id), eq(reviewsTable.countryCode, code.toUpperCase())))
+    .returning({ id: reviewsTable.id });
+  if (!deleted) { res.status(404).json({ error: "Review not found" }); return; }
+  res.status(204).end();
+});
+
 // ── Questions ──────────────────────────────────────────────────────────────
 router.get("/countries/:code/questions", async (req: Request, res: Response) => {
   const code = String(req.params.code);
@@ -282,6 +293,16 @@ router.post("/countries/:code/questions", async (req: Request, res: Response) =>
     .returning();
 
   res.status(201).json(question);
+});
+
+router.delete("/questions/:id", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) { res.status(401).json({ error: "Login required" }); return; }
+  const questionId = Number(req.params.id);
+  const [q] = await db.select({ userId: questionsTable.userId }).from(questionsTable).where(eq(questionsTable.id, questionId)).limit(1);
+  if (!q) { res.status(404).json({ error: "Question not found" }); return; }
+  if (q.userId !== req.user.id) { res.status(403).json({ error: "Forbidden" }); return; }
+  await db.delete(questionsTable).where(eq(questionsTable.id, questionId));
+  res.status(204).end();
 });
 
 // ── Answers ────────────────────────────────────────────────────────────────
@@ -577,6 +598,16 @@ router.get("/users/me/followed-questions", async (req: Request, res: Response) =
   })));
 });
 
+router.delete("/answers/:id", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) { res.status(401).json({ error: "Login required" }); return; }
+  const answerId = Number(req.params.id);
+  const [a] = await db.select({ userId: answersTable.userId }).from(answersTable).where(eq(answersTable.id, answerId)).limit(1);
+  if (!a) { res.status(404).json({ error: "Answer not found" }); return; }
+  if (a.userId !== req.user.id) { res.status(403).json({ error: "Forbidden" }); return; }
+  await db.delete(answersTable).where(eq(answersTable.id, answerId));
+  res.status(204).end();
+});
+
 // ── Answer replies ───────────────────────────────────────────────────────────
 router.get("/answers/:id/replies", async (req: Request, res: Response) => {
   const answerId = Number(req.params.id);
@@ -637,6 +668,16 @@ router.post("/answers/:id/replies", async (req: Request, res: Response) => {
     createdAt: reply.createdAt,
     user: userSnippet({ firstName: req.user.firstName ?? null, lastName: req.user.lastName ?? null, profileImageUrl: req.user.profileImageUrl ?? null }),
   });
+});
+
+router.delete("/answers/:id/replies/:replyId", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) { res.status(401).json({ error: "Login required" }); return; }
+  const replyId = Number(req.params.replyId);
+  const [r] = await db.select({ userId: answerRepliesTable.userId }).from(answerRepliesTable).where(eq(answerRepliesTable.id, replyId)).limit(1);
+  if (!r) { res.status(404).json({ error: "Reply not found" }); return; }
+  if (r.userId !== req.user.id) { res.status(403).json({ error: "Forbidden" }); return; }
+  await db.delete(answerRepliesTable).where(eq(answerRepliesTable.id, replyId));
+  res.status(204).end();
 });
 
 router.post("/questions/:id/resolve", async (req: Request, res: Response) => {

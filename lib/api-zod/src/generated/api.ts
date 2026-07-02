@@ -397,6 +397,16 @@ export const GetCountryReviewsResponse = zod.object({
 
 
 /**
+ * @summary Delete the authenticated user's review for a country
+ */
+export const DeleteCountryReviewParams = zod.object({
+  "code": zod.coerce.string()
+})
+
+export const DeleteCountryReviewResponse = zod.void()
+
+
+/**
  * @summary Create or update a review for a country
  */
 export const CreateCountryReviewParams = zod.object({
@@ -597,6 +607,16 @@ export const CreateQuestionResponse = zod.object({
 
 
 /**
+ * @summary Delete a question (author only)
+ */
+export const DeleteQuestionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteQuestionResponse = zod.void()
+
+
+/**
  * @summary Get a question with full detail and answers
  */
 export const GetQuestionParams = zod.object({
@@ -655,6 +675,16 @@ export const ToggleQuestionFollowResponse = zod.object({
 
 
 /**
+ * @summary Delete an answer (author only)
+ */
+export const DeleteAnswerParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteAnswerResponse = zod.void()
+
+
+/**
  * @summary Get replies to an answer
  */
 export const GetAnswerRepliesParams = zod.object({
@@ -702,6 +732,17 @@ export const PostAnswerReplyResponse = zod.object({
   "homeCountry": zod.string().nullish()
 })
 })
+
+
+/**
+ * @summary Delete a reply (author only)
+ */
+export const DeleteAnswerReplyParams = zod.object({
+  "id": zod.coerce.number(),
+  "replyId": zod.coerce.number()
+})
+
+export const DeleteAnswerReplyResponse = zod.void()
 
 
 /**

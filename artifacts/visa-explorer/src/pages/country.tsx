@@ -3,9 +3,9 @@ import { useState } from "react";
 import {
   useGetCountry, getGetCountryQueryKey,
   useGetCountryReviews, getGetCountryReviewsQueryKey,
-  useCreateCountryReview,
+  useCreateCountryReview, useDeleteCountryReview,
   useGetCountryQuestions, getGetCountryQuestionsQueryKey,
-  useCreateCountryQuestion,
+  useCreateCountryQuestion, useDeleteQuestion,
   useGetQuestionAnswers, getGetQuestionAnswersQueryKey,
   usePostAnswer,
   useUpsertTravelEntry, useDeleteTravelEntry, useGetTravelMap, getGetTravelMapQueryKey,
@@ -15,7 +15,7 @@ import {
 import type { QuestionSummary } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useQueryClient } from "@tanstack/react-query";
-import { Globe, MapPin, Coins, Languages, ArrowLeft, Loader2, Camera, Clock, DollarSign, CalendarDays, RefreshCw, Repeat, ExternalLink, FileText, Phone, Car, Users, Star, MessageSquare, ChevronDown, ChevronUp, CheckCircle2, Heart, PlusCircle, Send, BarChart2, TrendingUp, Award, X } from "lucide-react";
+import { Globe, MapPin, Coins, Languages, ArrowLeft, Loader2, Camera, Clock, DollarSign, CalendarDays, RefreshCw, Repeat, ExternalLink, FileText, Phone, Car, Users, Star, MessageSquare, ChevronDown, ChevronUp, CheckCircle2, Heart, PlusCircle, Send, BarChart2, TrendingUp, Award, X, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -538,7 +538,7 @@ function TravelMapSection({ code, countryName, flagEmoji }: { code: string; coun
 
 /* ─────────── Reviews section ─────────── */
 function ReviewsSection({ code, countryName }: { code: string; countryName: string }) {
-  const { isAuthenticated, login } = useAuth();
+  const { user, isAuthenticated, login } = useAuth();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
@@ -558,6 +558,12 @@ function ReviewsSection({ code, countryName }: { code: string; countryName: stri
         setShowForm(false);
         setTitle(""); setOverall(0); setEase(0); setWelcome(0); setBody("");
       },
+    },
+  });
+
+  const { mutate: deleteReview } = useDeleteCountryReview({
+    mutation: {
+      onSuccess: () => void queryClient.invalidateQueries({ queryKey: getGetCountryReviewsQueryKey(code) }),
     },
   });
 
@@ -663,7 +669,18 @@ function ReviewsSection({ code, countryName }: { code: string; countryName: stri
                   </div>
                   <span className="text-sm font-medium">{r.user?.firstName || "Traveler"}</span>
                 </div>
-                <span className="text-xs text-muted-foreground">{timeAgo(r.createdAt)}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">{timeAgo(r.createdAt)}</span>
+                  {user?.id === r.user?.userId && (
+                    <button
+                      onClick={() => { if (confirm("Delete your review?")) deleteReview({ code }); }}
+                      className="p-1 rounded text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                      title="Delete review"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
               {r.title && <p className="text-sm font-semibold mb-1">{r.title}</p>}
               <StarRow rating={r.overallRating} />
@@ -695,6 +712,12 @@ function QASection({ code, countryName }: { code: string; countryName: string })
         void queryClient.invalidateQueries({ queryKey: getGetCountryQuestionsQueryKey(code) });
         setShowForm(false); setTitle(""); setBody("");
       },
+    },
+  });
+
+  const { mutate: deleteQ } = useDeleteQuestion({
+    mutation: {
+      onSuccess: () => void queryClient.invalidateQueries({ queryKey: getGetCountryQuestionsQueryKey(code) }),
     },
   });
 
@@ -764,6 +787,7 @@ function QASection({ code, countryName }: { code: string; countryName: string })
               isAuthenticated={isAuthenticated}
               onLogin={login}
               queryClient={queryClient}
+              onDelete={deleteQ}
             />
           ))}
         </div>
@@ -773,7 +797,7 @@ function QASection({ code, countryName }: { code: string; countryName: string })
 }
 
 function QuestionItem({
-  q, isExpanded, onToggle, isAuthenticated, onLogin, queryClient,
+  q, isExpanded, onToggle, isAuthenticated, onLogin, queryClient, onDelete,
 }: {
   q: QuestionSummary;
   isExpanded: boolean;
@@ -781,8 +805,10 @@ function QuestionItem({
   isAuthenticated: boolean;
   onLogin: () => void;
   queryClient: ReturnType<typeof useQueryClient>;
+  onDelete?: (args: { id: number }) => void;
 }) {
   const [answerText, setAnswerText] = useState("");
+  const { user: authUser } = useAuth();
 
   const { data: qaData, isLoading: answersLoading } = useGetQuestionAnswers(q.id, {
     query: { queryKey: getGetQuestionAnswersQueryKey(q.id), enabled: isExpanded },
@@ -815,6 +841,15 @@ function QuestionItem({
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-xs text-muted-foreground">{q.answersCount} {q.answersCount === 1 ? "answer" : "answers"}</span>
+            {onDelete && authUser?.id === q.user?.userId && (
+              <button
+                onClick={(e) => { e.stopPropagation(); if (confirm("Delete this question?")) onDelete({ id: q.id }); }}
+                className="p-1 rounded text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                title="Delete question"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
             {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
           </div>
         </div>

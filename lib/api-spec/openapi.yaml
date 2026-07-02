@@ -457,6 +457,23 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReviewsResponse"
+    delete:
+      tags: [community]
+      operationId: deleteCountryReview
+      summary: Delete the authenticated user's review for a country
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not found
     post:
       tags: [community]
       operationId: createCountryReview
@@ -595,6 +612,25 @@ paths:
           description: Unauthorized
 
   /questions/{id}:
+    delete:
+      tags: [community]
+      operationId: deleteQuestion
+      summary: Delete a question (author only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
     get:
       tags: [community]
       operationId: getQuestion
@@ -635,6 +671,27 @@ paths:
                 $ref: "#/components/schemas/FollowStatus"
         "401":
           description: Unauthorized
+
+  /answers/{id}:
+    delete:
+      tags: [community]
+      operationId: deleteAnswer
+      summary: Delete an answer (author only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
 
   /answers/{id}/replies:
     get:
@@ -681,6 +738,32 @@ paths:
                 $ref: "#/components/schemas/AnswerReply"
         "401":
           description: Unauthorized
+
+  /answers/{id}/replies/{replyId}:
+    delete:
+      tags: [community]
+      operationId: deleteAnswerReply
+      summary: Delete a reply (author only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: replyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
 
   /users/me/followed-questions:
     get:
