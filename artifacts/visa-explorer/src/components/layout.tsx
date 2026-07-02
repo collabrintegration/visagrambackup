@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Compass, Globe, BookOpen, Map as MapIcon, Users, User, LogIn, LogOut, Loader2 } from "lucide-react";
+import { Compass, BookOpen, Map as MapIcon, Users, User, LogIn, LogOut, Loader2, Globe } from "lucide-react";
 import React from "react";
 import { useHealthCheck, getHealthCheckQueryKey } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
@@ -23,13 +23,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-[100dvh] flex flex-col bg-background selection:bg-primary/20 selection:text-primary">
       <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-            <div className="w-8 h-8 rounded-lg gradient-hero flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-              <Globe className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-serif font-bold text-xl tracking-tight">
-              Visa<span className="text-primary">fy</span>
-            </span>
+          <Link href="/" className="flex items-center shrink-0 group">
+            <img
+              src="/visafy-logo.png"
+              alt="Visafy"
+              className="h-9 w-auto opacity-90 group-hover:opacity-100 transition-opacity"
+              style={{ filter: "drop-shadow(0 0 6px hsl(var(--primary) / 0.25))" }}
+            />
           </Link>
 
           {/* Desktop nav */}
@@ -130,14 +130,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       <footer className="border-t border-border bg-card">
         <div className="container mx-auto px-4 py-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-md gradient-hero flex items-center justify-center">
-              <Globe className="w-3.5 h-3.5 text-white" />
-            </div>
-            <div>
-              <p className="font-serif font-bold text-base leading-none">Visafy</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Navigate the world with precision.</p>
-            </div>
+          <div className="flex items-center gap-3">
+            <img src="/visafy-logo.png" alt="Visafy" className="h-7 w-auto opacity-80" />
+            <p className="text-xs text-muted-foreground">Navigate the world with precision.</p>
           </div>
           <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
             <div className="flex gap-4 text-sm">
