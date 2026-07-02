@@ -7,6 +7,10 @@
  */
 
 export type SearchUsersParams = {
-q: string;
+q?: string;
 limit?: number;
+sex?: string;
+location?: string;
+minAge?: number;
+maxAge?: number;
 };

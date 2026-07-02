@@ -421,6 +421,9 @@ export const GetCurrentAuthUserResponse = zod.object({
   "profileImageUrl": zod.string().nullable(),
   "homeCountry": zod.string().nullish(),
   "bio": zod.string().nullish(),
+  "age": zod.number().nullish(),
+  "sex": zod.string().nullish(),
+  "location": zod.string().nullish(),
   "isPrivate": zod.boolean().optional(),
   "isEmailPublic": zod.boolean().optional(),
   "isSuperAdmin": zod.boolean().optional()
@@ -924,6 +927,11 @@ export const UpdateMyProfileBody = zod.object({
   "homeCountry": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "age": zod.number().nullish(),
+  "sex": zod.string().nullish(),
+  "location": zod.string().nullish(),
   "isPrivate": zod.boolean().optional(),
   "isEmailPublic": zod.boolean().optional()
 })
@@ -937,6 +945,9 @@ export const UpdateMyProfileResponse = zod.object({
   "profileImageUrl": zod.string().nullable(),
   "homeCountry": zod.string().nullish(),
   "bio": zod.string().nullish(),
+  "age": zod.number().nullish(),
+  "sex": zod.string().nullish(),
+  "location": zod.string().nullish(),
   "isPrivate": zod.boolean().optional(),
   "isEmailPublic": zod.boolean().optional(),
   "isSuperAdmin": zod.boolean().optional()
@@ -2020,13 +2031,17 @@ export const UnblockUserResponse = zod.object({
 
 
 /**
- * @summary Search users by name
+ * @summary Search users by name, with optional filters
  */
 export const searchUsersQueryLimitDefault = 20;
 
 export const SearchUsersQueryParams = zod.object({
-  "q": zod.coerce.string(),
-  "limit": zod.coerce.number().default(searchUsersQueryLimitDefault)
+  "q": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().default(searchUsersQueryLimitDefault),
+  "sex": zod.coerce.string().optional(),
+  "location": zod.coerce.string().optional(),
+  "minAge": zod.coerce.number().optional(),
+  "maxAge": zod.coerce.number().optional()
 })
 
 export const SearchUsersResponseItem = zod.object({
@@ -2036,6 +2051,9 @@ export const SearchUsersResponseItem = zod.object({
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
   "homeCountry": zod.string().nullish(),
+  "age": zod.number().nullish(),
+  "sex": zod.string().nullish(),
+  "location": zod.string().nullish(),
   "friendshipStatus": zod.string().nullish(),
   "iRequested": zod.boolean().nullish()
 })

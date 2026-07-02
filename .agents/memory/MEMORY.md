@@ -1,4 +1,5 @@
 - [Drizzle select must match buildGroupResponse](drizzle-select-parentgroupid.md) — every `select()` feeding `buildGroupResponse` must include `parentGroupId`; omitting it causes TS2345.
+- [Profile completion gate](profile-completion-gate.md) — mandatory modal blocks app until firstName/lastName/age/sex/location filled; lives in Layout so it fires on any page post-login.
 - [All generated hooks require explicit queryKey](use-get-blocked-users-query.md) — every Orval-generated hook's `query` option requires `queryKey: getXxxQueryKey(...)` alongside `enabled`; `{ enabled }` alone fails TS2741.
 - [Drizzle TS2769 overloads in api-server](drizzle-overloads.md) — Drizzle `and/or/eq` combos trigger TS2769 in api-server; pre-existing in friends.ts; esbuild compiles regardless so server runs fine.
 - [Mobile app structure](mobile-app.md) — Expo app at artifacts/visagram-app; 4 tabs: Explore, Community, Passport, Profile; setBaseUrl called at top of _layout.tsx; Midnight Rose dark theme in constants/colors.ts.

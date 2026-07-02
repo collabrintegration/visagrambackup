@@ -5,6 +5,7 @@ import { useHealthCheck, getHealthCheckQueryKey, useGetDmUnreadCount, getGetDmUn
 import { useAuth } from "@workspace/replit-auth-web";
 import { Button } from "@/components/ui/button";
 import GlobalSearch from "@/components/global-search";
+import ProfileCompletionGate from "@/components/profile-completion-gate";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location, navigate] = useLocation();
@@ -154,6 +155,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
+
+      <ProfileCompletionGate />
 
       <main className="flex-1">
         {children}

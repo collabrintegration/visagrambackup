@@ -2059,13 +2059,13 @@ paths:
   /users/search:
     get:
       operationId: searchUsers
-      summary: Search users by name
+      summary: Search users by name, with optional filters
       security:
         - session: []
       parameters:
         - name: q
           in: query
-          required: true
+          required: false
           schema:
             type: string
         - name: limit
@@ -2073,6 +2073,26 @@ paths:
           schema:
             type: integer
             default: 20
+        - name: sex
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: location
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: minAge
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: maxAge
+          in: query
+          required: false
+          schema:
+            type: integer
       responses:
         "200":
           description: Matching users with friendship status
@@ -2434,6 +2454,15 @@ components:
         homeCountry:
           type: string
           nullable: true
+        age:
+          type: integer
+          nullable: true
+        sex:
+          type: string
+          nullable: true
+        location:
+          type: string
+          nullable: true
         friendshipStatus:
           type: string
           nullable: true
@@ -2563,6 +2592,12 @@ components:
         homeCountry:
           type: ["string", "null"]
         bio:
+          type: ["string", "null"]
+        age:
+          type: ["integer", "null"]
+        sex:
+          type: ["string", "null"]
+        location:
           type: ["string", "null"]
         isPrivate:
           type: boolean
@@ -3208,6 +3243,16 @@ components:
         bio:
           type: ["string", "null"]
         profileImageUrl:
+          type: ["string", "null"]
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
+        age:
+          type: ["integer", "null"]
+        sex:
+          type: ["string", "null"]
+        location:
           type: ["string", "null"]
         isPrivate:
           type: boolean

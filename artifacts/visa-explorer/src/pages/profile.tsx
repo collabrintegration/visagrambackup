@@ -31,7 +31,7 @@ import {
   PlusCircle, X, Clock, RefreshCw, XCircle, Bell, PenLine, Save,
   Users, Crown, Lock, UserCheck, UserX, ChevronLeft, ChevronRight, BarChart2, Inbox,
   TrendingUp, Activity, Search, Shield, Mail, Calendar,
-  Camera, Eye, EyeOff,
+  Camera, Eye, EyeOff, MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -160,6 +160,11 @@ export default function Profile() {
   const [editingBio, setEditingBio] = useState(false);
   const [bioText, setBioText] = useState<string>("");
   const [isPrivateLocal, setIsPrivateLocal] = useState<boolean | null>(null);
+  const [editingAge, setEditingAge] = useState(false);
+  const [ageText, setAgeText] = useState("");
+  const [editingSex, setEditingSex] = useState(false);
+  const [editingLocation, setEditingLocation] = useState(false);
+  const [locationText, setLocationText] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showAddCountry, setShowAddCountry] = useState(false);
   const [addCountryCode, setAddCountryCode] = useState<string | null>(null);
@@ -439,6 +444,95 @@ export default function Profile() {
                       ? <span className="truncate max-w-xs">{(user as { bio?: string | null }).bio}</span>
                       : <span className="group-hover:text-primary">+ Add a bio</span>
                     }
+                  </button>
+                )}
+              </div>
+
+              {/* Age */}
+              <div className="mt-3">
+                {editingAge ? (
+                  <div className="flex items-center gap-2 max-w-xs">
+                    <input
+                      type="number" min={13} max={120}
+                      value={ageText}
+                      onChange={e => setAgeText(e.target.value)}
+                      placeholder="Your age"
+                      className="w-24 rounded-lg border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                      autoFocus
+                    />
+                    <Button size="sm" disabled={isSavingCountry} onClick={() => {
+                      const n = Number(ageText);
+                      if (!ageText || isNaN(n) || n < 13 || n > 120) return;
+                      updateProfile({ data: { age: n } });
+                      setEditingAge(false);
+                    }}>
+                      {isSavingCountry ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                    </Button>
+                    <button onClick={() => setEditingAge(false)} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
+                  </div>
+                ) : (
+                  <button onClick={() => { setAgeText(String((user as { age?: number | null })?.age ?? "")); setEditingAge(true); }}
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group">
+                    <span className="text-base">🎂</span>
+                    {(user as { age?: number | null })?.age
+                      ? <span>Age: <span className="text-foreground font-medium">{(user as { age?: number | null }).age}</span></span>
+                      : <span className="group-hover:text-primary">+ Add your age</span>}
+                    <ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </button>
+                )}
+              </div>
+
+              {/* Sex / Gender */}
+              <div className="mt-3">
+                {editingSex ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {["Male", "Female", "Non-binary", "Prefer not to say"].map(opt => (
+                      <button key={opt} type="button"
+                        onClick={() => { updateProfile({ data: { sex: opt } }); setEditingSex(false); }}
+                        className="px-3 py-1.5 rounded-full text-sm border border-border hover:border-primary hover:text-primary transition-colors"
+                      >{opt}</button>
+                    ))}
+                    <button onClick={() => setEditingSex(false)} className="text-muted-foreground hover:text-foreground ml-1"><X className="w-4 h-4" /></button>
+                  </div>
+                ) : (
+                  <button onClick={() => setEditingSex(true)}
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group">
+                    <span className="text-base">⚧</span>
+                    {(user as { sex?: string | null })?.sex
+                      ? <span>Gender: <span className="text-foreground font-medium">{(user as { sex?: string | null }).sex}</span></span>
+                      : <span className="group-hover:text-primary">+ Add your gender</span>}
+                    <ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </button>
+                )}
+              </div>
+
+              {/* Location */}
+              <div className="mt-3">
+                {editingLocation ? (
+                  <div className="flex items-center gap-2 max-w-xs">
+                    <input
+                      value={locationText}
+                      onChange={e => setLocationText(e.target.value)}
+                      placeholder="e.g. London, UK"
+                      className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                      autoFocus
+                    />
+                    <Button size="sm" disabled={isSavingCountry} onClick={() => {
+                      updateProfile({ data: { location: locationText.trim() || null } });
+                      setEditingLocation(false);
+                    }}>
+                      {isSavingCountry ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                    </Button>
+                    <button onClick={() => setEditingLocation(false)} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
+                  </div>
+                ) : (
+                  <button onClick={() => { setLocationText((user as { location?: string | null })?.location ?? ""); setEditingLocation(true); }}
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group">
+                    <MapPin className="w-4 h-4" />
+                    {(user as { location?: string | null })?.location
+                      ? <span>Based in: <span className="text-foreground font-medium">{(user as { location?: string | null }).location}</span></span>
+                      : <span className="group-hover:text-primary">+ Add your location</span>}
+                    <ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
                 )}
               </div>

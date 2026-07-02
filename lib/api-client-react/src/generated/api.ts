@@ -6689,7 +6689,7 @@ export const useUnblockUser = <TError = ErrorType<void>,
       return useMutation(getUnblockUserMutationOptions(options));
     }
 
-export const getSearchUsersUrl = (params: SearchUsersParams,) => {
+export const getSearchUsersUrl = (params?: SearchUsersParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -6705,9 +6705,9 @@ export const getSearchUsersUrl = (params: SearchUsersParams,) => {
 }
 
 /**
- * @summary Search users by name
+ * @summary Search users by name, with optional filters
  */
-export const searchUsers = async (params: SearchUsersParams, options?: RequestInit): Promise<UserSearchResult[]> => {
+export const searchUsers = async (params?: SearchUsersParams, options?: RequestInit): Promise<UserSearchResult[]> => {
 
   return customFetch<UserSearchResult[]>(getSearchUsersUrl(params),
   {
@@ -6729,7 +6729,7 @@ export const getSearchUsersQueryKey = (params?: SearchUsersParams,) => {
     }
 
 
-export const getSearchUsersQueryOptions = <TData = Awaited<ReturnType<typeof searchUsers>>, TError = ErrorType<void>>(params: SearchUsersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getSearchUsersQueryOptions = <TData = Awaited<ReturnType<typeof searchUsers>>, TError = ErrorType<void>>(params?: SearchUsersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -6752,11 +6752,11 @@ export type SearchUsersQueryError = ErrorType<void>
 
 
 /**
- * @summary Search users by name
+ * @summary Search users by name, with optional filters
  */
 
 export function useSearchUsers<TData = Awaited<ReturnType<typeof searchUsers>>, TError = ErrorType<void>>(
- params: SearchUsersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: SearchUsersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 

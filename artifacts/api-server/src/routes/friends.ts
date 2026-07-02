@@ -21,8 +21,15 @@ router.get("/users/search", async (req: Request, res: Response) => {
 
   const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
   const limit = Math.min(Number(req.query.limit) || 20, 50);
+  const sexFilter = typeof req.query.sex === "string" ? req.query.sex.trim() : "";
+  const locationFilter = typeof req.query.location === "string" ? req.query.location.trim() : "";
+  const minAge = req.query.minAge != null ? Number(req.query.minAge) : null;
+  const maxAge = req.query.maxAge != null ? Number(req.query.maxAge) : null;
 
-  if (q.length < 1) {
+  // Require at least a search term or a filter
+  const hasQuery = q.length > 0;
+  const hasFilter = sexFilter || locationFilter || minAge != null || maxAge != null;
+  if (!hasQuery && !hasFilter) {
     res.json([]);
     return;
   }
@@ -43,6 +50,24 @@ router.get("/users/search", async (req: Request, res: Response) => {
     friendshipMap.set(otherId, { status: f.status, iRequested: f.requesterId === myId });
   }
 
+  const conditions = [ne(usersTable.id, myId)];
+
+  if (hasQuery) {
+    conditions.push(
+      or(
+        ilike(usersTable.username, `%${q}%`),
+        ilike(usersTable.firstName, `%${q}%`),
+        ilike(usersTable.lastName, `%${q}%`),
+        ilike(usersTable.email, `%${q}%`),
+        ilike(sql`concat(${usersTable.firstName}, ' ', ${usersTable.lastName})`, `%${q}%`),
+      )!,
+    );
+  }
+  if (sexFilter) conditions.push(ilike(usersTable.sex, sexFilter));
+  if (locationFilter) conditions.push(ilike(usersTable.location, `%${locationFilter}%`));
+  if (minAge != null) conditions.push(sql`${usersTable.age} >= ${minAge}`);
+  if (maxAge != null) conditions.push(sql`${usersTable.age} <= ${maxAge}`);
+
   const users = await db
     .select({
       id: usersTable.id,
@@ -51,20 +76,12 @@ router.get("/users/search", async (req: Request, res: Response) => {
       lastName: usersTable.lastName,
       profileImageUrl: usersTable.profileImageUrl,
       homeCountry: usersTable.homeCountry,
+      age: usersTable.age,
+      sex: usersTable.sex,
+      location: usersTable.location,
     })
     .from(usersTable)
-    .where(
-      and(
-        ne(usersTable.id, myId),
-        or(
-          ilike(usersTable.username, `%${q}%`),
-          ilike(usersTable.firstName, `%${q}%`),
-          ilike(usersTable.lastName, `%${q}%`),
-          ilike(usersTable.email, `%${q}%`),
-          ilike(sql`concat(${usersTable.firstName}, ' ', ${usersTable.lastName})`, `%${q}%`),
-        ),
-      ),
-    )
+    .where(and(...conditions))
     .limit(limit);
 
   const results = users.map((u) => {

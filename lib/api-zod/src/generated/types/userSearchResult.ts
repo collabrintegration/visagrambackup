@@ -13,6 +13,9 @@ export interface UserSearchResult {
   lastName?: string | null;
   profileImageUrl?: string | null;
   homeCountry?: string | null;
+  age?: number | null;
+  sex?: string | null;
+  location?: string | null;
   friendshipStatus?: string | null;
   iRequested?: boolean | null;
 }

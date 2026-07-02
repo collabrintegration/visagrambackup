@@ -64,6 +64,9 @@ export interface UserSearchResult {
   lastName?: string | null;
   profileImageUrl?: string | null;
   homeCountry?: string | null;
+  age?: number | null;
+  sex?: string | null;
+  location?: string | null;
   friendshipStatus?: string | null;
   iRequested?: boolean | null;
 }
@@ -131,6 +134,12 @@ export interface AuthUser {
   homeCountry?: string | null;
   /** @nullable */
   bio?: string | null;
+  /** @nullable */
+  age?: number | null;
+  /** @nullable */
+  sex?: string | null;
+  /** @nullable */
+  location?: string | null;
   isPrivate?: boolean;
   isEmailPublic?: boolean;
   isSuperAdmin?: boolean;
@@ -518,6 +527,16 @@ export interface UpdateProfileBody {
   bio?: string | null;
   /** @nullable */
   profileImageUrl?: string | null;
+  /** @nullable */
+  firstName?: string | null;
+  /** @nullable */
+  lastName?: string | null;
+  /** @nullable */
+  age?: number | null;
+  /** @nullable */
+  sex?: string | null;
+  /** @nullable */
+  location?: string | null;
   isPrivate?: boolean;
   isEmailPublic?: boolean;
 }
@@ -1165,8 +1184,12 @@ export type GetBlockedUsers200Item = {
 };
 
 export type SearchUsersParams = {
-q: string;
+q?: string;
 limit?: number;
+sex?: string;
+location?: string;
+minAge?: number;
+maxAge?: number;
 };
 
 export type SendFriendRequest200 = {

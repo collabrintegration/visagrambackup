@@ -672,6 +672,13 @@ export default function FriendsPage() {
   const [dmOpenUserId, setDmOpenUserId] = useState<string | null>(null);
   const [searchRaw, setSearchRaw] = useState("");
   const searchQuery = useDebounce(searchRaw, 300);
+  const [sexFilter, setSexFilter] = useState("");
+  const [locationRaw, setLocationRaw] = useState("");
+  const locationFilter = useDebounce(locationRaw, 400);
+  const [minAgeRaw, setMinAgeRaw] = useState("");
+  const [maxAgeRaw, setMaxAgeRaw] = useState("");
+  const minAge = minAgeRaw ? Number(minAgeRaw) : undefined;
+  const maxAge = maxAgeRaw ? Number(maxAgeRaw) : undefined;
 
   const { data: dmUnread } = useGetDmUnreadCount({
     query: { queryKey: getGetDmUnreadCountQueryKey(), enabled: isAuthenticated, refetchInterval: 15000 },
@@ -680,9 +687,17 @@ export default function FriendsPage() {
 
   const { data: friends = [], isLoading: loadingFriends } = useListFriends({ query: { queryKey: getListFriendsQueryKey(), enabled: isAuthenticated } });
   const { data: requests = [], isLoading: loadingRequests } = useListFriendRequests({ query: { queryKey: getListFriendRequestsQueryKey(), enabled: isAuthenticated } });
+  const searchParams = {
+    ...(searchQuery.trim() ? { q: searchQuery } : {}),
+    ...(sexFilter ? { sex: sexFilter } : {}),
+    ...(locationFilter.trim() ? { location: locationFilter } : {}),
+    ...(minAge != null && !isNaN(minAge) ? { minAge } : {}),
+    ...(maxAge != null && !isNaN(maxAge) ? { maxAge } : {}),
+  };
+  const hasSearchInput = searchQuery.trim().length >= 2 || !!sexFilter || !!locationFilter.trim() || minAge != null || maxAge != null;
   const { data: searchResults = [], isLoading: loadingSearch } = useSearchUsers(
-    { q: searchQuery },
-    { query: { queryKey: getSearchUsersQueryKey({ q: searchQuery }), enabled: isAuthenticated && searchQuery.trim().length >= 2 } },
+    searchParams,
+    { query: { queryKey: getSearchUsersQueryKey(searchParams), enabled: isAuthenticated && hasSearchInput } },
   );
 
   const sendRequest = useSendFriendRequest();
@@ -807,24 +822,86 @@ export default function FriendsPage() {
             {/* ── Search ── */}
             {rightTab === "search" && (
               <div className="space-y-4">
+                {/* Search bar */}
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input value={searchRaw} onChange={e => setSearchRaw(e.target.value)} placeholder="Search by name or email…" className="pl-9" autoFocus />
                   {searchRaw && <button className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setSearchRaw("")}><X className="w-4 h-4" /></button>}
                 </div>
 
-                {searchQuery.trim().length < 2 ? (
+                {/* Filters row */}
+                <div className="flex flex-wrap gap-2 items-center">
+                  {/* Gender filter */}
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {["", "Male", "Female", "Non-binary", "Prefer not to say"].map(opt => (
+                      <button
+                        key={opt || "any"}
+                        onClick={() => setSexFilter(opt)}
+                        className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                          sexFilter === opt
+                            ? "border-primary bg-primary/10 text-primary font-medium"
+                            : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
+                        }`}
+                      >
+                        {opt || "Any gender"}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Location filter */}
+                  <div className="relative flex-1 min-w-[140px]">
+                    <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                    <input
+                      value={locationRaw}
+                      onChange={e => setLocationRaw(e.target.value)}
+                      placeholder="Filter by location…"
+                      className="w-full pl-7 pr-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                    />
+                  </div>
+
+                  {/* Age range filter */}
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <span className="text-xs">Age:</span>
+                    <input
+                      type="number" min={13} max={120}
+                      value={minAgeRaw}
+                      onChange={e => setMinAgeRaw(e.target.value)}
+                      placeholder="Min"
+                      className="w-16 px-2 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                    />
+                    <span className="text-xs">–</span>
+                    <input
+                      type="number" min={13} max={120}
+                      value={maxAgeRaw}
+                      onChange={e => setMaxAgeRaw(e.target.value)}
+                      placeholder="Max"
+                      className="w-16 px-2 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                    />
+                  </div>
+
+                  {/* Clear filters */}
+                  {(sexFilter || locationRaw || minAgeRaw || maxAgeRaw) && (
+                    <button
+                      onClick={() => { setSexFilter(""); setLocationRaw(""); setMinAgeRaw(""); setMaxAgeRaw(""); }}
+                      className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+                    >
+                      Clear filters
+                    </button>
+                  )}
+                </div>
+
+                {!hasSearchInput ? (
                   <div className="flex flex-col items-center gap-3 py-12 text-center">
                     <Search className="w-10 h-10 text-muted-foreground opacity-40" />
                     <p className="font-semibold">Find fellow travelers</p>
-                    <p className="text-sm text-muted-foreground">Type at least 2 characters to search.</p>
+                    <p className="text-sm text-muted-foreground">Search by name, or use the filters above.</p>
                   </div>
                 ) : loadingSearch ? (
                   <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
                 ) : searchResults.length === 0 ? (
                   <div className="flex flex-col items-center gap-2 py-10 text-center">
-                    <p className="font-semibold">No results for "{searchQuery}"</p>
-                    <p className="text-sm text-muted-foreground">Try a different name, @username, or email.</p>
+                    <p className="font-semibold">No travelers found</p>
+                    <p className="text-sm text-muted-foreground">Try adjusting your search or filters.</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -839,7 +916,12 @@ export default function FriendsPage() {
                             <div className="flex-1 min-w-0">
                               <p className="font-semibold text-sm">{name}</p>
                               {u.username && <p className="text-xs text-muted-foreground mt-0.5">@{u.username}</p>}
-                              {u.homeCountry && <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><MapPin className="w-2.5 h-2.5" />{u.homeCountry}</p>}
+                              <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                                {u.location && <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="w-2.5 h-2.5" />{u.location}</p>}
+                                {u.age && <p className="text-xs text-muted-foreground">Age {u.age}</p>}
+                                {u.sex && <p className="text-xs text-muted-foreground">{u.sex}</p>}
+                                {!u.location && u.homeCountry && <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="w-2.5 h-2.5" />{u.homeCountry}</p>}
+                              </div>
                             </div>
                             {isFriend ? (
                               <Button variant="outline" size="sm" className="text-xs" disabled><UserCheck className="w-3.5 h-3.5 mr-1 text-emerald-500" />Friends</Button>

@@ -13,6 +13,16 @@ export interface UpdateProfileBody {
   bio?: string | null;
   /** @nullable */
   profileImageUrl?: string | null;
+  /** @nullable */
+  firstName?: string | null;
+  /** @nullable */
+  lastName?: string | null;
+  /** @nullable */
+  age?: number | null;
+  /** @nullable */
+  sex?: string | null;
+  /** @nullable */
+  location?: string | null;
   isPrivate?: boolean;
   isEmailPublic?: boolean;
 }

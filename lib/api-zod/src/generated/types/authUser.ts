@@ -22,6 +22,12 @@ export interface AuthUser {
   homeCountry?: string | null;
   /** @nullable */
   bio?: string | null;
+  /** @nullable */
+  age?: number | null;
+  /** @nullable */
+  sex?: string | null;
+  /** @nullable */
+  location?: string | null;
   isPrivate?: boolean;
   isEmailPublic?: boolean;
   isSuperAdmin?: boolean;
