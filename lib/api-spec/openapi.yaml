@@ -2105,6 +2105,30 @@ paths:
         "401":
           description: Unauthorized
 
+  /users/{userId}:
+    get:
+      operationId: getPublicUserProfile
+      summary: Get a user's public profile
+      security:
+        - session: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Public profile with friendship status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicUserProfile"
+        "401":
+          description: Unauthorized
+        "404":
+          description: User not found
+
   /friends:
     get:
       operationId: listFriends
@@ -2471,6 +2495,52 @@ components:
           nullable: true
         location:
           type: string
+          nullable: true
+        friendshipStatus:
+          type: string
+          nullable: true
+        iRequested:
+          type: boolean
+          nullable: true
+
+    PublicUserProfile:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+          nullable: true
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        profileImageUrl:
+          type: string
+          nullable: true
+        homeCountry:
+          type: string
+          nullable: true
+        age:
+          type: integer
+          nullable: true
+        sex:
+          type: string
+          nullable: true
+        location:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        visitedCount:
+          type: integer
+          nullable: true
+        wantToVisitCount:
+          type: integer
           nullable: true
         friendshipStatus:
           type: string

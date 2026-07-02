@@ -74,6 +74,23 @@ export interface UserSearchResult {
   iRequested?: boolean | null;
 }
 
+export interface PublicUserProfile {
+  id: string;
+  username?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  profileImageUrl?: string | null;
+  homeCountry?: string | null;
+  age?: number | null;
+  sex?: string | null;
+  location?: string | null;
+  bio?: string | null;
+  visitedCount?: number | null;
+  wantToVisitCount?: number | null;
+  friendshipStatus?: string | null;
+  iRequested?: boolean | null;
+}
+
 export interface FriendProfile {
   id: string;
   firstName?: string | null;

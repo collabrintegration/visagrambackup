@@ -76,6 +76,7 @@ export * from './okResponse';
 export * from './passportDestinationsResponse';
 export * from './passportRank';
 export * from './passportRankEntry';
+export * from './publicUserProfile';
 export * from './questionDetail';
 export * from './questionSummary';
 export * from './questionWithAnswers';

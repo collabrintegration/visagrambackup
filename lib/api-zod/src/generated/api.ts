@@ -2067,6 +2067,31 @@ export const SearchUsersResponse = zod.array(SearchUsersResponseItem)
 
 
 /**
+ * @summary Get a user's public profile
+ */
+export const GetPublicUserProfileParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const GetPublicUserProfileResponse = zod.object({
+  "id": zod.string(),
+  "username": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "homeCountry": zod.string().nullish(),
+  "age": zod.number().nullish(),
+  "sex": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "visitedCount": zod.number().nullish(),
+  "wantToVisitCount": zod.number().nullish(),
+  "friendshipStatus": zod.string().nullish(),
+  "iRequested": zod.boolean().nullish()
+})
+
+
+/**
  * @summary List accepted friends
  */
 export const ListFriendsResponseItem = zod.object({

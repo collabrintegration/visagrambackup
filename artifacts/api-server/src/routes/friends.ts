@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { db, usersTable, friendshipsTable } from "@workspace/db";
-import { eq, and, or, ilike, ne, sql } from "drizzle-orm";
+import { db, usersTable, friendshipsTable, travelEntriesTable } from "@workspace/db";
+import { eq, and, or, ilike, ne, sql, count } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 const router: IRouter = Router();
@@ -95,6 +95,73 @@ router.get("/users/search", async (req: Request, res: Response) => {
   });
 
   res.json(results);
+});
+
+// ── Public user profile ───────────────────────────────────────────────────────
+router.get("/users/:userId", async (req: Request, res: Response) => {
+  const myId = requireAuth(req, res);
+  if (!myId) return;
+
+  const { userId } = req.params;
+
+  const [user] = await db
+    .select({
+      id: usersTable.id,
+      username: usersTable.username,
+      firstName: usersTable.firstName,
+      lastName: usersTable.lastName,
+      profileImageUrl: usersTable.profileImageUrl,
+      homeCountry: usersTable.homeCountry,
+      age: usersTable.age,
+      sex: usersTable.sex,
+      location: usersTable.location,
+      bio: usersTable.bio,
+    })
+    .from(usersTable)
+    .where(eq(usersTable.id, userId))
+    .limit(1);
+
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  // Travel map counts
+  const travelCounts = await db
+    .select({
+      status: travelEntriesTable.status,
+      cnt: count(),
+    })
+    .from(travelEntriesTable)
+    .where(eq(travelEntriesTable.userId, userId))
+    .groupBy(travelEntriesTable.status);
+
+  const visitedCount = travelCounts.find((r) => r.status === "visited")?.cnt ?? 0;
+  const wantToVisitCount = travelCounts.find((r) => r.status === "want_to_visit")?.cnt ?? 0;
+
+  // Friendship status between viewer and this user
+  const [friendship] = await db
+    .select({
+      requesterId: friendshipsTable.requesterId,
+      addresseeId: friendshipsTable.addresseeId,
+      status: friendshipsTable.status,
+    })
+    .from(friendshipsTable)
+    .where(
+      or(
+        and(eq(friendshipsTable.requesterId, myId), eq(friendshipsTable.addresseeId, userId)),
+        and(eq(friendshipsTable.requesterId, userId), eq(friendshipsTable.addresseeId, myId)),
+      ),
+    )
+    .limit(1);
+
+  res.json({
+    ...user,
+    visitedCount,
+    wantToVisitCount,
+    friendshipStatus: friendship?.status ?? null,
+    iRequested: friendship ? friendship.requesterId === myId : null,
+  });
 });
 
 // ── List my friends ───────────────────────────────────────────────────────────

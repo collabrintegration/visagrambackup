@@ -27,6 +27,7 @@ import {
   getListGroupJoinRequestsQueryKey,
   getGetDmUnreadCountQueryKey,
 } from "@workspace/api-client-react";
+import UserProfileModal from "@/components/user-profile-modal";
 import type { Group, GroupJoinRequest } from "@workspace/api-client-react";
 import DmProfileTab from "@/components/dm-profile-tab";
 import { useAuth } from "@workspace/replit-auth-web";
@@ -671,6 +672,7 @@ export default function FriendsPage() {
   const [rightTab, setRightTab] = useState<RightTab>("friends");
   const [dmOpenUserId, setDmOpenUserId] = useState<string | null>(null);
   const [searchRaw, setSearchRaw] = useState("");
+  const [profileModalUserId, setProfileModalUserId] = useState<string | null>(null);
   const searchQuery = useDebounce(searchRaw, 300);
   const [sexFilter, setSexFilter] = useState("");
   const [locationRaw, setLocationRaw] = useState("");
@@ -910,7 +912,11 @@ export default function FriendsPage() {
                       const isFriend = u.friendshipStatus === "accepted";
                       const isPending = u.friendshipStatus === "pending";
                       return (
-                        <div key={u.id} className="rounded-xl border border-border bg-card p-4">
+                        <div
+                          key={u.id}
+                          className="rounded-xl border border-border bg-card p-4 cursor-pointer hover:border-primary/40 hover:bg-card/80 transition-colors"
+                          onClick={() => setProfileModalUserId(u.id)}
+                        >
                           <div className="flex items-center gap-3">
                             <Avatar url={u.profileImageUrl} name={name} />
                             <div className="flex-1 min-w-0">
@@ -924,15 +930,15 @@ export default function FriendsPage() {
                               </div>
                             </div>
                             {isFriend ? (
-                              <Button variant="outline" size="sm" className="text-xs" disabled><UserCheck className="w-3.5 h-3.5 mr-1 text-emerald-500" />Friends</Button>
+                              <Button variant="outline" size="sm" className="text-xs" onClick={e => e.stopPropagation()} disabled><UserCheck className="w-3.5 h-3.5 mr-1 text-emerald-500" />Friends</Button>
                             ) : isPending && u.iRequested ? (
-                              <Button variant="outline" size="sm" className="text-xs" disabled><Clock className="w-3.5 h-3.5 mr-1" />Requested</Button>
+                              <Button variant="outline" size="sm" className="text-xs" onClick={e => e.stopPropagation()} disabled><Clock className="w-3.5 h-3.5 mr-1" />Requested</Button>
                             ) : isPending && !u.iRequested ? (
-                              <Button size="sm" className="text-xs" onClick={() => sendRequest.mutate({ userId: u.id }, { onSuccess: invalidate })} disabled={sendRequest.isPending}>
+                              <Button size="sm" className="text-xs" onClick={e => { e.stopPropagation(); sendRequest.mutate({ userId: u.id }, { onSuccess: invalidate }); }} disabled={sendRequest.isPending}>
                                 <Check className="w-3.5 h-3.5 mr-1" />Accept
                               </Button>
                             ) : (
-                              <Button size="sm" className="text-xs" onClick={() => sendRequest.mutate({ userId: u.id }, { onSuccess: invalidate })} disabled={sendRequest.isPending}>
+                              <Button size="sm" className="text-xs" onClick={e => { e.stopPropagation(); sendRequest.mutate({ userId: u.id }, { onSuccess: invalidate }); }} disabled={sendRequest.isPending}>
                                 <UserPlus className="w-3.5 h-3.5 mr-1" />Add Friend
                               </Button>
                             )}
@@ -972,6 +978,14 @@ export default function FriendsPage() {
           </div>
         </div>
       </div>
+
+      {profileModalUserId && (
+        <UserProfileModal
+          userId={profileModalUserId}
+          onClose={() => setProfileModalUserId(null)}
+          onInvalidate={invalidate}
+        />
+      )}
     </>
   );
 }

@@ -75,6 +75,7 @@ import type {
   OkResponse,
   PassportDestinationsResponse,
   PassportRankEntry,
+  PublicUserProfile,
   QuestionDetail,
   QuestionSummary,
   QuestionWithAnswers,
@@ -6761,6 +6762,83 @@ export function useSearchUsers<TData = Awaited<ReturnType<typeof searchUsers>>, 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getSearchUsersQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPublicUserProfileUrl = (userId: string,) => {
+
+
+
+
+  return `/api/users/${userId}`
+}
+
+/**
+ * @summary Get a user's public profile
+ */
+export const getPublicUserProfile = async (userId: string, options?: RequestInit): Promise<PublicUserProfile> => {
+
+  return customFetch<PublicUserProfile>(getGetPublicUserProfileUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicUserProfileQueryKey = (userId: string,) => {
+    return [
+    `/api/users/${userId}`
+    ] as const;
+    }
+
+
+export const getGetPublicUserProfileQueryOptions = <TData = Awaited<ReturnType<typeof getPublicUserProfile>>, TError = ErrorType<void>>(userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicUserProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicUserProfileQueryKey(userId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicUserProfile>>> = ({ signal }) => getPublicUserProfile(userId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: userId !== null && userId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicUserProfile>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPublicUserProfileQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicUserProfile>>>
+export type GetPublicUserProfileQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get a user's public profile
+ */
+
+export function useGetPublicUserProfile<TData = Awaited<ReturnType<typeof getPublicUserProfile>>, TError = ErrorType<void>>(
+ userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicUserProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPublicUserProfileQueryOptions(userId,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
