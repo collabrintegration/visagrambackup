@@ -63,6 +63,7 @@ export default function ExploreScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        style={styles.chipScrollView}
         contentContainerStyle={styles.continentScroll}
       >
         {CONTINENTS.map((c) => (
@@ -155,9 +156,15 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
   },
+  chipScrollView: {
+    flexShrink: 0,
+    flexGrow: 0,
+    marginBottom: 6,
+  },
   continentScroll: {
     paddingHorizontal: 16,
-    paddingBottom: 10,
+    paddingBottom: 6,
+    paddingTop: 2,
     gap: 8,
   },
   chip: {
