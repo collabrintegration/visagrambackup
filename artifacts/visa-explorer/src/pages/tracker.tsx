@@ -628,7 +628,7 @@ export default function TrackerPage() {
         <meta name="description" content="Track all your visa applications in one place. Monitor status, deadlines, and processing times for every country you're applying to — stay organized before your trip." />
         <meta property="og:title" content="Visa Application Tracker — Track Your Visa Status | Visagram" />
         <meta property="og:description" content="Monitor all your visa applications, deadlines, and processing times in one organized dashboard on Visagram." />
-        <meta property="og:url" content="https://visagram.app/tracker" />
+        <meta property="og:url" content="https://visagram.io/tracker" />
       </Helmet>
       {/* ── Header ── */}
       <div className="border-b border-border/60 bg-card/30">

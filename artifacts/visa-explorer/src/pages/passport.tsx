@@ -98,7 +98,7 @@ export default function PassportPower() {
         <meta name="description" content="Compare the strength of passports from 190+ countries. See how many destinations each passport unlocks visa-free, on arrival, or with an eVisa." />
         <meta property="og:title" content="Passport Power Rankings — Compare Passport Strength | Visagram" />
         <meta property="og:description" content="Compare the strength of passports from 190+ countries and discover where your passport unlocks visa-free access." />
-        <meta property="og:url" content="https://visagram.app/passport" />
+        <meta property="og:url" content="https://visagram.io/passport" />
       </Helmet>
       {/* ── Identity hero ── */}
       <div className="relative overflow-hidden h-64 md:h-72">

@@ -340,7 +340,7 @@ export default function Community() {
       <meta name="description" content="Read real traveler reviews, ask visa questions, and get answers from a global community of travelers. Share your own experiences and help others plan their trips." />
       <meta property="og:title" content="Community — Traveler Reviews & Visa Q&A | Visagram" />
       <meta property="og:description" content="Read real traveler reviews, ask visa questions, and connect with a global community of travelers on Visagram." />
-      <meta property="og:url" content="https://visagram.app/community" />
+      <meta property="og:url" content="https://visagram.io/community" />
     </Helmet>
     <div className="min-h-screen bg-background">
       {/* Hero */}

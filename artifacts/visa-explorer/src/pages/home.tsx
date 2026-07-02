@@ -67,16 +67,16 @@ export default function Home() {
         <meta name="description" content="Plan your next trip with Visagram. Explore visa requirements for 190+ countries, read real traveler reviews, compare passport power, and track your visa applications." />
         <meta property="og:title" content="Visagram — Discover Visa Requirements & Travel the World" />
         <meta property="og:description" content="Plan your next trip with Visagram. Explore visa requirements for 190+ countries, read real traveler reviews, compare passport power, and track your visa applications." />
-        <meta property="og:url" content="https://visagram.app/" />
+        <meta property="og:url" content="https://visagram.io/" />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "WebSite",
           "name": "Visagram",
-          "url": "https://visagram.app",
+          "url": "https://visagram.io",
           "description": "Discover visa requirements for 190+ countries, read community reviews, compare passport power, and track your visa applications.",
           "potentialAction": {
             "@type": "SearchAction",
-            "target": "https://visagram.app/explore?q={search_term_string}",
+            "target": "https://visagram.io/explore?q={search_term_string}",
             "query-input": "required name=search_term_string"
           }
         })}</script>

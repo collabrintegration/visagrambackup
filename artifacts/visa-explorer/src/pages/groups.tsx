@@ -138,7 +138,7 @@ export default function Groups() {
         <meta name="description" content="Join travel groups on Visagram to connect with fellow travelers, share visa tips, discuss destinations, and build your global travel network." />
         <meta property="og:title" content="Travel Groups — Connect with Fellow Travelers | Visagram" />
         <meta property="og:description" content="Join travel groups to connect with fellow travelers, share visa tips, and discuss destinations on Visagram." />
-        <meta property="og:url" content="https://visagram.app/groups" />
+        <meta property="og:url" content="https://visagram.io/groups" />
       </Helmet>
       {/* Hero */}
       <div className="border-b border-border/60 bg-card/30">

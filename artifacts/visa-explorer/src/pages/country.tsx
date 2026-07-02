@@ -149,13 +149,13 @@ export default function CountryDetail() {
         <meta name="description" content={`Find visa requirements for ${country.name}${country.capital ? ` (capital: ${country.capital})` : ""}${country.continent ? `, ${country.continent}` : ""}. Read real traveler reviews, ask questions, and track your ${country.name} visa application.`} />
         <meta property="og:title" content={`${country.name} Visa Requirements & Reviews — Visagram`} />
         <meta property="og:description" content={`Discover visa requirements, traveler reviews, and entry rules for ${country.name}. Join the community and plan your trip with confidence.`} />
-        <meta property="og:url" content={`https://visagram.app/country/${code}`} />
+        <meta property="og:url" content={`https://visagram.io/country/${code}`} />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "TouristDestination",
           "name": country.name,
           "description": `Visa requirements, traveler reviews, and entry rules for ${country.name}.`,
-          "url": `https://visagram.app/country/${code}`,
+          "url": `https://visagram.io/country/${code}`,
           "touristType": country.continent
         })}</script>
       </Helmet>
