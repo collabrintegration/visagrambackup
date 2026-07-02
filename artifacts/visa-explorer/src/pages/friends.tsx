@@ -1149,12 +1149,12 @@ export default function FriendsPage() {
               <FriendsGroupsTab />
             )}
 
-            {/* ── Travel Photos (shown under friends list, before testimonials) ── */}
+            {/* ── Photos (shown under friends list, before testimonials) ── */}
             {rightTab === "friends" && myId && (
               <div className="mt-6 bg-card border border-border rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold flex items-center gap-2">
-                    <Camera className="w-4 h-4 text-primary" /> Travel Photos
+                    <Camera className="w-4 h-4 text-primary" /> Photos
                     {myPhotos.length > 0 && (
                       <span className="text-xs font-normal text-muted-foreground">({myPhotos.length})</span>
                     )}
@@ -1172,7 +1172,7 @@ export default function FriendsPage() {
                     onClick={() => { setShowPhotoUploadModal(true); setShowPhotoCaptionStep(false); setPendingPhotoPath(null); setPendingPhotoCaption(""); setPhotoUploadCountry(null); }}
                   >
                     <Camera className="w-8 h-8 text-muted-foreground/30 mb-2" />
-                    <p className="text-sm text-muted-foreground">No travel photos yet — click to upload your first</p>
+                    <p className="text-sm text-muted-foreground">No photos yet — click to upload your first</p>
                   </div>
                 ) : (
                   <div className="columns-2 sm:columns-3 md:columns-4 gap-2 space-y-2">
