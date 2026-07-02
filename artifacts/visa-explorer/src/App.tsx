@@ -17,6 +17,8 @@ import ProfilePage from "@/pages/profile";
 import SupportCasePage from "@/pages/support-case";
 import QuestionDetailPage from "@/pages/question-detail";
 import SignIn from "@/pages/sign-in";
+import TermsPage from "@/pages/terms";
+import PrivacyPage from "@/pages/privacy";
 import GroupsPage from "@/pages/groups";
 import GroupChatPage from "@/pages/group-chat";
 import TrackerPage from "@/pages/tracker";
@@ -61,6 +63,8 @@ function Router() {
         <Route path="/support/cases/:id" component={SupportCasePage} />
         <Route path="/questions/:id" component={QuestionDetailPage} />
         <Route path="/sign-in" component={SignIn} />
+        <Route path="/terms" component={TermsPage} />
+        <Route path="/privacy" component={PrivacyPage} />
         <Route path="/groups" component={GroupsPage} />
         <Route path="/groups/:id" component={GroupChatPage} />
         <Route path="/tracker" component={TrackerPage} />

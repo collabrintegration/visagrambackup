@@ -87,7 +87,10 @@ export default function SignIn() {
             Continue to Login
           </Button>
           <p className="text-xs text-muted-foreground text-center">
-            By continuing you agree to Visagram's terms of use.
+            By continuing you agree to our{" "}
+            <a href="/terms" className="text-primary hover:underline">Terms of Service</a>
+            {" "}and{" "}
+            <a href="/privacy" className="text-primary hover:underline">Privacy Policy</a>.
           </p>
         </div>
 

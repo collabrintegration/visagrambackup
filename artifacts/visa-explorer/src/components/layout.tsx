@@ -62,6 +62,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               const isActive = (link.matchPaths ?? [link.href]).some(p =>
                 p === "/" ? location === p : location.startsWith(p)
               );
+              const showBadge = link.href === "/friends" && isAuthenticated && totalBadge > 0;
               return (
                 <Link
                   key={link.href}
@@ -74,6 +75,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 >
                   <Icon className="w-4 h-4" />
                   {link.label}
+                  {showBadge && (
+                    <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                      {totalBadge > 99 ? "99+" : totalBadge}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -128,6 +134,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               const isActive = (link.matchPaths ?? [link.href]).some(p =>
                 p === "/" ? location === p : location.startsWith(p)
               );
+              const showBadge = link.href === "/friends" && isAuthenticated && totalBadge > 0;
               return (
                 <Link
                   key={link.href}
@@ -138,6 +145,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 >
                   <Icon className="w-3.5 h-3.5" />
                   {link.label}
+                  {showBadge && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] bg-destructive text-destructive-foreground text-[8px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                      {totalBadge > 99 ? "99+" : totalBadge}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -170,9 +182,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
           <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
             <div className="flex gap-4 text-sm">
-              <a href="mailto:collabrintegration@gmail.com" className="hover:text-foreground transition-colors">Contact Us</a>
+              <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
               <span>·</span>
-              <a href="mailto:collabrintegration@gmail.com" className="hover:text-foreground transition-colors">Advertising &amp; Partnerships</a>
+              <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+              <span>·</span>
+              <a href="mailto:collabrintegration@gmail.com" className="hover:text-foreground transition-colors">Contact Us</a>
             </div>
             <div className="text-xs text-muted-foreground/60">collabrintegration@gmail.com</div>
           </div>
