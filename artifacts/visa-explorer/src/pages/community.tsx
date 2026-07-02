@@ -3,8 +3,9 @@ import { Link } from "wouter";
 import {
   useGetCommunityFeed,
   getGetCommunityFeedQueryKey,
+  useListCountries,
 } from "@workspace/api-client-react";
-import type { FeedItem } from "@workspace/api-client-react";
+import type { FeedItem, Country } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import {
   MessageSquare, Star, Globe, Users, Loader2, MapPin, LogIn,
@@ -144,18 +145,16 @@ export default function Community() {
     },
   );
 
+  const { data: allCountries = [] } = useListCountries();
+
   const isLoading = authLoading || feedLoading;
 
-  // Extract unique countries from feed
+  // All countries for the filter dropdown
   const countries = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const item of feed) {
-      if (item.countryCode) {
-        map.set(item.countryCode, `${item.countryFlag ?? ""} ${item.countryName ?? item.countryCode}`.trim());
-      }
-    }
-    return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1]));
-  }, [feed]);
+    return (allCountries as Country[])
+      .map((c): [string, string] => [c.code, `${c.flagEmoji ?? ""} ${c.name}`.trim()])
+      .sort((a: [string, string], b: [string, string]) => a[1].localeCompare(b[1]));
+  }, [allCountries]);
 
   // Apply filters
   const filtered = useMemo(() => {
