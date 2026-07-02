@@ -13,17 +13,13 @@ import { useColors } from "@/hooks/useColors";
 function NativeTabLayout() {
   return (
     <NativeTabs>
+      <NativeTabs.Trigger name="community">
+        <Icon sf={{ default: "bubble.left.and.bubble.right", selected: "bubble.left.and.bubble.right.fill" }} />
+        <Label>Chats</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="friends">
         <Icon sf={{ default: "person.2.circle", selected: "person.2.circle.fill" }} />
         <Label>Friends</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="groups">
-        <Icon sf={{ default: "person.3", selected: "person.3.fill" }} />
-        <Label>Groups</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="community">
-        <Icon sf={{ default: "bubble.left.and.bubble.right", selected: "bubble.left.and.bubble.right.fill" }} />
-        <Label>Community</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="index">
         <Icon sf={{ default: "globe", selected: "globe.fill" }} />
@@ -82,6 +78,18 @@ function ClassicTabLayout() {
       }}
     >
       <Tabs.Screen
+        name="community"
+        options={{
+          title: "Chats",
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="bubble.left.and.bubble.right" tintColor={color} size={24} />
+            ) : (
+              <Feather name="message-circle" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
         name="friends"
         options={{
           title: "Friends",
@@ -90,30 +98,6 @@ function ClassicTabLayout() {
               <SymbolView name="person.2.circle" tintColor={color} size={24} />
             ) : (
               <Feather name="users" size={22} color={color} />
-            ),
-        }}
-      />
-      <Tabs.Screen
-        name="groups"
-        options={{
-          title: "Groups",
-          tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="person.3" tintColor={color} size={24} />
-            ) : (
-              <Feather name="users" size={22} color={color} />
-            ),
-        }}
-      />
-      <Tabs.Screen
-        name="community"
-        options={{
-          title: "Community",
-          tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="bubble.left.and.bubble.right" tintColor={color} size={24} />
-            ) : (
-              <Feather name="message-circle" size={22} color={color} />
             ),
         }}
       />
@@ -153,6 +137,8 @@ function ClassicTabLayout() {
             ),
         }}
       />
+      {/* groups is accessible via community tab's Chats section — hidden from tab bar */}
+      <Tabs.Screen name="groups" options={{ href: null }} />
     </Tabs>
   );
 }
