@@ -10,6 +10,7 @@ export const visaApplicationsTable = pgTable("visa_applications", {
   passportCode: text("passport_code"),
   visaType: text("visa_type").notNull(),
   applicationDate: text("application_date").notNull(),
+  title: text("title"),
   status: text("status").notNull().default("applied"),
   grantedDate: text("granted_date"),
   comment: text("comment"),

@@ -28,6 +28,7 @@ router.get("/visa-tracker", async (req, res) => {
       applicationDate: visaApplicationsTable.applicationDate,
       status: visaApplicationsTable.status,
       grantedDate: visaApplicationsTable.grantedDate,
+      title: visaApplicationsTable.title,
       comment: visaApplicationsTable.comment,
       createdAt: visaApplicationsTable.createdAt,
       updatedAt: visaApplicationsTable.updatedAt,
@@ -148,7 +149,8 @@ router.get("/visa-tracker/analytics", async (req, res) => {
 router.post("/visa-tracker", async (req, res) => {
   if (!req.isAuthenticated()) { res.status(401).json({ error: "Unauthorized" }); return; }
 
-  const { countryCode, countryName, passportCode, visaType, applicationDate, status, comment } = req.body as {
+  const { title, countryCode, countryName, passportCode, visaType, applicationDate, status, comment } = req.body as {
+    title: string;
     countryCode: string;
     countryName: string;
     passportCode?: string;
@@ -158,7 +160,7 @@ router.post("/visa-tracker", async (req, res) => {
     comment?: string;
   };
 
-  if (!countryCode || !countryName || !visaType || !applicationDate) {
+  if (!countryCode || !countryName || !visaType || !applicationDate || !title) {
     res.status(400).json({ error: "Missing required fields" }); return;
   }
 
@@ -166,6 +168,7 @@ router.post("/visa-tracker", async (req, res) => {
     .insert(visaApplicationsTable)
     .values({
       userId: req.user!.id,
+      title: title.trim(),
       countryCode,
       countryName,
       passportCode: passportCode ? passportCode.toUpperCase() : null,
@@ -192,7 +195,8 @@ router.patch("/visa-tracker/:id", async (req, res) => {
   if (!existing) { res.status(404).json({ error: "Not found" }); return; }
   if (existing.userId !== req.user!.id) { res.status(403).json({ error: "Forbidden" }); return; }
 
-  const { status, grantedDate, comment } = req.body as {
+  const { title, status, grantedDate, comment } = req.body as {
+    title?: string | null;
     status?: string;
     grantedDate?: string | null;
     comment?: string | null;
@@ -202,6 +206,7 @@ router.patch("/visa-tracker/:id", async (req, res) => {
     updatedAt: new Date(),
   };
 
+  if (title !== undefined) updates.title = title?.trim() ?? null;
   if (status !== undefined) {
     updates.status = status;
     if (status === "approved" && !existing.grantedDate) {

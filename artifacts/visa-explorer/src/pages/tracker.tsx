@@ -16,7 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Plus, Loader2, Trash2, ChevronDown, ChevronUp, LogIn,
   ClipboardList, CheckCircle2, Clock, XCircle, AlertCircle,
-  MinusCircle, Globe, Pencil, Check, X, BarChart3, TrendingUp, Timer,
+  MinusCircle, Globe, Pencil, Check, X, BarChart3, TrendingUp, Timer, Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -177,7 +177,7 @@ function CaseTable({
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border bg-card/40">
-            {["Traveler", "Nationality", "Applied", "Days", "Status", "Granted", "Note", ""].map((h) => (
+            {["Traveler", "Title", "Nationality", "Applied", "Days", "Status", "Granted", "Note", ""].map((h) => (
               <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">{h}</th>
             ))}
           </tr>
@@ -200,6 +200,9 @@ function CaseTable({
                       {displayName(app)}{isOwn && <span className="text-[10px] text-primary ml-1">(you)</span>}
                     </span>
                   </div>
+                </td>
+                <td className="px-4 py-2.5 max-w-[160px]">
+                  <span className="text-xs font-medium truncate block">{(app as VisaApplication & { title?: string | null }).title || <span className="text-muted-foreground/40">—</span>}</span>
                 </td>
                 <td className="px-4 py-2.5 whitespace-nowrap">
                   {app.passportCode ? (
@@ -303,7 +306,7 @@ function DashboardPanel({
             onClick={(e) => { e.stopPropagation(); onAddCase(category.value); }}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
           >
-            <Plus className="w-3.5 h-3.5" /> Add a case
+            <Plus className="w-3.5 h-3.5" /> Add Visa
           </button>
           {expanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
         </div>
@@ -446,8 +449,10 @@ export default function TrackerPage() {
   const [selectedCountry, setSelectedCountry] = useState<string>("all");
   const [showModal, setShowModal] = useState(false);
   const [prefillType, setPrefillType] = useState<string>("travel");
+  const [countrySearch, setCountrySearch] = useState("");
 
   // Form state
+  const [fTitle, setFTitle] = useState("");
   const [fCountry, setFCountry] = useState<string | null>(null);
   const [fPassport, setFPassport] = useState<string | null>(null);
   const [fType, setFType] = useState<string>("travel");
@@ -481,6 +486,7 @@ export default function TrackerPage() {
     if (!isAuthenticated) { login(); return; }
     setPrefillType(type);
     setFType(type);
+    setFTitle("");
     setFCountry(null);
     setFPassport(null);
     setFDate(new Date().toISOString().split("T")[0]);
@@ -499,10 +505,11 @@ export default function TrackerPage() {
   }, [countries]);
 
   function handleCreate() {
-    if (!fCountry || !fType || !fDate) return;
+    if (!fCountry || !fType || !fDate || !fTitle.trim()) return;
     const fCountryName = countryNameMap[fCountry] ?? fCountry;
     create({
       data: {
+        title: fTitle.trim(),
         countryCode: fCountry,
         countryName: fCountryName,
         passportCode: fPassport ?? undefined,
@@ -514,11 +521,27 @@ export default function TrackerPage() {
     });
   }
 
-  // Figure out which country codes appear in the data (for the tab bar)
+  // Build dynamic country list from actual data
   const countriesInData = useMemo(() => {
-    const codes = new Set(apps.map((a) => a.countryCode));
-    return POPULAR_COUNTRIES.filter((c) => codes.has(c.code));
+    const countMap = new Map<string, { code: string; name: string; flag: string | null; count: number }>();
+    for (const a of apps) {
+      const key = a.countryCode.toUpperCase();
+      const existing = countMap.get(key);
+      if (existing) { existing.count++; }
+      else { countMap.set(key, { code: key, name: a.countryName, flag: null, count: 1 }); }
+    }
+    // Merge flag from POPULAR_COUNTRIES lookup
+    return [...countMap.values()]
+      .map((c) => ({ ...c, flag: POPULAR_COUNTRIES.find((p) => p.code === c.code)?.flag ?? "🏳" }))
+      .sort((a, b) => b.count - a.count);
   }, [apps]);
+
+  // Filtered by search
+  const visibleCountryTabs = useMemo(() => {
+    const q = countrySearch.toLowerCase().trim();
+    if (!q) return countriesInData;
+    return countriesInData.filter((c) => c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q));
+  }, [countriesInData, countrySearch]);
 
   // Filter apps by selected country
   const filteredByCountry = useMemo(
@@ -559,7 +582,7 @@ export default function TrackerPage() {
             {!authLoading && (
               isAuthenticated ? (
                 <Button onClick={() => openModal("travel")}>
-                  <Plus className="w-4 h-4 mr-2" /> Add a Case
+                  <Plus className="w-4 h-4 mr-2" /> Add Visa
                 </Button>
               ) : (
                 <Button variant="outline" onClick={login}>
@@ -611,29 +634,36 @@ export default function TrackerPage() {
       {/* ── Country tab bar ── */}
       {activeTab === "dashboards" && (
         <div className="border-b border-border/40 bg-card/20">
-          <div className="container mx-auto px-4 py-3">
+          <div className="container mx-auto px-4 py-3 space-y-2">
+            {/* Search */}
+            <div className="relative max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+              <input
+                value={countrySearch}
+                onChange={(e) => setCountrySearch(e.target.value)}
+                placeholder="Search countries…"
+                className="w-full pl-8 pr-3 py-1.5 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-1 focus:ring-primary/50 placeholder:text-muted-foreground"
+              />
+            </div>
+            {/* Tabs */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
               <button
                 onClick={() => setSelectedCountry("all")}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all shrink-0 ${selectedCountry === "all" ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"}`}
               >
-                🌍 All Countries
+                🌍 All <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${selectedCountry === "all" ? "bg-white/20" : "bg-muted"}`}>{apps.length}</span>
               </button>
-              {POPULAR_COUNTRIES.map((c) => {
-                const count = apps.filter((a) => a.countryCode === c.code).length;
-                return (
-                  <button key={c.code} onClick={() => setSelectedCountry(c.code)}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all shrink-0 ${selectedCountry === c.code ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"}`}
-                  >
-                    {c.flag} {c.name}
-                    {count > 0 && (
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${selectedCountry === c.code ? "bg-white/20" : "bg-muted"}`}>
-                        {count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+              {visibleCountryTabs.map((c) => (
+                <button key={c.code} onClick={() => setSelectedCountry(c.code)}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all shrink-0 ${selectedCountry === c.code ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"}`}
+                >
+                  {c.flag} {c.name}
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${selectedCountry === c.code ? "bg-white/20" : "bg-muted"}`}>{c.count}</span>
+                </button>
+              ))}
+              {visibleCountryTabs.length === 0 && countrySearch && (
+                <span className="text-sm text-muted-foreground px-2">No countries match "{countrySearch}"</span>
+              )}
             </div>
           </div>
         </div>
@@ -673,10 +703,21 @@ export default function TrackerPage() {
           onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}>
           <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-lg">
             <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-              <h2 className="text-lg font-bold">Add a Case</h2>
+              <h2 className="text-lg font-bold">Add Visa</h2>
               <button onClick={closeModal} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
             </div>
             <div className="px-6 py-5 space-y-4">
+              {/* Title */}
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Title *</label>
+                <input
+                  value={fTitle}
+                  onChange={(e) => setFTitle(e.target.value)}
+                  placeholder="e.g. UK Tourist Visa — applied Jan 2025"
+                  maxLength={120}
+                  className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 placeholder:text-muted-foreground"
+                />
+              </div>
               {/* Visa category */}
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Visa Category *</label>
@@ -745,7 +786,7 @@ export default function TrackerPage() {
             </div>
             <div className="flex gap-3 px-6 py-4 border-t border-border">
               <Button variant="outline" onClick={closeModal} className="flex-1">Cancel</Button>
-              <Button onClick={handleCreate} disabled={!fCountry || !fType || !fDate || creating} className="flex-1">
+              <Button onClick={handleCreate} disabled={!fCountry || !fType || !fDate || !fTitle.trim() || creating} className="flex-1">
                 {creating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
                 Submit
               </Button>

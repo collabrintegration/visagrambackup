@@ -1524,6 +1524,7 @@ export const DeleteVisaGuideEntryResponse = zod.void()
 export const ListVisaApplicationsResponseItem = zod.object({
   "id": zod.number(),
   "userId": zod.string(),
+  "title": zod.string().nullish(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
@@ -1548,6 +1549,7 @@ export const ListVisaApplicationsResponse = zod.array(ListVisaApplicationsRespon
  * @summary Create a visa application entry
  */
 export const CreateVisaApplicationBody = zod.object({
+  "title": zod.string(),
   "countryCode": zod.string(),
   "countryName": zod.string(),
   "passportCode": zod.string().nullish(),
@@ -1560,6 +1562,7 @@ export const CreateVisaApplicationBody = zod.object({
 export const CreateVisaApplicationResponse = zod.object({
   "id": zod.number(),
   "userId": zod.string(),
+  "title": zod.string().nullish(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),
@@ -1587,6 +1590,7 @@ export const UpdateVisaApplicationParams = zod.object({
 })
 
 export const UpdateVisaApplicationBody = zod.object({
+  "title": zod.string().nullish(),
   "status": zod.enum(['applied', 'in_review', 'approved', 'rejected', 'withdrawn']).optional(),
   "grantedDate": zod.string().nullish(),
   "comment": zod.string().nullish()
@@ -1595,6 +1599,7 @@ export const UpdateVisaApplicationBody = zod.object({
 export const UpdateVisaApplicationResponse = zod.object({
   "id": zod.number(),
   "userId": zod.string(),
+  "title": zod.string().nullish(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
   "profileImageUrl": zod.string().nullish(),

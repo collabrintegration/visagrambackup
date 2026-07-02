@@ -768,6 +768,7 @@ export const VisaApplicationStatus = {
 export interface VisaApplication {
   id: number;
   userId: string;
+  title?: string | null;
   firstName?: string | null;
   lastName?: string | null;
   profileImageUrl?: string | null;
@@ -809,6 +810,7 @@ export const CreateVisaApplicationInputStatus = {
 } as const;
 
 export interface CreateVisaApplicationInput {
+  title: string;
   countryCode: string;
   countryName: string;
   passportCode?: string | null;
@@ -830,6 +832,7 @@ export const UpdateVisaApplicationInputStatus = {
 } as const;
 
 export interface UpdateVisaApplicationInput {
+  title?: string | null;
   status?: UpdateVisaApplicationInputStatus;
   grantedDate?: string | null;
   comment?: string | null;

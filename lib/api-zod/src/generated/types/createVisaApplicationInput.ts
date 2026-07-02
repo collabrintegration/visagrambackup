@@ -9,6 +9,7 @@ import type { CreateVisaApplicationInputStatus } from './createVisaApplicationIn
 import type { CreateVisaApplicationInputVisaType } from './createVisaApplicationInputVisaType';
 
 export interface CreateVisaApplicationInput {
+  title: string;
   countryCode: string;
   countryName: string;
   passportCode?: string | null;

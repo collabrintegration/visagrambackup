@@ -8,6 +8,7 @@
 import type { UpdateVisaApplicationInputStatus } from './updateVisaApplicationInputStatus';
 
 export interface UpdateVisaApplicationInput {
+  title?: string | null;
   status?: UpdateVisaApplicationInputStatus;
   grantedDate?: string | null;
   comment?: string | null;

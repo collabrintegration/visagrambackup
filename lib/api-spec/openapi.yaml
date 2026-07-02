@@ -3213,6 +3213,9 @@ components:
           type: integer
         userId:
           type: string
+        title:
+          type: string
+          nullable: true
         firstName:
           type: string
           nullable: true
@@ -3261,8 +3264,10 @@ components:
 
     CreateVisaApplicationInput:
       type: object
-      required: [countryCode, countryName, visaType, applicationDate]
+      required: [countryCode, countryName, visaType, applicationDate, title]
       properties:
+        title:
+          type: string
         countryCode:
           type: string
         countryName:
@@ -3285,6 +3290,9 @@ components:
     UpdateVisaApplicationInput:
       type: object
       properties:
+        title:
+          type: string
+          nullable: true
         status:
           type: string
           enum: [applied, in_review, approved, rejected, withdrawn]

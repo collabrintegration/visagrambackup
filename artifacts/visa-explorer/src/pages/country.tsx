@@ -1224,6 +1224,7 @@ function CountryTrackerSection({ code, countryName }: { code: string; countryNam
 
   /* — Case state — */
   const [showCaseModal, setShowCaseModal] = useState(false);
+  const [cTitle, setCTitle] = useState("");
   const [cPassport, setCPassport] = useState<string | null>(null);
   const [cDate, setCDate] = useState(new Date().toISOString().split("T")[0]);
   const [cStatus, setCStatus] = useState<AppStatusKey>("applied");
@@ -1260,11 +1261,11 @@ function CountryTrackerSection({ code, countryName }: { code: string; countryNam
     editingGuide ? updateGuide({ id: editingGuide.id, data }) : createGuide({ data });
   }
 
-  function openCase() { if (!isAuthenticated) { login(); return; } setCPassport(null); setCDate(new Date().toISOString().split("T")[0]); setCStatus("applied"); setCComment(""); setShowCaseModal(true); }
+  function openCase() { if (!isAuthenticated) { login(); return; } setCTitle(""); setCPassport(null); setCDate(new Date().toISOString().split("T")[0]); setCStatus("applied"); setCComment(""); setShowCaseModal(true); }
   function closeCase() { setShowCaseModal(false); }
   function submitCase() {
-    const cat = TRACKER_CATS.find((c) => c.value === activeTab)!;
-    createApp({ data: { countryCode: code, countryName, passportCode: cPassport ?? undefined, visaType: activeTab as "travel" | "work" | "pr" | "citizenship" | "partner", applicationDate: cDate, status: cStatus, comment: cComment || undefined } });
+    if (!cTitle.trim() || !cDate) return;
+    createApp({ data: { title: cTitle.trim(), countryCode: code, countryName, passportCode: cPassport ?? undefined, visaType: activeTab as "travel" | "work" | "pr" | "citizenship" | "partner", applicationDate: cDate, status: cStatus, comment: cComment || undefined } });
   }
 
   const cat = TRACKER_CATS.find((c) => c.value === activeTab)!;
@@ -1508,6 +1509,11 @@ function CountryTrackerSection({ code, countryName }: { code: string; countryNam
             </div>
             <div className="p-5 space-y-4">
               <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Title *</label>
+                <input value={cTitle} onChange={(e) => setCTitle(e.target.value)} placeholder="e.g. Japan Tourist Visa — March 2025" maxLength={120}
+                  className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 placeholder:text-muted-foreground" />
+              </div>
+              <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Your Nationality (passport)</label>
                 <select value={cPassport ?? ""} onChange={(e) => setCPassport(e.target.value || null)}
                   className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50">
@@ -1540,7 +1546,7 @@ function CountryTrackerSection({ code, countryName }: { code: string; countryNam
             </div>
             <div className="flex gap-2 px-5 pb-5">
               <Button variant="outline" onClick={closeCase} className="flex-1">Cancel</Button>
-              <Button onClick={submitCase} disabled={!cDate || creatingApp} className="flex-1">
+              <Button onClick={submitCase} disabled={!cDate || !cTitle.trim() || creatingApp} className="flex-1">
                 {creatingApp ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}Submit
               </Button>
             </div>

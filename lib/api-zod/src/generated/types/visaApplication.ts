@@ -11,6 +11,7 @@ import type { VisaApplicationVisaType } from './visaApplicationVisaType';
 export interface VisaApplication {
   id: number;
   userId: string;
+  title?: string | null;
   firstName?: string | null;
   lastName?: string | null;
   profileImageUrl?: string | null;
