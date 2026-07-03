@@ -1233,6 +1233,13 @@ export default function FriendsPage() {
     queryClient.invalidateQueries({ queryKey: getListFriendRequestsQueryKey() });
   }, [queryClient]);
 
+  const markRequestSent = useCallback((targetId: string) => {
+    const key = getSearchUsersQueryKey(searchParams);
+    queryClient.setQueryData(key, (old: typeof searchResults | undefined) =>
+      old?.map(u => u.id === targetId ? { ...u, friendshipStatus: "pending", iRequested: true } : u));
+    queryClient.invalidateQueries({ queryKey: getSearchUsersQueryKey(searchParams) });
+  }, [queryClient, searchParams]);
+
   const friendIds = new Set(friends.map(f => f.id));
   const myId = (authUser as { id?: string })?.id ?? "";
   const myName = [(authUser as { firstName?: string })?.firstName, (authUser as { lastName?: string })?.lastName].filter(Boolean).join(" ") || "Me";
@@ -1395,11 +1402,11 @@ export default function FriendsPage() {
                   ) : isPending && u.iRequested ? (
                     <Button variant="outline" size="sm" className="text-xs" onClick={e => e.stopPropagation()} disabled><Clock className="w-3.5 h-3.5 mr-1" />Requested</Button>
                   ) : isPending && !u.iRequested ? (
-                    <Button size="sm" className="text-xs" onClick={e => { e.stopPropagation(); sendRequest.mutate({ userId: u.id }, { onSuccess: invalidate }); }} disabled={sendRequest.isPending}>
+                    <Button size="sm" className="text-xs" onClick={e => { e.stopPropagation(); sendRequest.mutate({ userId: u.id }, { onSuccess: () => { invalidate(); markRequestSent(u.id); } }); }} disabled={sendRequest.isPending}>
                       <Check className="w-3.5 h-3.5 mr-1" />Accept
                     </Button>
                   ) : (
-                    <Button size="sm" className="text-xs" onClick={e => { e.stopPropagation(); sendRequest.mutate({ userId: u.id }, { onSuccess: invalidate }); }} disabled={sendRequest.isPending}>
+                    <Button size="sm" className="text-xs" onClick={e => { e.stopPropagation(); sendRequest.mutate({ userId: u.id }, { onSuccess: () => { invalidate(); markRequestSent(u.id); } }); }} disabled={sendRequest.isPending}>
                       <UserPlus className="w-3.5 h-3.5 mr-1" />Add Friend
                     </Button>
                   )}

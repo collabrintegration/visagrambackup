@@ -321,12 +321,16 @@ router.post("/friends/request/:userId", async (req: Request, res: Response) => {
 
   await db.insert(friendshipsTable).values({ requesterId: myId, addresseeId: userId });
 
-  await createNotification({
-    recipientId: userId,
-    actorId: myId,
-    type: "friend_request",
-    link: `/user/${myId}`,
-  });
+  try {
+    await createNotification({
+      recipientId: userId,
+      actorId: myId,
+      type: "friend_request",
+      link: `/user/${myId}`,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to create friend_request notification");
+  }
 
   res.json({ status: "pending" });
 });
