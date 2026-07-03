@@ -177,25 +177,21 @@ function ThreadPanel({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-border/60 bg-card/30">
-        <button onClick={onBack} className="md:hidden text-muted-foreground hover:text-foreground p-1">
-          <ArrowLeft className="w-5 h-5" />
+      {/* Header — profile-card style: gradient cover + overlapping avatar */}
+      <div className="relative border-b border-border/60 bg-card/30 shrink-0">
+        <div className="h-16 bg-gradient-to-br from-primary/40 via-purple-500/30 to-pink-500/40" />
+
+        <button
+          onClick={onBack}
+          className="md:hidden absolute left-3 top-3 p-1.5 rounded-full bg-black/30 text-white hover:bg-black/45 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
         </button>
-        <Link href={`/user/${otherId}`}>
-          <Avatar img={conv.otherUserProfileImageUrl} firstName={conv.otherUserFirstName} lastName={conv.otherUserLastName} size="sm" />
-        </Link>
-        <div className="flex-1 min-w-0">
-          <Link href={`/user/${otherId}`} className="hover:text-primary transition-colors">
-            <p className="text-sm font-semibold truncate">{displayName(conv.otherUserFirstName, conv.otherUserLastName)}</p>
-          </Link>
-          {isRequest && <p className="text-xs text-amber-400">Message request · <Link href={`/user/${otherId}`} className="underline underline-offset-2 hover:text-amber-300">View profile</Link></p>}
-          {iBlockedThem && <p className="text-xs text-muted-foreground flex items-center gap-1"><Lock className="w-3 h-3" /> Blocked</p>}
-        </div>
-        <div className="relative">
+
+        <div className="absolute right-3 top-3">
           <button
             onClick={() => setShowMenu((v) => !v)}
-            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+            className="p-1.5 rounded-full bg-black/30 text-white hover:bg-black/45 transition-colors"
           >
             <MoreHorizontal className="w-4 h-4" />
           </button>
@@ -226,6 +222,19 @@ function ThreadPanel({
               )}
             </div>
           )}
+        </div>
+
+        <div className="px-4 pb-3 -mt-7 flex items-end gap-3">
+          <Link href={`/user/${otherId}`} className="shrink-0 rounded-full ring-4 ring-card">
+            <Avatar img={conv.otherUserProfileImageUrl} firstName={conv.otherUserFirstName} lastName={conv.otherUserLastName} size="lg" />
+          </Link>
+          <div className="flex-1 min-w-0 pb-1">
+            <Link href={`/user/${otherId}`} className="hover:text-primary transition-colors">
+              <p className="text-base font-bold truncate leading-tight">{displayName(conv.otherUserFirstName, conv.otherUserLastName)}</p>
+            </Link>
+            {isRequest && <p className="text-xs text-amber-400 mt-0.5">Message request · <Link href={`/user/${otherId}`} className="underline underline-offset-2 hover:text-amber-300">View profile</Link></p>}
+            {iBlockedThem && <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><Lock className="w-3 h-3" /> Blocked</p>}
+          </div>
         </div>
       </div>
 
