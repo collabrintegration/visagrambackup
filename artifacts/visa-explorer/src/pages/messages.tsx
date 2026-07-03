@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, useLocation, Link } from "wouter";
+import { useParams, useLocation, useSearch, Link } from "wouter";
 import {
   useGetDmInbox,
   useGetDmRequests,
@@ -394,13 +394,15 @@ function ThreadPanel({
 export default function MessagesPage() {
   const { userId: routeUserId } = useParams<{ userId?: string }>();
   const [, navigate] = useLocation();
+  const search = useSearch();
+  const backTo = new URLSearchParams(search).get("back");
   const { user, isAuthenticated, isLoading: authLoading, login } = useAuth();
   const myId = (user as { id?: string })?.id ?? "";
   const qc = useQueryClient();
 
   const [tab, setTab] = useState<"inbox" | "requests">("inbox");
   const [selectedId, setSelectedId] = useState<string | null>(routeUserId ?? null);
-  const [search, setSearch] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [showPanel, setShowPanel] = useState<"list" | "thread">(routeUserId ? "thread" : "list");
 
   const inboxKey = getGetDmInboxQueryKey();
@@ -415,9 +417,9 @@ export default function MessagesPage() {
   });
 
   const list = (tab === "inbox" ? inbox : requests).filter((c) => {
-    if (!search) return true;
+    if (!searchTerm) return true;
     const name = displayName(c.otherUserFirstName, c.otherUserLastName).toLowerCase();
-    return name.includes(search.toLowerCase());
+    return name.includes(searchTerm.toLowerCase());
   });
 
   const selectedConv = [...inbox, ...requests].find((c) => c.otherUserId === selectedId) ?? null;
@@ -453,7 +455,7 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="flex h-[calc(100dvh-4rem)] overflow-hidden">
+    <div className="flex h-[calc(100dvh-7.5rem)] md:h-[calc(100dvh-4rem)] overflow-hidden">
       {/* ── Sidebar ── */}
       <div className={`flex flex-col w-full md:w-80 border-r border-border bg-card/20 shrink-0 ${showPanel === "thread" ? "hidden md:flex" : "flex"}`}>
         <div className="px-4 pt-5 pb-3 border-b border-border/60">
@@ -463,8 +465,8 @@ export default function MessagesPage() {
           <div className="relative mb-3">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
             <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search conversations…"
               className="w-full bg-background border border-border rounded-lg pl-8 pr-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
             />
@@ -528,7 +530,7 @@ export default function MessagesPage() {
           <ThreadPanel
             conv={selectedConv}
             myId={myId}
-            onBack={() => { setShowPanel("list"); setSelectedId(null); navigate("/messages"); }}
+            onBack={() => { setShowPanel("list"); setSelectedId(null); navigate(backTo ?? "/messages"); }}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center gap-4">

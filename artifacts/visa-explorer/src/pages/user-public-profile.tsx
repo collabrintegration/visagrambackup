@@ -159,7 +159,7 @@ export default function UserPublicProfilePage() {
         onClick={() => acceptDmRequest.mutate({ userId: p.id }, {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getGetPublicUserProfileQueryKey(p.id) });
-            navigate(`/messages/${p.id}`);
+            navigate(`/messages/${p.id}?back=${encodeURIComponent(`/user/${p.id}`)}`);
           },
         })}
         disabled={acceptDmRequest.isPending}
