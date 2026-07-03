@@ -2088,7 +2088,9 @@ export const GetPublicUserProfileResponse = zod.object({
   "visitedCount": zod.number().nullish(),
   "wantToVisitCount": zod.number().nullish(),
   "friendshipStatus": zod.string().nullish(),
-  "iRequested": zod.boolean().nullish()
+  "iRequested": zod.boolean().nullish(),
+  "dmStatus": zod.string().nullish(),
+  "dmRequestedByMe": zod.boolean().nullish()
 })
 
 

@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { db, usersTable, friendshipsTable, travelEntriesTable } from "@workspace/db";
+import { db, usersTable, friendshipsTable, travelEntriesTable, dmConversationsTable } from "@workspace/db";
 import { eq, and, or, ilike, ne, sql, count } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { createNotification } from "../lib/notifications";
@@ -156,12 +156,25 @@ router.get("/users/:userId", async (req: Request, res: Response) => {
     )
     .limit(1);
 
+  // DM conversation status between viewer and this user
+  const [u1, u2] = myId < userId ? [myId, userId] : [userId, myId];
+  const [dmConv] = await db
+    .select({
+      status: dmConversationsTable.status,
+      requestedBy: dmConversationsTable.requestedBy,
+    })
+    .from(dmConversationsTable)
+    .where(and(eq(dmConversationsTable.user1Id, u1), eq(dmConversationsTable.user2Id, u2)))
+    .limit(1);
+
   res.json({
     ...user,
     visitedCount,
     wantToVisitCount,
     friendshipStatus: friendship?.status ?? null,
     iRequested: friendship ? friendship.requesterId === myId : null,
+    dmStatus: dmConv?.status ?? null,
+    dmRequestedByMe: dmConv ? dmConv.requestedBy === myId : null,
   });
 });
 

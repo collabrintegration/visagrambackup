@@ -21,4 +21,6 @@ export interface PublicUserProfile {
   wantToVisitCount?: number | null;
   friendshipStatus?: string | null;
   iRequested?: boolean | null;
+  dmStatus?: string | null;
+  dmRequestedByMe?: boolean | null;
 }

@@ -2825,6 +2825,12 @@ components:
         iRequested:
           type: boolean
           nullable: true
+        dmStatus:
+          type: string
+          nullable: true
+        dmRequestedByMe:
+          type: boolean
+          nullable: true
 
     FriendProfile:
       type: object

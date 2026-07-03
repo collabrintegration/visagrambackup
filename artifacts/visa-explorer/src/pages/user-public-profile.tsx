@@ -7,6 +7,7 @@ import {
   useListUserGroups,
   useSendFriendRequest,
   useAcceptFriendRequest,
+  useAcceptDmRequest,
   getGetPublicUserProfileQueryKey,
   getListPhotosQueryKey,
   getListTestimonialsQueryKey,
@@ -86,6 +87,12 @@ export default function UserPublicProfilePage() {
     },
   });
 
+  const acceptDmRequest = useAcceptDmRequest({
+    mutation: {
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetPublicUserProfileQueryKey(userId ?? "") }),
+    },
+  });
+
   if (!userId) return null;
 
   if (profileLoading) {
@@ -109,7 +116,46 @@ export default function UserPublicProfilePage() {
   const fullName = [p.firstName, p.lastName].filter(Boolean).join(" ") || "Traveler";
   const isOwnProfile = myId === p.id;
   const status = p.friendshipStatus;
-  const isFriend = status === "accepted";
+  const dmStatus = p.dmStatus;
+
+  function MessageButton() {
+    if (isOwnProfile || !isAuthenticated) return null;
+    if (dmStatus === "active") return (
+      <Link href={`/messages/${p.id}`}>
+        <Button size="sm" variant="outline" className="w-full">
+          <MessageCircle className="w-3.5 h-3.5 mr-1.5" />Message
+        </Button>
+      </Link>
+    );
+    if (dmStatus === "request" && p.dmRequestedByMe) return (
+      <Badge variant="secondary" className="w-full justify-center text-muted-foreground py-1.5 text-xs">Message request sent</Badge>
+    );
+    if (dmStatus === "request" && !p.dmRequestedByMe) return (
+      <Button
+        size="sm"
+        variant="outline"
+        className="w-full"
+        onClick={() => acceptDmRequest.mutate({ userId: p.id }, {
+          onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: getGetPublicUserProfileQueryKey(p.id) });
+            navigate(`/messages/${p.id}`);
+          },
+        })}
+        disabled={acceptDmRequest.isPending}
+      >
+        {acceptDmRequest.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <MessageCircle className="w-3.5 h-3.5 mr-1.5" />}
+        Accept Message Request
+      </Button>
+    );
+    if (dmStatus === "blocked" || dmStatus === "spam") return null;
+    return (
+      <Link href={`/messages/${p.id}`}>
+        <Button size="sm" variant="outline" className="w-full">
+          <MessageCircle className="w-3.5 h-3.5 mr-1.5" />Send Message Request
+        </Button>
+      </Link>
+    );
+  }
 
   function FriendButton() {
     if (isOwnProfile) {
@@ -202,13 +248,7 @@ export default function UserPublicProfilePage() {
               {!isOwnProfile && isAuthenticated && (
                 <div className="mt-4 pt-3 border-t border-border/60 flex flex-col gap-2">
                   <FriendButton />
-                  {isFriend && (
-                    <Link href={`/messages/${p.id}`}>
-                      <Button size="sm" variant="outline" className="w-full">
-                        <MessageCircle className="w-3.5 h-3.5 mr-1.5" />Message
-                      </Button>
-                    </Link>
-                  )}
+                  <MessageButton />
                 </div>
               )}
               {isOwnProfile && (
