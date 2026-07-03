@@ -8,11 +8,15 @@ import {
   useSendFriendRequest,
   useAcceptFriendRequest,
   useAcceptDmRequest,
+  useSendDm,
   getGetPublicUserProfileQueryKey,
   getListPhotosQueryKey,
   getListTestimonialsQueryKey,
   getListUserFriendsQueryKey,
   getListUserGroupsQueryKey,
+  getGetDmInboxQueryKey,
+  getGetDmRequestsQueryKey,
+  getGetDmUnreadCountQueryKey,
 } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useQueryClient } from "@tanstack/react-query";
@@ -24,6 +28,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 function Avatar({ url, name, size = 80 }: { url?: string | null; name: string; size?: number }) {
   if (url) {
@@ -93,6 +98,22 @@ export default function UserPublicProfilePage() {
     },
   });
 
+  const { toast } = useToast();
+  const sendDm = useSendDm({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetPublicUserProfileQueryKey(userId ?? "") });
+        queryClient.invalidateQueries({ queryKey: getGetDmInboxQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetDmRequestsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetDmUnreadCountQueryKey() });
+        toast({ title: "Message request sent" });
+      },
+      onError: () => {
+        toast({ title: "Couldn't send message request", variant: "destructive" });
+      },
+    },
+  });
+
   if (!userId) return null;
 
   if (profileLoading) {
@@ -149,11 +170,16 @@ export default function UserPublicProfilePage() {
     );
     if (dmStatus === "blocked" || dmStatus === "spam") return null;
     return (
-      <Link href={`/messages/${p.id}`}>
-        <Button size="sm" variant="outline" className="w-full">
-          <MessageCircle className="w-3.5 h-3.5 mr-1.5" />Send Message Request
-        </Button>
-      </Link>
+      <Button
+        size="sm"
+        variant="outline"
+        className="w-full"
+        onClick={() => sendDm.mutate({ userId: p.id, data: { content: `Hi, I'd like to connect!` } })}
+        disabled={sendDm.isPending}
+      >
+        {sendDm.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <MessageCircle className="w-3.5 h-3.5 mr-1.5" />}
+        Send Message Request
+      </Button>
     );
   }
 
