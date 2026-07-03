@@ -868,7 +868,7 @@ function MobileMessagesDropdown({ myId }: { myId: string }) {
     return (
       <div
         className="flex items-stretch gap-2.5 p-2.5 rounded-lg hover:bg-muted/40 cursor-pointer transition-colors"
-        onClick={() => navigate(`/messages/${conv.otherUserId}`)}
+        onClick={() => navigate(showAccept ? `/user/${conv.otherUserId}` : `/messages/${conv.otherUserId}`)}
       >
         <div className={`flex items-center gap-2.5 min-w-0 ${showAccept ? "basis-[80%] sm:basis-auto sm:flex-1" : "flex-1"}`}>
           <Avatar url={conv.otherUserProfileImageUrl} name={name} />

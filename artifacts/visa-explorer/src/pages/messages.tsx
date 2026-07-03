@@ -61,37 +61,53 @@ function Avatar({ img, firstName, lastName, size = "md" }: {
 }
 
 function ConvItem({
-  conv, selected, myId, onClick,
-}: { conv: DmConversation; selected: boolean; myId: string; onClick: () => void }) {
+  conv, selected, myId, isRequestTab, onOpen, onViewProfile, onAccept, acceptPending,
+}: {
+  conv: DmConversation; selected: boolean; myId: string; isRequestTab: boolean;
+  onOpen: () => void; onViewProfile: () => void; onAccept?: () => void; acceptPending?: boolean;
+}) {
   const isRequest = conv.status === "request";
   return (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40 ${selected ? "bg-muted/60 border-r-2 border-primary" : ""}`}
+    <div
+      onClick={isRequestTab ? onViewProfile : onOpen}
+      className={`w-full flex items-stretch gap-3 px-4 py-3 text-left cursor-pointer transition-colors hover:bg-muted/40 ${selected ? "bg-muted/60 border-r-2 border-primary" : ""}`}
     >
-      <div className="relative shrink-0">
-        <Avatar img={conv.otherUserProfileImageUrl} firstName={conv.otherUserFirstName} lastName={conv.otherUserLastName} size="md" />
-        {conv.unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-primary-foreground text-[9px] font-bold rounded-full flex items-center justify-center">
-            {conv.unreadCount > 9 ? "9+" : conv.unreadCount}
-          </span>
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-1">
-          <span className={`text-sm font-medium truncate ${conv.unreadCount > 0 ? "text-foreground" : "text-foreground/80"}`}>
-            {displayName(conv.otherUserFirstName, conv.otherUserLastName)}
-          </span>
-          <span className="text-[10px] text-muted-foreground shrink-0">{timeAgo(conv.lastMessageAt?.toString())}</span>
+      <div className={`flex items-center gap-3 min-w-0 ${isRequestTab ? "basis-[70%] sm:basis-auto sm:flex-1" : "flex-1"}`}>
+        <div className="relative shrink-0">
+          <Avatar img={conv.otherUserProfileImageUrl} firstName={conv.otherUserFirstName} lastName={conv.otherUserLastName} size="md" />
+          {conv.unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-primary-foreground text-[9px] font-bold rounded-full flex items-center justify-center">
+              {conv.unreadCount > 9 ? "9+" : conv.unreadCount}
+            </span>
+          )}
         </div>
-        <div className="flex items-center gap-1">
-          <p className={`text-xs truncate flex-1 ${conv.unreadCount > 0 ? "text-foreground/70" : "text-muted-foreground"}`}>
-            {conv.lastMessage ?? (isRequest ? "Sent you a message" : "No messages yet")}
-          </p>
-          {isRequest && <Badge variant="outline" className="text-[9px] px-1 py-0 border-amber-500/40 text-amber-400 shrink-0">New</Badge>}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-1">
+            <span className={`text-sm font-medium truncate ${conv.unreadCount > 0 ? "text-foreground" : "text-foreground/80"}`}>
+              {displayName(conv.otherUserFirstName, conv.otherUserLastName)}
+            </span>
+            <span className="text-[10px] text-muted-foreground shrink-0">{timeAgo(conv.lastMessageAt?.toString())}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <p className={`text-xs truncate flex-1 ${conv.unreadCount > 0 ? "text-foreground/70" : "text-muted-foreground"}`}>
+              {conv.lastMessage ?? (isRequest ? "Sent you a message" : "No messages yet")}
+            </p>
+            {isRequest && !isRequestTab && <Badge variant="outline" className="text-[9px] px-1 py-0 border-amber-500/40 text-amber-400 shrink-0">New</Badge>}
+          </div>
         </div>
       </div>
-    </button>
+      {isRequestTab && (
+        <div
+          className="flex flex-col sm:flex-row gap-1.5 basis-[26%] sm:basis-auto shrink-0 items-center justify-center"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Button size="sm" className="text-xs w-full sm:w-auto justify-center" onClick={onAccept} disabled={acceptPending}>
+            {acceptPending ? <Loader2 className="w-3.5 h-3.5 animate-spin sm:mr-1" /> : <Check className="w-3.5 h-3.5 sm:mr-1" />}
+            <span className="hidden sm:inline">Accept</span>
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -412,6 +428,16 @@ export default function MessagesPage() {
     navigate(`/messages/${conv.otherUserId}`);
   }
 
+  const acceptRequest = useAcceptDmRequest({
+    mutation: {
+      onSuccess: () => {
+        void qc.invalidateQueries({ queryKey: inboxKey });
+        void qc.invalidateQueries({ queryKey: requestsKey });
+        void qc.invalidateQueries({ queryKey: getGetDmUnreadCountQueryKey() });
+      },
+    },
+  });
+
   if (authLoading) {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
@@ -485,7 +511,11 @@ export default function MessagesPage() {
                 conv={conv}
                 selected={selectedId === conv.otherUserId}
                 myId={myId}
-                onClick={() => selectConv(conv)}
+                isRequestTab={tab === "requests"}
+                onOpen={() => selectConv(conv)}
+                onViewProfile={() => navigate(`/user/${conv.otherUserId}`)}
+                onAccept={() => acceptRequest.mutate({ userId: conv.otherUserId })}
+                acceptPending={acceptRequest.isPending}
               />
             ))
           )}
