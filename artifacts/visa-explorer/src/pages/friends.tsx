@@ -1531,7 +1531,7 @@ export default function FriendsPage() {
           <div className="flex-1 min-w-0">
 
             {/* Tab bar */}
-            <div className="flex items-center gap-1 border-b border-border mb-5">
+            <div className="flex items-center gap-1 border-b border-border mb-5 overflow-x-auto whitespace-nowrap">
               {([
                 { key: "friends" as RightTab, label: "Friends", icon: Users, count: friends.length },
                 { key: "messages" as RightTab, label: "Messages", icon: MessageSquare, count: dmBadge > 0 ? dmBadge : null },
@@ -1542,11 +1542,11 @@ export default function FriendsPage() {
                 <button
                   key={tab.key}
                   onClick={() => setRightTab(tab.key)}
-                  className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                  className={`flex items-center gap-1.5 shrink-0 whitespace-nowrap px-3 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
                     rightTab === tab.key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <tab.icon className="w-4 h-4" />
+                  <tab.icon className="w-4 h-4 shrink-0" />
                   {tab.label}
                   {tab.count !== null && tab.count > 0 && (
                     <Badge variant={rightTab === tab.key ? "default" : "secondary"} className="text-xs px-1.5 py-0 h-5">{tab.count}</Badge>
