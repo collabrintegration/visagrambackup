@@ -17,7 +17,8 @@ import { useAuth } from "@workspace/replit-auth-web";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   MapPin, Globe, Loader2, Camera, Users, UserPlus,
-  Check, MessageCircle, ChevronLeft, Star, User,
+  Check, MessageCircle, ChevronLeft, Star,
+  CheckCircle2, Heart, User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -217,6 +218,31 @@ export default function UserPublicProfilePage() {
               )}
             </div>
           </div>
+
+          {/* Travel map (desktop only) */}
+          {((p.visitedCount ?? 0) > 0 || (p.wantToVisitCount ?? 0) > 0) && (
+            <div className="hidden md:block rounded-2xl border border-border bg-card p-4">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Travel Map</h3>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-center">
+                  <div className="flex items-center justify-center gap-1 mb-0.5">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                    <span className="text-xs text-emerald-400 font-medium">Visited</span>
+                  </div>
+                  <p className="text-2xl font-bold text-emerald-400">{p.visitedCount ?? 0}</p>
+                  <p className="text-xs text-muted-foreground">countries</p>
+                </div>
+                <div className="rounded-xl bg-primary/10 border border-primary/20 p-3 text-center">
+                  <div className="flex items-center justify-center gap-1 mb-0.5">
+                    <Heart className="w-3 h-3 text-primary" />
+                    <span className="text-xs text-primary font-medium">Wishlist</span>
+                  </div>
+                  <p className="text-2xl font-bold text-primary">{p.wantToVisitCount ?? 0}</p>
+                  <p className="text-xs text-muted-foreground">countries</p>
+                </div>
+              </div>
+            </div>
+          )}
 
         </aside>
 
