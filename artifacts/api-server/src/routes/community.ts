@@ -1,7 +1,7 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { db, reviewsTable, questionsTable, answersTable, travelEntriesTable, usersTable, countriesTable, visaReportsTable, questionFollowsTable, answerRepliesTable } from "@workspace/db";
 import { eq, and, desc, sql, count } from "drizzle-orm";
-import { createMentionNotifications } from "../lib/notifications";
+import { createMentionNotifications, createNotification } from "../lib/notifications";
 
 const router: IRouter = Router();
 
@@ -400,6 +400,14 @@ router.post("/questions/:id/answers", async (req: Request, res: Response) => {
     .values({ userId: req.user.id, questionId, body, gifUrl: gifUrl || null })
     .returning();
 
+  await createNotification({
+    recipientId: q.userId,
+    actorId: req.user.id,
+    type: "answer",
+    link: `/questions/${questionId}`,
+    preview: body,
+  });
+
   await createMentionNotifications({
     text: body,
     actorId: req.user.id,
@@ -682,6 +690,14 @@ router.post("/answers/:id/replies", async (req: Request, res: Response) => {
     .insert(answerRepliesTable)
     .values({ userId: req.user.id, answerId, body, gifUrl: gifUrl || null })
     .returning();
+
+  await createNotification({
+    recipientId: answer.userId,
+    actorId: req.user.id,
+    type: "reply",
+    link: `/questions/${answer.questionId}`,
+    preview: body,
+  });
 
   await createMentionNotifications({
     text: body,

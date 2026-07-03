@@ -2599,7 +2599,7 @@ components:
 
     NotificationType:
       type: string
-      enum: [friend_request, message_request, mention_qa, mention_chat]
+      enum: [friend_request, message_request, mention_qa, mention_chat, answer, reply]
 
     Notification:
       type: object

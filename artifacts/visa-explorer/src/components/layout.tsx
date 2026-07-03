@@ -94,6 +94,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       message_request: "sent you a message",
       mention_qa: "mentioned you in a question",
       mention_chat: "mentioned you in a chat",
+      answer: "answered your question",
+      reply: "replied to your answer",
     };
     unseen.slice(0, 3).forEach((n: Notification) => {
       const name = [n.actor.firstName, n.actor.lastName].filter(Boolean).join(" ") || "Someone";

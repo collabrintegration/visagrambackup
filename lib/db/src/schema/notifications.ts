@@ -6,6 +6,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "message_request",
   "mention_qa",
   "mention_chat",
+  "answer",
+  "reply",
 ]);
 
 export const notificationsTable = pgTable(

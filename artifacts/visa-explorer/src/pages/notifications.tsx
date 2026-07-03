@@ -11,7 +11,7 @@ import {
 import type { Notification } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell, UserPlus, Mail, AtSign, MessageCircle, CheckCheck, Loader2, LogIn } from "lucide-react";
+import { Bell, UserPlus, Mail, AtSign, MessageCircle, MessageSquare, Reply, CheckCheck, Loader2, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 function timeAgo(dt: string | null | undefined): string {
@@ -43,6 +43,8 @@ const TYPE_META: Record<Notification["type"], { icon: typeof Bell; label: string
   message_request: { icon: Mail, label: "Message request", color: "text-blue-500" },
   mention_qa: { icon: AtSign, label: "Mentioned you in Q&A", color: "text-amber-500" },
   mention_chat: { icon: MessageCircle, label: "Mentioned you in chat", color: "text-emerald-500" },
+  answer: { icon: MessageSquare, label: "Answered your question", color: "text-sky-500" },
+  reply: { icon: Reply, label: "Replied to your answer", color: "text-violet-500" },
 };
 
 function NotificationRow({ n, onRead }: { n: Notification; onRead: (id: number) => void }) {

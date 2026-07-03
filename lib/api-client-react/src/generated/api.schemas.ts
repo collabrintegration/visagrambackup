@@ -21,6 +21,8 @@ export const NotificationType = {
   message_request: 'message_request',
   mention_qa: 'mention_qa',
   mention_chat: 'mention_chat',
+  answer: 'answer',
+  reply: 'reply',
 } as const;
 
 export interface UserSnippet {

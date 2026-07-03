@@ -2366,7 +2366,7 @@ export const ListNotificationsQueryParams = zod.object({
 export const ListNotificationsResponse = zod.object({
   "notifications": zod.array(zod.object({
   "id": zod.number(),
-  "type": zod.enum(['friend_request', 'message_request', 'mention_qa', 'mention_chat']),
+  "type": zod.enum(['friend_request', 'message_request', 'mention_qa', 'mention_chat', 'answer', 'reply']),
   "link": zod.string(),
   "preview": zod.string().nullish(),
   "isRead": zod.boolean(),
