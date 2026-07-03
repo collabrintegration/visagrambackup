@@ -153,10 +153,10 @@ export default function UserPublicProfilePage() {
         <ChevronLeft className="w-4 h-4" /> Back
       </button>
 
-      <div className="flex gap-6 items-start">
+      <div className="flex flex-col md:flex-row gap-6 items-start">
 
         {/* ── LEFT PANEL ── */}
-        <aside className="w-72 shrink-0 space-y-4">
+        <aside className="w-full md:w-72 shrink-0 space-y-4">
 
           {/* Profile card */}
           <div className="rounded-2xl border border-border bg-card overflow-hidden">

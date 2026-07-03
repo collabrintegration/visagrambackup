@@ -125,7 +125,7 @@ export default function NotificationsPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => markAllRead.mutate({})}
+            onClick={() => markAllRead.mutate()}
             disabled={markAllRead.isPending}
           >
             {markAllRead.isPending ? (
