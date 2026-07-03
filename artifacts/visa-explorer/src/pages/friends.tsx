@@ -785,19 +785,24 @@ function FriendRequestsList({ requests, loading, onAccept, onDecline, onSelect, 
       {requests.map(r => {
         const name = [r.firstName, r.lastName].filter(Boolean).join(" ") || "Traveler";
         return (
-          <div key={r.id} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition-colors" onClick={() => onSelect(r.id)}>
-            <Avatar url={r.profileImageUrl} name={name} />
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm">{name}</p>
-              {r.homeCountry && <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><MapPin className="w-2.5 h-2.5" />{r.homeCountry}</p>}
-              <p className="text-xs text-muted-foreground mt-0.5">{r.createdAt ? timeAgo(r.createdAt) : ""}</p>
+          <div key={r.id} className="flex items-stretch gap-3 p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition-colors" onClick={() => onSelect(r.id)}>
+            <div className="flex items-center gap-3 basis-[78%] sm:basis-auto sm:flex-1 min-w-0">
+              <Avatar url={r.profileImageUrl} name={name} />
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm truncate">{name}</p>
+                {r.homeCountry && <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5 truncate"><MapPin className="w-2.5 h-2.5 shrink-0" />{r.homeCountry}</p>}
+                <p className="text-xs text-muted-foreground mt-0.5">{r.createdAt ? timeAgo(r.createdAt) : ""}</p>
+              </div>
             </div>
-            <div className="flex gap-2 shrink-0" onClick={e => e.stopPropagation()}>
-              <Button size="sm" className="text-xs" onClick={() => onAccept(r.id)} disabled={acceptPending}>
-                <Check className="w-3.5 h-3.5 mr-1" />Accept
+            <div
+              className="flex flex-col sm:flex-row gap-1.5 basis-[20%] sm:basis-auto shrink-0 justify-center"
+              onClick={e => e.stopPropagation()}
+            >
+              <Button size="sm" className="text-xs w-full sm:w-auto justify-center" onClick={() => onAccept(r.id)} disabled={acceptPending}>
+                <Check className="w-3.5 h-3.5 sm:mr-1" /><span className="hidden sm:inline">Accept</span>
               </Button>
-              <Button variant="outline" size="sm" className="text-xs" onClick={() => onDecline(r.id)} disabled={declinePending}>
-                <X className="w-3.5 h-3.5 mr-1" />Decline
+              <Button variant="outline" size="sm" className="text-xs w-full sm:w-auto justify-center" onClick={() => onDecline(r.id)} disabled={declinePending}>
+                <X className="w-3.5 h-3.5 sm:mr-1" /><span className="hidden sm:inline">Decline</span>
               </Button>
             </div>
           </div>
@@ -862,28 +867,32 @@ function MobileMessagesDropdown({ myId }: { myId: string }) {
     const name = [conv.otherUserFirstName, conv.otherUserLastName].filter(Boolean).join(" ") || "Traveler";
     return (
       <div
-        className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-muted/40 cursor-pointer transition-colors"
+        className="flex items-stretch gap-2.5 p-2.5 rounded-lg hover:bg-muted/40 cursor-pointer transition-colors"
         onClick={() => navigate(`/messages/${conv.otherUserId}`)}
       >
-        <Avatar url={conv.otherUserProfileImageUrl} name={name} />
-        <div className="flex-1 min-w-0">
-          <p className={`text-sm truncate ${conv.unreadCount > 0 ? "font-semibold" : "font-medium"}`}>{name}</p>
-          <p className="text-xs text-muted-foreground truncate">{conv.lastMessage ?? "Sent you a message"}</p>
+        <div className={`flex items-center gap-2.5 min-w-0 ${showAccept ? "basis-[80%] sm:basis-auto sm:flex-1" : "flex-1"}`}>
+          <Avatar url={conv.otherUserProfileImageUrl} name={name} />
+          <div className="flex-1 min-w-0">
+            <p className={`text-sm truncate ${conv.unreadCount > 0 ? "font-semibold" : "font-medium"}`}>{name}</p>
+            <p className="text-xs text-muted-foreground truncate">{conv.lastMessage ?? "Sent you a message"}</p>
+          </div>
+          {conv.unreadCount > 0 && (
+            <span className="w-4 h-4 bg-primary text-primary-foreground text-[9px] font-bold rounded-full flex items-center justify-center shrink-0">
+              {conv.unreadCount > 9 ? "9+" : conv.unreadCount}
+            </span>
+          )}
         </div>
-        {conv.unreadCount > 0 && (
-          <span className="w-4 h-4 bg-primary text-primary-foreground text-[9px] font-bold rounded-full flex items-center justify-center shrink-0">
-            {conv.unreadCount > 9 ? "9+" : conv.unreadCount}
-          </span>
-        )}
         {showAccept && (
-          <Button
-            size="sm"
-            className="text-xs shrink-0"
-            onClick={(e) => { e.stopPropagation(); acceptRequest.mutate({ userId: conv.otherUserId }); }}
-            disabled={acceptRequest.isPending}
-          >
-            Accept
-          </Button>
+          <div className="flex items-center basis-[20%] sm:basis-auto shrink-0 justify-center" onClick={e => e.stopPropagation()}>
+            <Button
+              size="sm"
+              className="text-xs w-full sm:w-auto justify-center"
+              onClick={() => acceptRequest.mutate({ userId: conv.otherUserId })}
+              disabled={acceptRequest.isPending}
+            >
+              Accept
+            </Button>
+          </div>
         )}
       </div>
     );
