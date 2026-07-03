@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { db, dmConversationsTable, dmMessagesTable, usersTable } from "@workspace/db";
 import { and, desc, eq, or, ne, count, sql } from "drizzle-orm";
+import { createMentionNotifications, createNotification } from "../lib/notifications";
 
 const router = Router();
 
@@ -159,12 +160,14 @@ router.post("/dm/:userId", async (req: Request, res: Response) => {
   if (!content?.trim() && !gifUrl) { res.status(400).json({ error: "content or gifUrl required" }); return; }
 
   let conv = await getConv(myId, otherId);
+  let isNewConversation = false;
   if (!conv) {
     const [u1, u2] = convUserIds(myId, otherId);
     const [created] = await db.insert(dmConversationsTable)
       .values({ user1Id: u1, user2Id: u2, requestedBy: myId, status: "request", lastMessageAt: new Date() })
       .returning();
     conv = created;
+    isNewConversation = true;
   } else {
     if (conv.status === "blocked") { res.status(403).json({ error: "Blocked" }); return; }
     if (conv.status === "spam") { res.status(403).json({ error: "Blocked" }); return; }
@@ -177,6 +180,26 @@ router.post("/dm/:userId", async (req: Request, res: Response) => {
   await db.update(dmConversationsTable)
     .set({ lastMessageAt: new Date() })
     .where(eq(dmConversationsTable.id, conv.id));
+
+  if (isNewConversation) {
+    await createNotification({
+      recipientId: otherId,
+      actorId: myId,
+      type: "message_request",
+      link: `/messages/${myId}`,
+      preview: content?.trim() ? content.trim() : null,
+    });
+  }
+
+  if (content?.trim()) {
+    await createMentionNotifications({
+      text: content,
+      actorId: myId,
+      link: `/messages/${myId}`,
+      type: "mention_chat",
+      allowedRecipientIds: [otherId],
+    });
+  }
 
   res.status(201).json(msg);
 });

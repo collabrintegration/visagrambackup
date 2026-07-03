@@ -13,3 +13,4 @@ export * from "./visa-guide";
 export * from "./analytics";
 export * from "./travel-photos";
 export * from "./newsletter";
+export * from "./notifications";

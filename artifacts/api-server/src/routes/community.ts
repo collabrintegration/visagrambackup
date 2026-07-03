@@ -1,6 +1,7 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { db, reviewsTable, questionsTable, answersTable, travelEntriesTable, usersTable, countriesTable, visaReportsTable, questionFollowsTable, answerRepliesTable } from "@workspace/db";
 import { eq, and, desc, sql, count } from "drizzle-orm";
+import { createMentionNotifications } from "../lib/notifications";
 
 const router: IRouter = Router();
 
@@ -292,6 +293,13 @@ router.post("/countries/:code/questions", async (req: Request, res: Response) =>
     })
     .returning();
 
+  await createMentionNotifications({
+    text: `${title}\n${body}`,
+    actorId: req.user.id,
+    link: `/questions/${question.id}`,
+    type: "mention_qa",
+  });
+
   res.status(201).json(question);
 });
 
@@ -391,6 +399,13 @@ router.post("/questions/:id/answers", async (req: Request, res: Response) => {
     .insert(answersTable)
     .values({ userId: req.user.id, questionId, body, gifUrl: gifUrl || null })
     .returning();
+
+  await createMentionNotifications({
+    text: body,
+    actorId: req.user.id,
+    link: `/questions/${questionId}`,
+    type: "mention_qa",
+  });
 
   res.status(201).json(answer);
 });
@@ -499,6 +514,13 @@ router.post("/questions", async (req: Request, res: Response) => {
       passportCode: passportCode?.toUpperCase() || null,
     })
     .returning();
+
+  await createMentionNotifications({
+    text: `${title}\n${body}`,
+    actorId: req.user.id,
+    link: `/questions/${question.id}`,
+    type: "mention_qa",
+  });
 
   const country = await db.select({ name: countriesTable.name, flagEmoji: countriesTable.flagEmoji })
     .from(countriesTable)
@@ -660,6 +682,13 @@ router.post("/answers/:id/replies", async (req: Request, res: Response) => {
     .insert(answerRepliesTable)
     .values({ userId: req.user.id, answerId, body, gifUrl: gifUrl || null })
     .returning();
+
+  await createMentionNotifications({
+    text: body,
+    actorId: req.user.id,
+    link: `/questions/${answer.questionId}`,
+    type: "mention_qa",
+  });
 
   res.status(201).json({
     id: reply.id,

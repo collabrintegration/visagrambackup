@@ -2,6 +2,7 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import { db, groupsTable, groupMembersTable, groupMessagesTable, groupJoinRequestsTable, usersTable, blockedUsersTable, groupReportsTable } from "@workspace/db";
 import { eq, and, desc, lt, count, sql, inArray } from "drizzle-orm";
 import { moderateMessage } from "../lib/moderation";
+import { createMentionNotifications } from "../lib/notifications";
 
 async function isSuperAdmin(userId: string): Promise<boolean> {
   const [user] = await db
@@ -567,6 +568,21 @@ router.post("/groups/:id/messages", async (req: Request, res: Response) => {
     .insert(groupMessagesTable)
     .values({ groupId, userId, content: content?.trim() ?? "", gifUrl: gifUrl ?? null })
     .returning();
+
+  if (content?.trim()) {
+    const members = await db
+      .select({ userId: groupMembersTable.userId })
+      .from(groupMembersTable)
+      .where(eq(groupMembersTable.groupId, groupId));
+
+    await createMentionNotifications({
+      text: content,
+      actorId: userId,
+      link: `/groups/${groupId}`,
+      type: "mention_chat",
+      allowedRecipientIds: members.map((m) => m.userId),
+    });
+  }
 
   const user = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
 

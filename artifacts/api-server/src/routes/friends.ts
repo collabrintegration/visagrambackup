@@ -2,6 +2,7 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import { db, usersTable, friendshipsTable, travelEntriesTable } from "@workspace/db";
 import { eq, and, or, ilike, ne, sql, count } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
+import { createNotification } from "../lib/notifications";
 
 const router: IRouter = Router();
 
@@ -319,6 +320,14 @@ router.post("/friends/request/:userId", async (req: Request, res: Response) => {
   }
 
   await db.insert(friendshipsTable).values({ requesterId: myId, addresseeId: userId });
+
+  await createNotification({
+    recipientId: userId,
+    actorId: myId,
+    type: "friend_request",
+    link: `/user/${myId}`,
+  });
+
   res.json({ status: "pending" });
 });
 

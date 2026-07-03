@@ -30,6 +30,8 @@ tags:
     description: Community visa application tracker
   - name: dm
     description: Private direct messages between users
+  - name: notifications
+    description: In-app notifications center
 paths:
   /api/admin/users/search:
     get:
@@ -2491,6 +2493,93 @@ paths:
         "404":
           description: Not found
 
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: Get my notifications, newest first
+      security:
+        - session: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Notifications page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationsPage"
+        "401":
+          description: Unauthorized
+
+  /notifications/unread-count:
+    get:
+      operationId: getNotificationsUnreadCount
+      tags: [notifications]
+      summary: Get unread notification count
+      security:
+        - session: []
+      responses:
+        "200":
+          description: Unread count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationsUnreadCount"
+        "401":
+          description: Unauthorized
+
+  /notifications/{id}/read:
+    patch:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark a single notification as read
+      security:
+        - session: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Marked as read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not found
+
+  /notifications/read-all:
+    post:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all my notifications as read
+      security:
+        - session: []
+      responses:
+        "200":
+          description: Marked all as read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "401":
+          description: Unauthorized
+
 components:
   schemas:
     HealthStatus:
@@ -2507,6 +2596,47 @@ components:
         ok:
           type: boolean
       required: [ok]
+
+    NotificationType:
+      type: string
+      enum: [friend_request, message_request, mention_qa, mention_chat]
+
+    Notification:
+      type: object
+      required: [id, type, link, isRead, createdAt, actor]
+      properties:
+        id:
+          type: integer
+        type:
+          $ref: "#/components/schemas/NotificationType"
+        link:
+          type: string
+        preview:
+          type: ["string", "null"]
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+        actor:
+          $ref: "#/components/schemas/UserSnippet"
+
+    NotificationsPage:
+      type: object
+      required: [notifications, hasMore]
+      properties:
+        notifications:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
+        hasMore:
+          type: boolean
+
+    NotificationsUnreadCount:
+      type: object
+      required: [count]
+      properties:
+        count:
+          type: integer
 
     AdminUserResult:
       type: object

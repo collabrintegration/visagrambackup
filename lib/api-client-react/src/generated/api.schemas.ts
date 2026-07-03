@@ -13,6 +13,48 @@ export interface OkResponse {
   ok: boolean;
 }
 
+export type NotificationType = typeof NotificationType[keyof typeof NotificationType];
+
+
+export const NotificationType = {
+  friend_request: 'friend_request',
+  message_request: 'message_request',
+  mention_qa: 'mention_qa',
+  mention_chat: 'mention_chat',
+} as const;
+
+export interface UserSnippet {
+  userId?: string | null;
+  /** @nullable */
+  firstName?: string | null;
+  /** @nullable */
+  lastName?: string | null;
+  /** @nullable */
+  profileImageUrl?: string | null;
+  /** @nullable */
+  homeCountry?: string | null;
+}
+
+export interface Notification {
+  id: number;
+  type: NotificationType;
+  link: string;
+  /** @nullable */
+  preview?: string | null;
+  isRead: boolean;
+  createdAt: string;
+  actor: UserSnippet;
+}
+
+export interface NotificationsPage {
+  notifications: Notification[];
+  hasMore: boolean;
+}
+
+export interface NotificationsUnreadCount {
+  count: number;
+}
+
 export interface AdminUserResult {
   id: string;
   email?: string | null;
@@ -169,18 +211,6 @@ export interface AuthUser {
 
 export interface AuthUserEnvelope {
   user: AuthUser | null;
-}
-
-export interface UserSnippet {
-  userId?: string | null;
-  /** @nullable */
-  firstName?: string | null;
-  /** @nullable */
-  lastName?: string | null;
-  /** @nullable */
-  profileImageUrl?: string | null;
-  /** @nullable */
-  homeCountry?: string | null;
 }
 
 export interface Review {
@@ -1278,6 +1308,11 @@ export type CreateTestimonialBody = {
 export type ListPhotosParams = {
 countryCode?: string;
 userId?: string;
+limit?: number;
+offset?: number;
+};
+
+export type ListNotificationsParams = {
 limit?: number;
 offset?: number;
 };

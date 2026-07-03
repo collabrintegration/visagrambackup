@@ -1,11 +1,19 @@
 import { Link, useLocation } from "wouter";
-import { Compass, Map as MapIcon, Users, User, LogIn, LogOut, Loader2, ClipboardList, UserPlus, ChevronDown, Settings, MapPin, BarChart2 } from "lucide-react";
+import { Compass, Map as MapIcon, Users, User, LogIn, LogOut, Loader2, ClipboardList, UserPlus, ChevronDown, Settings, MapPin, BarChart2, Bell } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
-import { useHealthCheck, getHealthCheckQueryKey, useGetDmUnreadCount, getGetDmUnreadCountQueryKey, useListFriendRequests, getListFriendRequestsQueryKey } from "@workspace/api-client-react";
+import {
+  useHealthCheck, getHealthCheckQueryKey,
+  useGetDmUnreadCount, getGetDmUnreadCountQueryKey,
+  useListFriendRequests, getListFriendRequestsQueryKey,
+  useGetNotificationsUnreadCount, getGetNotificationsUnreadCountQueryKey,
+  useListNotifications, getListNotificationsQueryKey,
+} from "@workspace/api-client-react";
+import type { Notification } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { Button } from "@/components/ui/button";
 import GlobalSearch from "@/components/global-search";
 import ProfileCompletionGate from "@/components/profile-completion-gate";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location, navigate] = useLocation();
@@ -47,6 +55,54 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       refetchInterval: 30000,
     },
   });
+
+  const { data: notifUnread } = useGetNotificationsUnreadCount({
+    query: {
+      queryKey: getGetNotificationsUnreadCountQueryKey(),
+      enabled: isAuthenticated,
+      refetchInterval: 15000,
+    },
+  });
+  const notifBadge = notifUnread?.count ?? 0;
+
+  const { toast } = useToast();
+  const seenNotifIdRef = useRef<number | null>(null);
+  const { data: latestNotifData } = useListNotifications(
+    { limit: 5 },
+    {
+      query: {
+        queryKey: getListNotificationsQueryKey({ limit: 5 }),
+        enabled: isAuthenticated,
+        refetchInterval: 15000,
+      },
+    }
+  );
+
+  useEffect(() => {
+    const list = latestNotifData?.notifications ?? [];
+    if (list.length === 0) return;
+    const newest = list[0];
+    if (seenNotifIdRef.current === null) {
+      seenNotifIdRef.current = newest.id;
+      return;
+    }
+    if (newest.id === seenNotifIdRef.current) return;
+    const unseen = list.filter((n: Notification) => n.id > (seenNotifIdRef.current ?? 0));
+    seenNotifIdRef.current = newest.id;
+    const labels: Record<Notification["type"], string> = {
+      friend_request: "sent you a friend request",
+      message_request: "sent you a message",
+      mention_qa: "mentioned you in a question",
+      mention_chat: "mentioned you in a chat",
+    };
+    unseen.slice(0, 3).forEach((n: Notification) => {
+      const name = [n.actor.firstName, n.actor.lastName].filter(Boolean).join(" ") || "Someone";
+      toast({
+        title: name,
+        description: labels[n.type],
+      });
+    });
+  }, [latestNotifData, toast]);
 
   const totalBadge = (unreadData?.unreadMessages ?? 0) + (unreadData?.pendingRequests ?? 0) + friendRequests.length;
 
@@ -113,6 +169,24 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
             ) : isAuthenticated ? (
               <>
+                {/* Notifications bell */}
+                <Link
+                  href="/notifications"
+                  className={`relative flex items-center justify-center w-9 h-9 rounded-lg transition-all ${
+                    location.startsWith("/notifications")
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                  title="Notifications"
+                >
+                  <Bell className="w-4 h-4" />
+                  {notifBadge > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                      {notifBadge > 99 ? "99+" : notifBadge}
+                    </span>
+                  )}
+                </Link>
+
                 {/* Profile dropdown */}
                 <div className="relative hidden md:block" ref={profileRef}>
                   <button
@@ -181,6 +255,24 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     </div>
                   )}
                 </div>
+
+                {/* Notifications bell (mobile) */}
+                <Link
+                  href="/notifications"
+                  className={`relative md:hidden flex items-center justify-center w-9 h-9 rounded-lg transition-all ${
+                    location.startsWith("/notifications")
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                  title="Notifications"
+                >
+                  <Bell className="w-4 h-4" />
+                  {notifBadge > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] bg-destructive text-destructive-foreground text-[8px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                      {notifBadge > 99 ? "99+" : notifBadge}
+                    </span>
+                  )}
+                </Link>
 
                 {/* Mobile profile dropdown */}
                 <div className="relative md:hidden" ref={mobileMenuRef}>

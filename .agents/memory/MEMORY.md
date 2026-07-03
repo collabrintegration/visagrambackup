@@ -6,3 +6,4 @@
 - [API double-prefix routing](api-routing.md) — OpenAPI spec has /api in both server URL and path entries; codegen generates /api/api/... calls; Express router-level routes must include /api/ prefix to match.
 - [Object Storage setup](object-storage-setup.md) — GCS bucket provisioned; presigned-URL flow works; pnpm override for Uppy must use literal version "19.1.0" not "$react".
 - [Orval mutation calling convention](orval-mutations.md) — generated mutations wrap body in `{ data: ... }`, e.g. `useCreatePhoto.mutate({ data: { ... } })` not a plain object.
+- [Drizzle array membership queries](drizzle-array-membership.md) — use `inArray()` not raw `sql\`col = ANY(${array})\`` for WHERE-clause array membership; the raw form caused intermittent 500s.

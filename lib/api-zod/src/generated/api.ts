@@ -2355,3 +2355,59 @@ export const DeletePhotoResponse = zod.object({
 })
 
 
+/**
+ * @summary Get my notifications, newest first
+ */
+export const ListNotificationsQueryParams = zod.object({
+  "limit": zod.coerce.number().optional(),
+  "offset": zod.coerce.number().optional()
+})
+
+export const ListNotificationsResponse = zod.object({
+  "notifications": zod.array(zod.object({
+  "id": zod.number(),
+  "type": zod.enum(['friend_request', 'message_request', 'mention_qa', 'mention_chat']),
+  "link": zod.string(),
+  "preview": zod.string().nullish(),
+  "isRead": zod.boolean(),
+  "createdAt": zod.string(),
+  "actor": zod.object({
+  "userId": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "profileImageUrl": zod.string().nullish(),
+  "homeCountry": zod.string().nullish()
+})
+})),
+  "hasMore": zod.boolean()
+})
+
+
+/**
+ * @summary Get unread notification count
+ */
+export const GetNotificationsUnreadCountResponse = zod.object({
+  "count": zod.number()
+})
+
+
+/**
+ * @summary Mark a single notification as read
+ */
+export const MarkNotificationReadParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const MarkNotificationReadResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
+ * @summary Mark all my notifications as read
+ */
+export const MarkAllNotificationsReadResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+

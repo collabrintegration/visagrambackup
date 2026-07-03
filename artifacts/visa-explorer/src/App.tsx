@@ -25,6 +25,7 @@ import TrackerPage from "@/pages/tracker";
 import MessagesPage from "@/pages/messages";
 import FriendsPage from "@/pages/friends";
 import UserPublicProfilePage from "@/pages/user-public-profile";
+import NotificationsPage from "@/pages/notifications";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -74,6 +75,7 @@ function Router() {
         <Route path="/user/:id" component={UserPublicProfilePage} />
         <Route path="/messages" component={MessagesPage} />
         <Route path="/messages/:userId" component={MessagesPage} />
+        <Route path="/notifications" component={NotificationsPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

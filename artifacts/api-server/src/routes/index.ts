@@ -16,6 +16,7 @@ import adminRouter from "./admin";
 import friendsRouter from "./friends";
 import testimonialsRouter from "./testimonials";
 import newsletterRouter from "./newsletter";
+import notificationsRouter from "./notifications";
 
 const router: IRouter = Router();
 
@@ -36,5 +37,6 @@ router.use(adminRouter);
 router.use(friendsRouter);
 router.use(testimonialsRouter);
 router.use(newsletterRouter);
+router.use(notificationsRouter);
 
 export default router;
