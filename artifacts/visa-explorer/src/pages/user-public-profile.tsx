@@ -142,7 +142,7 @@ export default function UserPublicProfilePage() {
   function MessageButton() {
     if (isOwnProfile || !isAuthenticated) return null;
     if (dmStatus === "active") return (
-      <Link href={`/messages/${p.id}`}>
+      <Link href={`/messages/${p.id}?back=${encodeURIComponent(`/user/${p.id}`)}`}>
         <Button size="sm" variant="outline" className="w-full">
           <MessageCircle className="w-3.5 h-3.5 mr-1.5" />Message
         </Button>
