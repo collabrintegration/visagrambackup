@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, type ReactNode } from "react";
 import {
   useListFriends,
   useListFriendRequests,
@@ -24,6 +24,9 @@ import {
   useListPhotos,
   useCreatePhoto,
   useDeletePhoto,
+  useGetDmInbox,
+  useGetDmRequests,
+  useAcceptDmRequest,
   getListFriendsQueryKey,
   getListFriendRequestsQueryKey,
   getListTestimonialsQueryKey,
@@ -32,8 +35,10 @@ import {
   getListGroupJoinRequestsQueryKey,
   getGetDmUnreadCountQueryKey,
   getListPhotosQueryKey,
+  getGetDmInboxQueryKey,
+  getGetDmRequestsQueryKey,
 } from "@workspace/api-client-react";
-import type { TravelPhoto } from "@workspace/api-client-react";
+import type { TravelPhoto, DmConversation } from "@workspace/api-client-react";
 import { ObjectUploader } from "@workspace/object-storage-web";
 import UserProfileModal from "@/components/user-profile-modal";
 import type { Group, GroupJoinRequest } from "@workspace/api-client-react";
@@ -43,8 +48,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   UserPlus, UserCheck, UserMinus, Search, Users, Inbox,
   Clock, MapPin, LogIn, X, Check, Loader2, Star, Trash2,
-  Globe, ChevronLeft, ChevronRight, MessageSquare, Crown, Lock, ArrowLeft, Camera, Mail, Eye, EyeOff,
-  CheckCircle2, Heart, CalendarDays, Venus, Pencil,
+  Globe, ChevronLeft, ChevronRight, ChevronDown, MessageSquare, Crown, Lock, ArrowLeft, Camera, Mail, Eye, EyeOff,
+  CheckCircle2, Heart, CalendarDays, Venus, Pencil, MailQuestion,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -752,6 +757,171 @@ function AdminGroupPanel({ group }: { group: Group }) {
   );
 }
 
+interface FriendRequestsListProps {
+  requests: { id: string; firstName?: string | null; lastName?: string | null; profileImageUrl?: string | null; homeCountry?: string | null; createdAt?: string | null }[];
+  loading: boolean;
+  onAccept: (id: string) => void;
+  onDecline: (id: string) => void;
+  onSelect: (id: string) => void;
+  acceptPending: boolean;
+  declinePending: boolean;
+}
+
+function FriendRequestsList({ requests, loading, onAccept, onDecline, onSelect, acceptPending, declinePending }: FriendRequestsListProps) {
+  if (loading) {
+    return <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
+  }
+  if (requests.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-10 text-center">
+        <Inbox className="w-10 h-10 text-muted-foreground opacity-40" />
+        <p className="font-semibold">No pending requests</p>
+        <p className="text-sm text-muted-foreground">Friend requests will appear here.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      {requests.map(r => {
+        const name = [r.firstName, r.lastName].filter(Boolean).join(" ") || "Traveler";
+        return (
+          <div key={r.id} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition-colors" onClick={() => onSelect(r.id)}>
+            <Avatar url={r.profileImageUrl} name={name} />
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm">{name}</p>
+              {r.homeCountry && <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><MapPin className="w-2.5 h-2.5" />{r.homeCountry}</p>}
+              <p className="text-xs text-muted-foreground mt-0.5">{r.createdAt ? timeAgo(r.createdAt) : ""}</p>
+            </div>
+            <div className="flex gap-2 shrink-0" onClick={e => e.stopPropagation()}>
+              <Button size="sm" className="text-xs" onClick={() => onAccept(r.id)} disabled={acceptPending}>
+                <Check className="w-3.5 h-3.5 mr-1" />Accept
+              </Button>
+              <Button variant="outline" size="sm" className="text-xs" onClick={() => onDecline(r.id)} disabled={declinePending}>
+                <X className="w-3.5 h-3.5 mr-1" />Decline
+              </Button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Mobile: collapsible section wrapper for Requests / Messages dropdowns ──────
+
+function MobileDropdownSection({
+  label, icon: Icon, count, open, onToggle, children,
+}: {
+  label: string; icon: typeof Inbox; count: number; open: boolean; onToggle: () => void; children: ReactNode;
+}) {
+  return (
+    <div className="border border-border rounded-xl overflow-hidden bg-card/40">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold"
+      >
+        <span className="flex items-center gap-2">
+          <Icon className="w-4 h-4 text-primary" />
+          {label}
+          {count > 0 && <Badge variant="default" className="text-xs px-1.5 py-0 h-5">{count}</Badge>}
+        </span>
+        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && <div className="px-3 pb-3 border-t border-border/60 pt-3">{children}</div>}
+    </div>
+  );
+}
+
+// ── Mobile: Messages dropdown (requests + recent inbox previews) ───────────────
+
+function MobileMessagesDropdown({ myId }: { myId: string }) {
+  const qc = useQueryClient();
+  const [, navigate] = useLocation();
+
+  const { data: inbox = [], isLoading: inboxLoading } = useGetDmInbox({
+    query: { queryKey: getGetDmInboxQueryKey(), enabled: !!myId, refetchInterval: 15000 },
+  });
+  const { data: requests = [], isLoading: requestsLoading } = useGetDmRequests({
+    query: { queryKey: getGetDmRequestsQueryKey(), enabled: !!myId, refetchInterval: 15000 },
+  });
+
+  const acceptRequest = useAcceptDmRequest({
+    mutation: {
+      onSuccess: () => {
+        void qc.invalidateQueries({ queryKey: getGetDmInboxQueryKey() });
+        void qc.invalidateQueries({ queryKey: getGetDmRequestsQueryKey() });
+        void qc.invalidateQueries({ queryKey: getGetDmUnreadCountQueryKey() });
+      },
+    },
+  });
+
+  const loading = inboxLoading || requestsLoading;
+  const recentInbox = inbox.slice(0, 5);
+
+  function ConvPreviewRow({ conv, showAccept }: { conv: DmConversation; showAccept?: boolean }) {
+    const name = [conv.otherUserFirstName, conv.otherUserLastName].filter(Boolean).join(" ") || "Traveler";
+    return (
+      <div
+        className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-muted/40 cursor-pointer transition-colors"
+        onClick={() => navigate(`/messages/${conv.otherUserId}`)}
+      >
+        <Avatar url={conv.otherUserProfileImageUrl} name={name} />
+        <div className="flex-1 min-w-0">
+          <p className={`text-sm truncate ${conv.unreadCount > 0 ? "font-semibold" : "font-medium"}`}>{name}</p>
+          <p className="text-xs text-muted-foreground truncate">{conv.lastMessage ?? "Sent you a message"}</p>
+        </div>
+        {conv.unreadCount > 0 && (
+          <span className="w-4 h-4 bg-primary text-primary-foreground text-[9px] font-bold rounded-full flex items-center justify-center shrink-0">
+            {conv.unreadCount > 9 ? "9+" : conv.unreadCount}
+          </span>
+        )}
+        {showAccept && (
+          <Button
+            size="sm"
+            className="text-xs shrink-0"
+            onClick={(e) => { e.stopPropagation(); acceptRequest.mutate({ userId: conv.otherUserId }); }}
+            disabled={acceptRequest.isPending}
+          >
+            Accept
+          </Button>
+        )}
+      </div>
+    );
+  }
+
+  if (loading) {
+    return <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
+  }
+
+  return (
+    <div className="space-y-3">
+      {requests.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground mb-1.5 px-1">Message Requests</p>
+          <div className="space-y-1">
+            {requests.map((c) => <ConvPreviewRow key={c.id} conv={c} showAccept />)}
+          </div>
+        </div>
+      )}
+      <div>
+        {requests.length > 0 && <p className="text-xs font-semibold text-muted-foreground mb-1.5 px-1">Inbox</p>}
+        {recentInbox.length === 0 && requests.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">No messages yet.</p>
+        ) : recentInbox.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">No conversations yet.</p>
+        ) : (
+          <div className="space-y-1">
+            {recentInbox.map((c) => <ConvPreviewRow key={c.id} conv={c} />)}
+          </div>
+        )}
+      </div>
+      <Link href="/messages" className="flex items-center justify-center gap-1 text-sm text-primary font-medium py-1.5 hover:underline">
+        View all messages <ChevronRight className="w-3.5 h-3.5" />
+      </Link>
+    </div>
+  );
+}
+
 interface FriendsListSectionProps {
   friends: { id: string; firstName?: string | null; lastName?: string | null; profileImageUrl?: string | null; homeCountry?: string | null }[];
   loading: boolean;
@@ -1014,6 +1184,8 @@ export default function FriendsPage() {
 
   const [rightTab, setRightTab] = useState<RightTab>("friends");
   const [mobileView, setMobileView] = useState<"friends" | "search">("friends");
+  const [mobileRequestsOpen, setMobileRequestsOpen] = useState(false);
+  const [mobileMessagesOpen, setMobileMessagesOpen] = useState(false);
   const [dmOpenUserId, setDmOpenUserId] = useState<string | null>(null);
   const [searchRaw, setSearchRaw] = useState("");
   const [profileModalUserId, setProfileModalUserId] = useState<string | null>(null);
@@ -1267,6 +1439,36 @@ export default function FriendsPage() {
           </div>
         ) : (
           <>
+            <div className="space-y-2">
+              <MobileDropdownSection
+                label="Requests"
+                icon={Inbox}
+                count={requests.length}
+                open={mobileRequestsOpen}
+                onToggle={() => setMobileRequestsOpen(o => !o)}
+              >
+                <FriendRequestsList
+                  requests={requests}
+                  loading={loadingRequests}
+                  onAccept={(id) => acceptRequest.mutate({ requesterId: id }, { onSuccess: invalidate })}
+                  onDecline={(id) => declineRequest.mutate({ requesterId: id }, { onSuccess: invalidate })}
+                  onSelect={(id) => navigate(`/user/${id}`)}
+                  acceptPending={acceptRequest.isPending}
+                  declinePending={declineRequest.isPending}
+                />
+              </MobileDropdownSection>
+
+              <MobileDropdownSection
+                label="Messages"
+                icon={MessageSquare}
+                count={dmBadge}
+                open={mobileMessagesOpen}
+                onToggle={() => setMobileMessagesOpen(o => !o)}
+              >
+                {myId && <MobileMessagesDropdown myId={myId} />}
+              </MobileDropdownSection>
+            </div>
+
             <div>
               <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
                 <Users className="w-4 h-4 text-primary" />
@@ -1350,39 +1552,15 @@ export default function FriendsPage() {
 
             {/* ── Requests ── */}
             {rightTab === "requests" && (
-              <div className="space-y-2">
-                {loadingRequests ? (
-                  <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
-                ) : requests.length === 0 ? (
-                  <div className="flex flex-col items-center gap-3 py-12 text-center">
-                    <Inbox className="w-10 h-10 text-muted-foreground opacity-40" />
-                    <p className="font-semibold">No pending requests</p>
-                    <p className="text-sm text-muted-foreground">Friend requests will appear here.</p>
-                  </div>
-                ) : (
-                  requests.map(r => {
-                    const name = [r.firstName, r.lastName].filter(Boolean).join(" ") || "Traveler";
-                    return (
-                      <div key={r.id} className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition-colors" onClick={() => navigate(`/user/${r.id}`)}>
-                        <Avatar url={r.profileImageUrl} name={name} />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm">{name}</p>
-                          {r.homeCountry && <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><MapPin className="w-2.5 h-2.5" />{r.homeCountry}</p>}
-                          <p className="text-xs text-muted-foreground mt-0.5">{r.createdAt ? timeAgo(r.createdAt) : ""}</p>
-                        </div>
-                        <div className="flex gap-2" onClick={e => e.stopPropagation()}>
-                          <Button size="sm" className="text-xs" onClick={() => acceptRequest.mutate({ requesterId: r.id }, { onSuccess: invalidate })} disabled={acceptRequest.isPending}>
-                            <Check className="w-3.5 h-3.5 mr-1" />Accept
-                          </Button>
-                          <Button variant="outline" size="sm" className="text-xs" onClick={() => declineRequest.mutate({ requesterId: r.id }, { onSuccess: invalidate })} disabled={declineRequest.isPending}>
-                            <X className="w-3.5 h-3.5 mr-1" />Decline
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
+              <FriendRequestsList
+                requests={requests}
+                loading={loadingRequests}
+                onAccept={(id) => acceptRequest.mutate({ requesterId: id }, { onSuccess: invalidate })}
+                onDecline={(id) => declineRequest.mutate({ requesterId: id }, { onSuccess: invalidate })}
+                onSelect={(id) => navigate(`/user/${id}`)}
+                acceptPending={acceptRequest.isPending}
+                declinePending={declineRequest.isPending}
+              />
             )}
 
             {/* ── Search ── */}
