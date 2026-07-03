@@ -35,7 +35,7 @@ function MentionLink({ username }: { username: string }) {
     <Link
       href={`/user/${match.id}`}
       onClick={(e) => e.stopPropagation()}
-      className="text-primary font-medium hover:underline"
+      className="text-white font-semibold underline underline-offset-2 decoration-white/50 hover:decoration-white"
     >
       @{username}
     </Link>
