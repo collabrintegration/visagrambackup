@@ -112,8 +112,8 @@ function ConvItem({
 }
 
 function ThreadPanel({
-  conv, myId, onBack,
-}: { conv: DmConversation; myId: string; onBack: () => void }) {
+  conv, myId, onBack, backTo,
+}: { conv: DmConversation; myId: string; onBack: () => void; backTo?: string | null }) {
   const qc = useQueryClient();
   const otherId = conv.otherUserId;
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -203,6 +203,15 @@ function ThreadPanel({
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
+
+        {backTo && (
+          <button
+            onClick={onBack}
+            className="hidden md:flex absolute left-3 top-3 items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-black/30 text-white text-xs font-medium hover:bg-black/45 transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to profile
+          </button>
+        )}
 
         <div className="absolute right-3 top-3">
           <button
@@ -530,6 +539,7 @@ export default function MessagesPage() {
           <ThreadPanel
             conv={selectedConv}
             myId={myId}
+            backTo={backTo}
             onBack={() => { setShowPanel("list"); setSelectedId(null); navigate(backTo ?? "/messages"); }}
           />
         ) : (
