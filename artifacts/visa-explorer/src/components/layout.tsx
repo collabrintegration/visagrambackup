@@ -174,7 +174,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 {/* Notifications bell */}
                 <Link
                   href="/notifications"
-                  className={`relative flex items-center justify-center w-9 h-9 rounded-lg transition-all ${
+                  className={`relative hidden md:flex items-center justify-center w-9 h-9 rounded-lg transition-all ${
                     location.startsWith("/notifications")
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
