@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import AdUnit from "@/components/ad-unit";
 import CountryCombobox from "@/components/country-combobox";
 import UserMiniCard from "@/components/user-mini-card";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const GROUP_EMOJI_OPTIONS = ["🌍","✈️","🗺️","🏖️","🏔️","🌏","🌐","🚀","🎒","🧳","🌴","🏕️","🚂","⛵","🛸","🏛️","🌺","🍜","🎉","🤝"];
 
@@ -219,8 +220,9 @@ export default function Community() {
   const [qaPage, setQaPage] = useState(0);
   const [qaSort, setQaSort] = useState<"newest" | "answers">("newest");
 
-  const GROUPS_PER_PAGE = 12;
-  const QA_PER_PAGE = 10;
+  const isMobile = useIsMobile();
+  const GROUPS_PER_PAGE = isMobile ? 6 : 12;
+  const QA_PER_PAGE = isMobile ? 6 : 10;
 
   const { data: feed = [], isLoading: feedLoading } = useGetCommunityFeed(
     { limit: 100 },
@@ -395,7 +397,7 @@ export default function Community() {
 
       {/* Groups + Questions two-column layout */}
       <div className="container mx-auto px-4 py-8 max-w-7xl" onClick={() => setCountryOpen(false)}>
-        <div className="flex gap-6 items-start">
+        <div className="flex flex-col md:flex-row gap-6 items-start">
 
           {/* ── LEFT: Groups column (major portion) ─────────────── */}
           <div className="min-w-0 flex-[3]">
@@ -472,7 +474,7 @@ export default function Community() {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {filteredSidebarGroups.slice(groupPage * GROUPS_PER_PAGE, (groupPage + 1) * GROUPS_PER_PAGE).map((g) => (
                     <div
                       key={g.id}

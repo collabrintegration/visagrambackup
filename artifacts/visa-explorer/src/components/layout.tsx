@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Compass, Map as MapIcon, Users, User, LogIn, LogOut, Loader2, ClipboardList, UserPlus, ChevronDown, Settings, MapPin } from "lucide-react";
+import { Compass, Map as MapIcon, Users, User, LogIn, LogOut, Loader2, ClipboardList, UserPlus, ChevronDown, Settings, MapPin, BarChart2 } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
 import { useHealthCheck, getHealthCheckQueryKey, useGetDmUnreadCount, getGetDmUnreadCountQueryKey, useListFriendRequests, getListFriendRequestsQueryKey } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
@@ -11,20 +11,26 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [location, navigate] = useLocation();
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
         setProfileOpen(false);
       }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target as Node)) {
+        setMobileMenuOpen(false);
+      }
     }
-    if (profileOpen) document.addEventListener("mousedown", handleClick);
+    if (profileOpen || mobileMenuOpen) document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [profileOpen]);
+  }, [profileOpen, mobileMenuOpen]);
   const { data: health } = useHealthCheck({
     query: { queryKey: getHealthCheckQueryKey(), refetchInterval: 60000 },
   });
   const { user, isAuthenticated, isLoading: authLoading, login, logout } = useAuth();
+  const isSuperAdmin = (user as { isSuperAdmin?: boolean })?.isSuperAdmin === true;
 
   const { data: unreadData } = useGetDmUnreadCount({
     query: {
@@ -176,15 +182,56 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   )}
                 </div>
 
-                {/* Mobile sign-out */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={logout}
-                  className="md:hidden text-muted-foreground hover:text-foreground"
-                >
-                  <LogOut className="w-4 h-4" />
-                </Button>
+                {/* Mobile profile dropdown */}
+                <div className="relative md:hidden" ref={mobileMenuRef}>
+                  <button
+                    onClick={() => setMobileMenuOpen(o => !o)}
+                    className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                      mobileMenuOpen ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {user?.profileImageUrl ? (
+                      <img src={user.profileImageUrl} alt="" className="w-6 h-6 rounded-full object-cover" />
+                    ) : (
+                      <User className="w-4 h-4" />
+                    )}
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${mobileMenuOpen ? "rotate-180" : ""}`} />
+                  </button>
+
+                  {mobileMenuOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-60 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden z-[200]">
+                      <div className="py-1">
+                        <Link
+                          href="/profile"
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+                        >
+                          <Settings className="w-4 h-4 text-muted-foreground" />
+                          Edit Profile Settings
+                        </Link>
+                        {isSuperAdmin && (
+                          <Link
+                            href="/profile?tab=admin"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+                          >
+                            <BarChart2 className="w-4 h-4 text-muted-foreground" />
+                            Admin — Site Stats
+                          </Link>
+                        )}
+                      </div>
+                      <div className="border-t border-border/60 py-1">
+                        <button
+                          onClick={() => { setMobileMenuOpen(false); logout(); }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Sign out
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </>
             ) : (
               <Button size="sm" onClick={() => navigate("/sign-in")}>

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
 import {
   useGetTravelMap,
   useUpsertTravelEntry,
@@ -151,7 +151,11 @@ function FollowedQuestionCard({ q }: { q: { id: number; title: string; countryCo
 
 export default function Profile() {
   const { user, isAuthenticated, isLoading: authLoading, login } = useAuth();
-  const [activeTab, setActiveTab] = useState<ProfileTab>("travel");
+  const search = useSearch();
+  const requestedTab = new URLSearchParams(search).get("tab");
+  const [activeTab, setActiveTab] = useState<ProfileTab>(
+    requestedTab === "admin" ? "admin" : "travel"
+  );
   const [travelFilter, setTravelFilter] = useState<TravelStatus>("visited");
   const [activitySub, setActivitySub] = useState<ActivitySubTab>("asked");
   const [editingCountry, setEditingCountry] = useState(false);

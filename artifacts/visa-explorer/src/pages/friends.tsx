@@ -84,7 +84,7 @@ function Avatar({
 
 // ── Left Panel: My Profile ────────────────────────────────────────────────────
 
-function ProfilePanel({ friendCount }: { friendCount: number }) {
+function ProfilePanel({ friendCount, hideTravelMap = false, fullWidth = false, hideQuickLinks = false }: { friendCount: number; hideTravelMap?: boolean; fullWidth?: boolean; hideQuickLinks?: boolean }) {
   const queryClient = useQueryClient();
   const { data: authData } = useGetCurrentAuthUser();
   const [isUploadingPic, setIsUploadingPic] = useState(false);
@@ -176,7 +176,7 @@ function ProfilePanel({ friendCount }: { friendCount: number }) {
   const hasTravel = visitedCount > 0 || wantToVisitCount > 0;
 
   return (
-    <aside className="w-72 shrink-0 space-y-4">
+    <aside className={`${fullWidth ? "w-full" : "w-72"} shrink-0 space-y-4`}>
       {/* Profile card */}
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
         {/* Cover gradient */}
@@ -328,7 +328,7 @@ function ProfilePanel({ friendCount }: { friendCount: number }) {
       </div>
 
       {/* Travel stats */}
-      {hasTravel && (
+      {hasTravel && !hideTravelMap && (
         <div className="rounded-2xl border border-border bg-card p-4">
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">My Travel Map</h3>
           <div className="grid grid-cols-2 gap-2">
@@ -353,21 +353,129 @@ function ProfilePanel({ friendCount }: { friendCount: number }) {
       )}
 
       {/* Quick links */}
-      <div className="rounded-2xl border border-border bg-card p-4 space-y-1">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Quick links</h3>
-        {[
-          { href: "/profile", label: "Edit Profile" },
-          { href: "/tracker", label: "My Visa Tracker" },
-        ].map((l) => (
-          <Link key={l.href} href={l.href}
-            className="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          >
-            {l.label}
-            <ChevronRight className="w-3.5 h-3.5" />
-          </Link>
-        ))}
-      </div>
+      {!hideQuickLinks && (
+        <div className="rounded-2xl border border-border bg-card p-4 space-y-1">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Quick links</h3>
+          {[
+            { href: "/profile", label: "Edit Profile" },
+            { href: "/tracker", label: "My Visa Tracker" },
+          ].map((l) => (
+            <Link key={l.href} href={l.href}
+              className="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              {l.label}
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          ))}
+        </div>
+      )}
     </aside>
+  );
+}
+
+// ── Mobile: Quick links dropdown (Edit Profile / My Visa Tracker) ──────────────
+
+function MobileQuickLinksMenu() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    if (open) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border border-border transition-colors ${
+          open ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+        }`}
+      >
+        Menu
+        <ChevronRight className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-90" : ""}`} />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden z-[200]">
+          {[
+            { href: "/profile", label: "Edit Profile" },
+            { href: "/tracker", label: "My Visa Tracker" },
+          ].map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              onClick={() => setOpen(false)}
+              className="flex items-center justify-between px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              {l.label}
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Photos section (reused across desktop + mobile layouts) ────────────────────
+
+function PhotosSection({ loading, photos, onUpload, onPhotoClick }: {
+  loading: boolean;
+  photos: TravelPhoto[];
+  onUpload: () => void;
+  onPhotoClick: (photo: TravelPhoto) => void;
+}) {
+  return (
+    <div className="bg-card border border-border rounded-2xl p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold flex items-center gap-2">
+          <Camera className="w-4 h-4 text-primary" /> Photos
+          {photos.length > 0 && (
+            <span className="text-xs font-normal text-muted-foreground">({photos.length})</span>
+          )}
+        </h3>
+        <Button size="sm" variant="outline" onClick={onUpload}>
+          <Camera className="w-3.5 h-3.5 mr-1.5" /> Upload Photo
+        </Button>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+      ) : photos.length === 0 ? (
+        <div
+          className="flex flex-col items-center justify-center py-10 border border-dashed border-border rounded-xl cursor-pointer hover:border-primary/40 transition-colors"
+          onClick={onUpload}
+        >
+          <Camera className="w-8 h-8 text-muted-foreground/30 mb-2" />
+          <p className="text-sm text-muted-foreground">No photos yet — click to upload your first</p>
+        </div>
+      ) : (
+        <div className="columns-2 sm:columns-3 md:columns-4 gap-2 space-y-2">
+          {photos.map((photo) => (
+            <div
+              key={photo.id}
+              className="relative group break-inside-avoid rounded-xl overflow-hidden cursor-pointer border border-border hover:border-primary/40 transition-all"
+              onClick={() => onPhotoClick(photo)}
+            >
+              <img
+                src={`/api/storage${photo.objectPath}`}
+                alt={photo.caption ?? "Travel photo"}
+                className="w-full object-cover"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute bottom-0 left-0 right-0 p-2 translate-y-1 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all">
+                {photo.caption && <p className="text-xs text-white/90 line-clamp-1">{photo.caption}</p>}
+                <p className="text-[10px] text-white/60 mt-0.5">{photo.countryCode}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -905,6 +1013,7 @@ export default function FriendsPage() {
   const queryClient = useQueryClient();
 
   const [rightTab, setRightTab] = useState<RightTab>("friends");
+  const [mobileView, setMobileView] = useState<"friends" | "search">("friends");
   const [dmOpenUserId, setDmOpenUserId] = useState<string | null>(null);
   const [searchRaw, setSearchRaw] = useState("");
   const [profileModalUserId, setProfileModalUserId] = useState<string | null>(null);
@@ -1002,11 +1111,199 @@ export default function FriendsPage() {
     );
   }
 
+  const searchPanel = (
+    <div className="space-y-4">
+      {/* Search bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input value={searchRaw} onChange={e => setSearchRaw(e.target.value)} placeholder="Search by name or email…" className="pl-9" autoFocus />
+        {searchRaw && <button className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setSearchRaw("")}><X className="w-4 h-4" /></button>}
+      </div>
+
+      {/* Filters row */}
+      <div className="flex flex-wrap gap-2 items-center">
+        {/* Gender filter */}
+        <div className="flex items-center gap-1 flex-wrap">
+          {["", "Male", "Female", "Non-binary", "Prefer not to say"].map(opt => (
+            <button
+              key={opt || "any"}
+              onClick={() => setSexFilter(opt)}
+              className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                sexFilter === opt
+                  ? "border-primary bg-primary/10 text-primary font-medium"
+                  : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
+              }`}
+            >
+              {opt || "Any gender"}
+            </button>
+          ))}
+        </div>
+
+        {/* Location filter */}
+        <div className="relative flex-1 min-w-[140px]">
+          <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <input
+            value={locationRaw}
+            onChange={e => setLocationRaw(e.target.value)}
+            placeholder="Filter by location…"
+            className="w-full pl-7 pr-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+          />
+        </div>
+
+        {/* Age range filter */}
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <span className="text-xs">Age:</span>
+          <input
+            type="number" min={13} max={120}
+            value={minAgeRaw}
+            onChange={e => setMinAgeRaw(e.target.value)}
+            placeholder="Min"
+            className="w-16 px-2 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+          />
+          <span className="text-xs">–</span>
+          <input
+            type="number" min={13} max={120}
+            value={maxAgeRaw}
+            onChange={e => setMaxAgeRaw(e.target.value)}
+            placeholder="Max"
+            className="w-16 px-2 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+          />
+        </div>
+
+        {/* Clear filters */}
+        {(sexFilter || locationRaw || minAgeRaw || maxAgeRaw) && (
+          <button
+            onClick={() => { setSexFilter(""); setLocationRaw(""); setMinAgeRaw(""); setMaxAgeRaw(""); }}
+            className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+          >
+            Clear filters
+          </button>
+        )}
+      </div>
+
+      {!hasSearchInput ? (
+        <div className="flex flex-col items-center gap-3 py-12 text-center">
+          <Search className="w-10 h-10 text-muted-foreground opacity-40" />
+          <p className="font-semibold">Find fellow travelers</p>
+          <p className="text-sm text-muted-foreground">Search by name, or use the filters above.</p>
+        </div>
+      ) : loadingSearch ? (
+        <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+      ) : searchResults.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 py-10 text-center">
+          <p className="font-semibold">No travelers found</p>
+          <p className="text-sm text-muted-foreground">Try adjusting your search or filters.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {searchResults.map(u => {
+            const name = [u.firstName, u.lastName].filter(Boolean).join(" ") || "Traveler";
+            const isFriend = u.friendshipStatus === "accepted";
+            const isPending = u.friendshipStatus === "pending";
+            return (
+              <div
+                key={u.id}
+                className="rounded-xl border border-border bg-card p-4 cursor-pointer hover:border-primary/40 hover:bg-card/80 transition-colors"
+                onClick={() => navigate(`/user/${u.id}`)}
+              >
+                <div className="flex items-center gap-3">
+                  <Avatar url={u.profileImageUrl} name={name} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm">{name}</p>
+                    {u.username && <p className="text-xs text-muted-foreground mt-0.5">@{u.username}</p>}
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                      {u.location && <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="w-2.5 h-2.5" />{u.location}</p>}
+                      {u.age && <p className="text-xs text-muted-foreground">Age {u.age}</p>}
+                      {u.sex && <p className="text-xs text-muted-foreground">{u.sex}</p>}
+                      {!u.location && u.homeCountry && <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="w-2.5 h-2.5" />{u.homeCountry}</p>}
+                    </div>
+                  </div>
+                  {isFriend ? (
+                    <Button variant="outline" size="sm" className="text-xs" onClick={e => e.stopPropagation()} disabled><UserCheck className="w-3.5 h-3.5 mr-1 text-emerald-500" />Friends</Button>
+                  ) : isPending && u.iRequested ? (
+                    <Button variant="outline" size="sm" className="text-xs" onClick={e => e.stopPropagation()} disabled><Clock className="w-3.5 h-3.5 mr-1" />Requested</Button>
+                  ) : isPending && !u.iRequested ? (
+                    <Button size="sm" className="text-xs" onClick={e => { e.stopPropagation(); sendRequest.mutate({ userId: u.id }, { onSuccess: invalidate }); }} disabled={sendRequest.isPending}>
+                      <Check className="w-3.5 h-3.5 mr-1" />Accept
+                    </Button>
+                  ) : (
+                    <Button size="sm" className="text-xs" onClick={e => { e.stopPropagation(); sendRequest.mutate({ userId: u.id }, { onSuccess: invalidate }); }} disabled={sendRequest.isPending}>
+                      <UserPlus className="w-3.5 h-3.5 mr-1" />Add Friend
+                    </Button>
+                  )}
+                </div>
+                <WriteTestimonialInline targetId={u.id} targetName={name} isFriend={isFriend} />
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <>
       <Helmet><title>Friends — Visagram</title></Helmet>
 
-      <div className="container mx-auto px-4 py-8">
+      {/* ══════════════ MOBILE LAYOUT ══════════════ */}
+      <div className="md:hidden container mx-auto px-4 py-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold">Profile</h1>
+          <MobileQuickLinksMenu />
+        </div>
+
+        <ProfilePanel friendCount={friends.length} hideTravelMap fullWidth hideQuickLinks />
+
+        {mobileView === "search" ? (
+          <div className="space-y-3">
+            <button
+              onClick={() => setMobileView("friends")}
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Friends
+            </button>
+            {searchPanel}
+          </div>
+        ) : (
+          <>
+            <div>
+              <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                <Users className="w-4 h-4 text-primary" />
+                Friends
+                {friends.length > 0 && <span className="text-xs font-normal text-muted-foreground">({friends.length})</span>}
+              </h3>
+              <FriendsListSection
+                friends={friends}
+                loading={loadingFriends}
+                onRemove={(id) => removeFriend.mutate({ userId: id }, { onSuccess: invalidate })}
+                onMessage={(id) => navigate(`/messages/${id}`)}
+                onFindPeople={() => setMobileView("search")}
+              />
+            </div>
+
+            {myId && (
+              <PhotosSection
+                loading={photosLoading}
+                photos={myPhotos}
+                onUpload={() => { setShowPhotoUploadModal(true); setShowPhotoCaptionStep(false); setPendingPhotoPath(null); setPendingPhotoCaption(""); }}
+                onPhotoClick={(p) => setPhotoLightbox(p)}
+              />
+            )}
+
+            <div>
+              <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                <Users className="w-4 h-4 text-primary" />
+                Groups
+              </h3>
+              <FriendsGroupsTab />
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* ══════════════ DESKTOP LAYOUT ══════════════ */}
+      <div className="hidden md:block container mx-auto px-4 py-8">
         <div className="flex gap-6 items-start">
 
           {/* ── LEFT PANEL: My Profile ── */}
@@ -1089,135 +1386,7 @@ export default function FriendsPage() {
             )}
 
             {/* ── Search ── */}
-            {rightTab === "search" && (
-              <div className="space-y-4">
-                {/* Search bar */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input value={searchRaw} onChange={e => setSearchRaw(e.target.value)} placeholder="Search by name or email…" className="pl-9" autoFocus />
-                  {searchRaw && <button className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setSearchRaw("")}><X className="w-4 h-4" /></button>}
-                </div>
-
-                {/* Filters row */}
-                <div className="flex flex-wrap gap-2 items-center">
-                  {/* Gender filter */}
-                  <div className="flex items-center gap-1 flex-wrap">
-                    {["", "Male", "Female", "Non-binary", "Prefer not to say"].map(opt => (
-                      <button
-                        key={opt || "any"}
-                        onClick={() => setSexFilter(opt)}
-                        className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
-                          sexFilter === opt
-                            ? "border-primary bg-primary/10 text-primary font-medium"
-                            : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
-                        }`}
-                      >
-                        {opt || "Any gender"}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Location filter */}
-                  <div className="relative flex-1 min-w-[140px]">
-                    <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                    <input
-                      value={locationRaw}
-                      onChange={e => setLocationRaw(e.target.value)}
-                      placeholder="Filter by location…"
-                      className="w-full pl-7 pr-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
-                    />
-                  </div>
-
-                  {/* Age range filter */}
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <span className="text-xs">Age:</span>
-                    <input
-                      type="number" min={13} max={120}
-                      value={minAgeRaw}
-                      onChange={e => setMinAgeRaw(e.target.value)}
-                      placeholder="Min"
-                      className="w-16 px-2 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
-                    />
-                    <span className="text-xs">–</span>
-                    <input
-                      type="number" min={13} max={120}
-                      value={maxAgeRaw}
-                      onChange={e => setMaxAgeRaw(e.target.value)}
-                      placeholder="Max"
-                      className="w-16 px-2 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
-                    />
-                  </div>
-
-                  {/* Clear filters */}
-                  {(sexFilter || locationRaw || minAgeRaw || maxAgeRaw) && (
-                    <button
-                      onClick={() => { setSexFilter(""); setLocationRaw(""); setMinAgeRaw(""); setMaxAgeRaw(""); }}
-                      className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
-                    >
-                      Clear filters
-                    </button>
-                  )}
-                </div>
-
-                {!hasSearchInput ? (
-                  <div className="flex flex-col items-center gap-3 py-12 text-center">
-                    <Search className="w-10 h-10 text-muted-foreground opacity-40" />
-                    <p className="font-semibold">Find fellow travelers</p>
-                    <p className="text-sm text-muted-foreground">Search by name, or use the filters above.</p>
-                  </div>
-                ) : loadingSearch ? (
-                  <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
-                ) : searchResults.length === 0 ? (
-                  <div className="flex flex-col items-center gap-2 py-10 text-center">
-                    <p className="font-semibold">No travelers found</p>
-                    <p className="text-sm text-muted-foreground">Try adjusting your search or filters.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {searchResults.map(u => {
-                      const name = [u.firstName, u.lastName].filter(Boolean).join(" ") || "Traveler";
-                      const isFriend = u.friendshipStatus === "accepted";
-                      const isPending = u.friendshipStatus === "pending";
-                      return (
-                        <div
-                          key={u.id}
-                          className="rounded-xl border border-border bg-card p-4 cursor-pointer hover:border-primary/40 hover:bg-card/80 transition-colors"
-                          onClick={() => navigate(`/user/${u.id}`)}
-                        >
-                          <div className="flex items-center gap-3">
-                            <Avatar url={u.profileImageUrl} name={name} />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-sm">{name}</p>
-                              {u.username && <p className="text-xs text-muted-foreground mt-0.5">@{u.username}</p>}
-                              <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
-                                {u.location && <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="w-2.5 h-2.5" />{u.location}</p>}
-                                {u.age && <p className="text-xs text-muted-foreground">Age {u.age}</p>}
-                                {u.sex && <p className="text-xs text-muted-foreground">{u.sex}</p>}
-                                {!u.location && u.homeCountry && <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="w-2.5 h-2.5" />{u.homeCountry}</p>}
-                              </div>
-                            </div>
-                            {isFriend ? (
-                              <Button variant="outline" size="sm" className="text-xs" onClick={e => e.stopPropagation()} disabled><UserCheck className="w-3.5 h-3.5 mr-1 text-emerald-500" />Friends</Button>
-                            ) : isPending && u.iRequested ? (
-                              <Button variant="outline" size="sm" className="text-xs" onClick={e => e.stopPropagation()} disabled><Clock className="w-3.5 h-3.5 mr-1" />Requested</Button>
-                            ) : isPending && !u.iRequested ? (
-                              <Button size="sm" className="text-xs" onClick={e => { e.stopPropagation(); sendRequest.mutate({ userId: u.id }, { onSuccess: invalidate }); }} disabled={sendRequest.isPending}>
-                                <Check className="w-3.5 h-3.5 mr-1" />Accept
-                              </Button>
-                            ) : (
-                              <Button size="sm" className="text-xs" onClick={e => { e.stopPropagation(); sendRequest.mutate({ userId: u.id }, { onSuccess: invalidate }); }} disabled={sendRequest.isPending}>
-                                <UserPlus className="w-3.5 h-3.5 mr-1" />Add Friend
-                              </Button>
-                            )}
-                          </div>
-                          <WriteTestimonialInline targetId={u.id} targetName={name} isFriend={isFriend} />
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
+            {rightTab === "search" && searchPanel}
 
             {/* ── Messages ── */}
             {rightTab === "messages" && (
@@ -1240,52 +1409,13 @@ export default function FriendsPage() {
 
             {/* ── Photos (shown under friends list, before testimonials) ── */}
             {rightTab === "friends" && myId && (
-              <div className="mt-6 bg-card border border-border rounded-2xl p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold flex items-center gap-2">
-                    <Camera className="w-4 h-4 text-primary" /> Photos
-                    {myPhotos.length > 0 && (
-                      <span className="text-xs font-normal text-muted-foreground">({myPhotos.length})</span>
-                    )}
-                  </h3>
-                  <Button size="sm" variant="outline" onClick={() => { setShowPhotoUploadModal(true); setShowPhotoCaptionStep(false); setPendingPhotoPath(null); setPendingPhotoCaption(""); }}>
-                    <Camera className="w-3.5 h-3.5 mr-1.5" /> Upload Photo
-                  </Button>
-                </div>
-
-                {photosLoading ? (
-                  <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
-                ) : myPhotos.length === 0 ? (
-                  <div
-                    className="flex flex-col items-center justify-center py-10 border border-dashed border-border rounded-xl cursor-pointer hover:border-primary/40 transition-colors"
-                    onClick={() => { setShowPhotoUploadModal(true); setShowPhotoCaptionStep(false); setPendingPhotoPath(null); setPendingPhotoCaption(""); }}
-                  >
-                    <Camera className="w-8 h-8 text-muted-foreground/30 mb-2" />
-                    <p className="text-sm text-muted-foreground">No photos yet — click to upload your first</p>
-                  </div>
-                ) : (
-                  <div className="columns-2 sm:columns-3 md:columns-4 gap-2 space-y-2">
-                    {myPhotos.map((photo) => (
-                      <div
-                        key={photo.id}
-                        className="relative group break-inside-avoid rounded-xl overflow-hidden cursor-pointer border border-border hover:border-primary/40 transition-all"
-                        onClick={() => setPhotoLightbox(photo)}
-                      >
-                        <img
-                          src={`/api/storage${photo.objectPath}`}
-                          alt={photo.caption ?? "Travel photo"}
-                          className="w-full object-cover"
-                          loading="lazy"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="absolute bottom-0 left-0 right-0 p-2 translate-y-1 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all">
-                          {photo.caption && <p className="text-xs text-white/90 line-clamp-1">{photo.caption}</p>}
-                          <p className="text-[10px] text-white/60 mt-0.5">{photo.countryCode}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              <div className="mt-6">
+                <PhotosSection
+                  loading={photosLoading}
+                  photos={myPhotos}
+                  onUpload={() => { setShowPhotoUploadModal(true); setShowPhotoCaptionStep(false); setPendingPhotoPath(null); setPendingPhotoCaption(""); }}
+                  onPhotoClick={(p) => setPhotoLightbox(p)}
+                />
               </div>
             )}
 
